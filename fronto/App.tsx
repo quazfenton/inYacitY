@@ -4,7 +4,7 @@ import EventCard from './components/EventCard';
 import SubscribeForm from './components/SubscribeForm';
 import VibeChart from './components/VibeChart';
 import ErrorBoundary from './components/ErrorBoundary';
-import { City, Event, ViewState } from './types';
+import { City, Event, ViewState, VibeData } from './types';
 import { ArrowLeft, Sparkles, X } from 'lucide-react';
 import {
   getCityEvents,
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [showAbout, setShowAbout] = useState(false);
   const [cities, setCities] = useState<City[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [vibeData, setVibeData] = useState<VibeData[]>([]);
 
   // Load cities from API on mount
   useEffect(() => {
@@ -40,6 +41,8 @@ const App: React.FC = () => {
       } catch (error) {
         console.error('Failed to load cities:', error);
         // Fallback to static cities if API fails
+        const { CITIES } = await import('./constants');
+        setCities(CITIES);
         setInitialLoad(false);
       }
     };
@@ -52,17 +55,33 @@ const App: React.FC = () => {
     setLoading(true);
     setView(ViewState.CITY_FEED);
     window.scrollTo(0, 0);
-    
+
     try {
       // Fetch events from API
       const backendEvents: BackendEvent[] = await getCityEvents(city.id);
-      
+
       // Format events for frontend
       const formattedEvents = backendEvents.map(formatBackendEvent);
       setEvents(formattedEvents);
+      
+      // Fetch vibe data for the selected city
+      // TODO: Implement API call to fetch actual vibe data
+      // For now, using mock data as fallback
+      const mockVibeData: VibeData[] = [
+        { day: 'Mon', intensity: 40, crowd: 30 },
+        { day: 'Tue', intensity: 60, crowd: 45 },
+        { day: 'Wed', intensity: 35, crowd: 25 },
+        { day: 'Thu', intensity: 75, crowd: 60 },
+        { day: 'Fri', intensity: 90, crowd: 80 },
+        { day: 'Sat', intensity: 85, crowd: 75 },
+        { day: 'Sun', intensity: 50, crowd: 40 },
+      ];
+      setVibeData(mockVibeData);
     } catch (error) {
       console.error('Failed to load events:', error);
       setEvents([]);
+      // Set empty vibe data on error
+      setVibeData([]);
     } finally {
       setLoading(false);
     }
@@ -165,7 +184,7 @@ const App: React.FC = () => {
                       <SubscribeForm cityId={selectedCity?.id} cityName={selectedCity?.name} />
                     </div>
 
-                    <VibeChart />
+                    <VibeChart data={vibeData} />
 
                     <div className="border-t border-zinc-800 pt-6">
                       <h3 className="font-mono text-xs text-zinc-500 mb-4 uppercase">Actions</h3>

@@ -1,15 +1,19 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MOCK_VIBE_DATA } from '../constants';
+import { VibeData } from '../types';
 
-const VibeChart: React.FC = () => {
+interface VibeChartProps {
+  data: VibeData[];
+}
+
+const VibeChart: React.FC<VibeChartProps> = ({ data }) => {
   return (
     <div className="h-32 w-full mt-8 opacity-60 hover:opacity-100 transition-opacity duration-500">
       <div className="text-[10px] font-mono text-zinc-500 mb-2 uppercase border-b border-zinc-800 pb-1">
         Projected Intensity Levels (Weekly)
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={MOCK_VIBE_DATA}>
+        <AreaChart data={data}>
           <defs>
             <linearGradient id="colorIntensity" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#ccff00" stopOpacity={0.3}/>

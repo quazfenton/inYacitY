@@ -1,4 +1,4 @@
-import { City, VibeData } from './types';
+import { City } from './types';
 
 // City mapping from backend city IDs to frontend display format
 export const CITY_MAPPING: Record<string, City> = {
@@ -53,13 +53,3 @@ export const CITIES: City[] = Object.values(CITY_MAPPING);
 // API configuration
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Mock data for charts and previews
-export const MOCK_VIBE_DATA: VibeData[] = [
-  { day: 'Mon', intensity: 40, crowd: 30 },
-  { day: 'Tue', intensity: 60, crowd: 45 },
-  { day: 'Wed', intensity: 35, crowd: 25 },
-  { day: 'Thu', intensity: 75, crowd: 60 },
-  { day: 'Fri', intensity: 90, crowd: 80 },
-  { day: 'Sat', intensity: 85, crowd: 75 },
-  { day: 'Sun', intensity: 50, crowd: 40 },
-];

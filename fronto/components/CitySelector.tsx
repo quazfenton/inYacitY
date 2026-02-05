@@ -37,7 +37,7 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
             onMouseEnter={() => setHoveredCity(city.id)}
             onMouseLeave={() => setHoveredCity(null)}
             onClick={() => onSelect(city)}
-            className="group relative flex items-center justify-between w-full text-left focus:outline-none py-2 border-b border-concrete hover:border-acid transition-colors duration-500"
+            className="group relative flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-acid focus-visible:ring-offset-2 focus-visible:ring-offset-void py-2 border-b border-concrete hover:border-acid transition-colors duration-500"
           >
             <span 
               className={`

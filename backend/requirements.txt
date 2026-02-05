@@ -1,0 +1,29 @@
+# Backend dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic[email]==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy[asyncio]==2.0.23
+asyncpg==0.29.0
+alembic==1.13.0
+
+# Email
+aiosmtplib==3.0.1
+aiohttp==3.9.0
+
+# HTTP client
+httpx==0.25.2
+requests==2.31.0
+
+# Scraping dependencies (from scraper/)
+playwright>=1.40.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+pydoll-python>=0.1.0
+
+# Utilities
+python-dateutil==2.8.2

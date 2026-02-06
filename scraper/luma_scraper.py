@@ -11,14 +11,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from browser import fetch_page, create_browser, close_browser
 from typing import Optional
-
-
-# City mapping
-LUMA_CITIES = {
-    'dc--washington': 'dc', 'ny--new-york': 'nyc',
-    'ca--los-angeles': 'la', 'ca--san-francisco': 'sf',
-    'tx--houston': 'houston', 'il--chicago': 'chicago'
-}
+from config_loader import get_config
 
 
 async def fetch_luma_page(url: str) -> Optional[str]:
@@ -44,8 +37,16 @@ async def fetch_luma_page(url: str) -> Optional[str]:
         raise e
 
 
-async def scrape_luma(city: str = "la") -> list:
+async def scrape_luma(city: str = None) -> list:
     """Scrape Luma events for a city"""
+    config = get_config()
+    
+    if not city:
+        # Get location code and map to Luma format
+        location = config.get_location()
+        luma_map = config.get_city_map('LUMA')
+        city = luma_map.get(location, 'la')
+    
     output_file = "luma_events.json"
     
     # Convert city code

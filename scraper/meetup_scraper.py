@@ -10,10 +10,22 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from browser import fetch_page
+from config_loader import get_config
 
 
-async def scrape_meetup(location: str = "us--ca--los-angeles") -> list:
+async def scrape_meetup(location: str = None) -> list:
     """Scrape Meetup events"""
+    config = get_config()
+    
+    if not location:
+        # Convert location format from config to Meetup format
+        city_code = config.get_location()
+        if '--' in city_code:
+            parts = city_code.split('--')
+            location = f"us--{parts[0]}--{parts[1]}"
+        else:
+            location = f"us--{city_code}"
+    
     output_file = "meetup_events.json"
     
     # Build URL

@@ -21,27 +21,7 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 from simple_browser import create_browser, close_browser
-
-
-# Mapping of city codes to posh.vip URL parameters
-POSH_VIP_CITY_MAP = {
-    "ca--los-angeles": "los-angeles",
-    "ca--san-diego": "san-diego",
-    "ca--san-francisco": "san-francisco",
-    "dc--washington": "washington-dc",
-    "fl--miami": "miami",
-    "ga--atlanta": "atlanta",
-    "il--chicago": "chicago",
-    "ny--new-york": "new-york",
-    "pa--philadelphia": "philadelphia",
-    "tx--austin": "austin",
-    "tx--dallas": "dallas",
-    "tx--houston": "houston",
-    "wa--seattle": "seattle",
-    "co--denver": "denver",
-    "nv--las-vegas": "las-vegas",
-    "ma--boston": "boston",
-}
+from config_loader import get_config
 
 
 def build_posh_vip_url(city_code: str) -> Optional[str]:
@@ -54,10 +34,14 @@ def build_posh_vip_url(city_code: str) -> Optional[str]:
     Returns:
         Full posh.vip URL or None
     """
-    if city_code not in POSH_VIP_CITY_MAP:
+    config = get_config()
+    posh_config = config.get_scraper_config('POSH_VIP')
+    city_map = posh_config.get('city_map', {})
+    
+    if city_code not in city_map:
         return None
     
-    city_slug = POSH_VIP_CITY_MAP[city_code]
+    city_slug = city_map[city_code]
     return f"https://posh.vip/events/{city_slug}"
 
 

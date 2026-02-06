@@ -7,17 +7,10 @@ import asyncio
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from browser import fetch_page
-
-
-CONFIG = {
-    "MAIN_PAGES": 2,
-    "MAX_EVENTS_PER_PAGE": 50,
-    "LOCATION": "ca--los-angeles",
-    "BASE_URL": "https://www.eventbrite.com/d/{location}/free--events/"
-}
+from config_loader import get_config
 
 
 def parse_event_date(date_str: str) -> str:
@@ -162,10 +155,17 @@ def parse_events_from_html(html: str) -> list:
     return events
 
 
-async def scrape_eventbrite(location: str = None, max_pages: int = 2) -> list:
+async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list:
     """Scrape Eventbrite events for a location"""
+    config = get_config()
+    
     if not location:
-        location = CONFIG.get("LOCATION", "ca--los-angeles")
+        location = config.get_location()
+    
+    # Get Eventbrite config
+    eb_config = config.get_scraper_config('EVENTBRITE')
+    if max_pages is None:
+        max_pages = eb_config.get('main_pages', 2)
     
     output_file = "eventbrite_events.json"
     
@@ -181,7 +181,7 @@ async def scrape_eventbrite(location: str = None, max_pages: int = 2) -> list:
             pass
     
     all_events = []
-    base_url = CONFIG["BASE_URL"].format(location=location)
+    base_url = eb_config.get('base_url', 'https://www.eventbrite.com/d/{location}/free--events/').format(location=location)
     
     # Scrape multiple pages
     for page in range(1, max_pages + 1):

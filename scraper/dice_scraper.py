@@ -10,25 +10,27 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from browser import fetch_page
+from config_loader import get_config
 
 
-# City mapping
-DICE_CITIES = {
-    'ca--los-angeles': 'losangeles-5982e13c613de866017c3e3a',
-    'ny--new-york': 'new_york-5bbf4db0f06331478e9b2c59',
-    'fl--miami': 'miami-5e3bf1b0fe75488ec46cdf9f',
-    'il--chicago': 'chicago-5b238ca66e4bcd93783835b0',
-    'tx--austin': 'austin-5e3c24db136e51081e406ed3',
-    'ca--san-francisco': 'sanfrancisco-60dee10ce5e339918757f0db',
-}
-
-
-async def scrape_dice(city: str = "ca--los-angeles", max_price: int = 0) -> list:
+async def scrape_dice(city: str = None, max_price: int = None) -> list:
     """Scrape Dice.fm events"""
+    config = get_config()
+    
+    if not city:
+        city = config.get_location()
+    
+    # Get Dice.fm config
+    dice_config = config.get_scraper_config('DICE_FM')
+    city_map = dice_config.get('city_map', {})
+    
+    if max_price is None:
+        max_price = dice_config.get('max_price', 0)
+    
     output_file = "dice_events.json"
     
     # Build URL
-    city_id = DICE_CITIES.get(city, 'losangeles-5982e13c613de866017c3e3a')
+    city_id = city_map.get(city, 'losangeles-5982e13c613de866017c3e3a')
     url = f"https://dice.fm/browse/{city_id}"
     if max_price == 0:
         url += "?priceTo=1"  # Free events

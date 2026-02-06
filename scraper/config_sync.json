@@ -25,6 +25,10 @@
     "WAIT_TIME": 2000,
     "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   },
+  "DATABASE": {
+    "SYNC_MODE": 0,
+    "COMMENTS": "0=disabled | 1-4=every Nth run | 5+=every run"
+  },
   "SCRAPER_SETTINGS": {
     "EVENTBRITE": {
       "enabled": true,

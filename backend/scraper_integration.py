@@ -392,6 +392,14 @@ async def scrape_city_events(city_id: str) -> Dict:
 
     logger.info(f"Saved {result['saved']} new events, updated {result['updated']} existing events")
 
+    # Sync to Supabase if configured
+    try:
+        from supabase_integration import sync_events_to_supabase
+        supabase_result = await sync_events_to_supabase(events_data, city_id)
+        logger.info(f"Supabase sync result: {supabase_result}")
+    except Exception as e:
+        logger.warning(f"Supabase sync failed (non-critical): {e}")
+
     return {
         "city_id": city_id,
         "status": "success",

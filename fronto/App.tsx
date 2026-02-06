@@ -4,6 +4,8 @@ import EventCard from './components/EventCard';
 import SubscribeForm from './components/SubscribeForm';
 import VibeChart from './components/VibeChart';
 import ErrorBoundary from './components/ErrorBoundary';
+import AmbientMusic from './components/AmbientMusic';
+import ScrollHelper from './components/ScrollHelper';
 import { City, Event, ViewState, VibeData } from './types';
 import { ArrowLeft, Sparkles, X } from 'lucide-react';
 import {
@@ -24,6 +26,9 @@ const App: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [initialLoad, setInitialLoad] = useState(true);
   const [vibeData, setVibeData] = useState<VibeData[]>([]);
+  const [refreshUsed, setRefreshUsed] = useState(false);
+  const [initialEventCount, setInitialEventCount] = useState(0);
+  const [newEventsCount, setNewEventsCount] = useState(0);
 
   // Load cities from API on mount
   useEffect(() => {
@@ -54,6 +59,7 @@ const App: React.FC = () => {
     setSelectedCity(city);
     setLoading(true);
     setView(ViewState.CITY_FEED);
+    setNewEventsCount(0);
     window.scrollTo(0, 0);
 
     try {
@@ -63,6 +69,7 @@ const App: React.FC = () => {
       // Format events for frontend
       const formattedEvents = backendEvents.map(formatBackendEvent);
       setEvents(formattedEvents);
+      setInitialEventCount(formattedEvents.length);
       
       // Fetch vibe data for the selected city
       // TODO: Implement API call to fetch actual vibe data
@@ -80,6 +87,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Failed to load events:', error);
       setEvents([]);
+      setInitialEventCount(0);
       // Set empty vibe data on error
       setVibeData([]);
     } finally {
@@ -94,19 +102,52 @@ const App: React.FC = () => {
     setEvents([]);
   };
 
-  // Refresh/Scrape Handler
+  // Refresh/Scrape Handler (limited to 1 per entire session)
   const handleRefreshEvents = async () => {
-    if (!selectedCity) return;
+    if (!selectedCity || refreshUsed) return;
     setLoading(true);
     
     try {
       // Trigger scrape for this city
       await scrapeCity(selectedCity.id);
       
-      // Fetch updated events
-      const backendEvents = await getCityEvents(selectedCity.id);
-      const formattedEvents = backendEvents.map(formatBackendEvent);
-      setEvents(formattedEvents);
+      // Poll for new events with progressive loading
+      let currentCount = events.length;
+      let pollAttempts = 0;
+      const maxAttempts = 20; // Poll for up to 20 seconds
+      let finalEvents: Event[] = [];
+      
+      while (pollAttempts < maxAttempts) {
+        // Wait before polling
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch updated events
+        const backendEvents = await getCityEvents(selectedCity.id);
+        finalEvents = backendEvents.map(formatBackendEvent);
+        
+        // If we got new events, update UI progressively
+        if (finalEvents.length > currentCount) {
+          setEvents(finalEvents);
+          currentCount = finalEvents.length;
+        }
+        
+        // Stop polling if we haven't seen new events in last 2 attempts
+        if (pollAttempts > 2 && finalEvents.length === currentCount) {
+          break;
+        }
+        
+        pollAttempts++;
+      }
+      
+      // Set final events
+      setEvents(finalEvents);
+      
+      // Calculate new events
+      const newCount = Math.max(0, finalEvents.length - initialEventCount);
+      setNewEventsCount(newCount);
+      
+      // Mark refresh as used for this entire session (persists across cities)
+      setRefreshUsed(true);
     } catch (error) {
       console.error('Failed to refresh events:', error);
     } finally {
@@ -116,6 +157,8 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
+      <ScrollHelper />
+      <AmbientMusic />
       <div className="min-h-screen bg-void text-zinc-100 selection:bg-acid selection:text-void font-sans">
 
         {/* Persistent Nav/Header */}
@@ -187,42 +230,84 @@ const App: React.FC = () => {
                     <VibeChart data={vibeData} />
 
                     <div className="border-t border-zinc-800 pt-6">
-                      <h3 className="font-mono text-xs text-zinc-500 mb-4 uppercase">Actions</h3>
-                      <button
-                        onClick={handleRefreshEvents}
-                        disabled={loading}
-                        className="w-full py-4 border border-zinc-700 hover:border-acid hover:bg-acid hover:text-void transition-all duration-300 font-mono text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                         {loading ? (
-                           <span className="animate-pulse">REFRESHING EVENTS...</span>
+                       <h3 className="font-mono text-xs text-zinc-500 mb-4 uppercase">Actions</h3>
+                       <button
+                         onClick={handleRefreshEvents}
+                         disabled={loading || refreshUsed}
+                         className={`w-full py-4 border transition-all duration-300 font-mono text-sm flex items-center justify-center gap-2 ${
+                           refreshUsed
+                             ? 'border-zinc-700 opacity-30 cursor-not-allowed'
+                             : 'border-zinc-700 hover:border-acid hover:bg-acid hover:text-void'
+                         } disabled:opacity-50 disabled:cursor-not-allowed`}
+                       >
+                          {loading ? (
+                            <span className="animate-pulse">REFRESHING EVENTS...</span>
+                          ) : refreshUsed ? (
+                            <>
+                              <Sparkles size={16} />
+                              REFRESH USED (0/1)
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={16} />
+                              REFRESH EVENTS (1/1)
+                            </>
+                          )}
+                       </button>
+                       <p className="text-[10px] text-zinc-600 mt-2 text-center font-mono">
+                         {refreshUsed && newEventsCount > 0 ? (
+                           <>Found <span className="text-acid font-bold">{newEventsCount}</span> new events from live scrape.</>
+                         ) : refreshUsed ? (
+                           <>Refresh limit reached for this session.</>
                          ) : (
-                           <>
-                             <Sparkles size={16} />
-                             REFRESH EVENTS
-                           </>
+                           <>* Fetches latest events from Eventbrite, Meetup & Luma.</>
                          )}
-                      </button>
-                      <p className="text-[10px] text-zinc-600 mt-2 text-center font-mono">
-                        * Fetches latest events from Eventbrite, Meetup & Luma.
-                      </p>
-                    </div>
+                       </p>
+                     </div>
                   </div>
                 </div>
 
                 {/* Right Column: Events Feed */}
-                <div className="lg:col-span-8">
-                   <div className="grid grid-cols-1 gap-6">
-                      {loading && events.length === 0 ? (
-                        <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono animate-pulse">
-                          SCANNING FOR EVENTS...
-                        </div>
-                      ) : events.length === 0 ? (
-                        <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono">
-                          NO EVENTS FOUND. TRY REFRESHING.
-                        </div>
-                      ) : (
+                 <div className="lg:col-span-8">
+                    <div className="grid grid-cols-1 gap-6">
+                       {loading && events.length === 0 ? (
+                         <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono animate-pulse">
+                           SCANNING FOR EVENTS...
+                         </div>
+                       ) : loading && events.length > 0 ? (
+                         <>
+                           {events.map((event, idx) => (
+                             <div 
+                               key={event.id} 
+                               className="animate-slide-in-up" 
+                               style={{ 
+                                 animation: `slideInUp 0.6s ease-out forwards`,
+                                 animationDelay: `${idx * 120}ms`
+                               }}
+                             >
+                               <EventCard event={event} />
+                             </div>
+                           ))}
+                           <div className="py-20 text-center border border-acid/30 border-dashed text-acid font-mono animate-pulse">
+                             LOADING MORE EVENTS...
+                           </div>
+                         </>
+                       ) : events.length === 0 ? (
+                         <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono">
+                           NO EVENTS FOUND. TRY REFRESHING.
+                         </div>
+                       ) : (
                         events.map((event, idx) => (
-                          <div key={event.id} className="animate-in fade-in slide-in-from-bottom-10 duration-700" style={{ animationDelay: `${idx * 100}ms` }}>
+                          <div 
+                            key={event.id} 
+                            className="animate-slide-in-up" 
+                            style={{ 
+                              animationDelay: `${idx * 120}ms`,
+                              opacity: 0,
+                              animation: `slideInUp 0.6s ease-out forwards`,
+                              animationDelay: `${idx * 120}ms`
+                            }}
+                          >
                             <EventCard event={event} />
                           </div>
                         ))

@@ -27,3 +27,6 @@ pydoll-python>=0.1.0
 
 # Utilities
 python-dateutil==2.8.2
+
+# Supabase (optional - for real-time event sharing)
+supabase==2.1.5

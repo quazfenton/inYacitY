@@ -186,7 +186,11 @@ async def scrape_events(city_id: str, background_tasks: BackgroundTasks):
     # Run scraping in background
     background_tasks.add_task(scrape_city_events, city_id)
     
-    return {"message": f"Scraping initiated for {city_id}", "city_id": city_id}
+    return {
+        "message": f"Scraping initiated for {city_id}",
+        "city_id": city_id,
+        "note": "Events will be synced to shared database in real-time"
+    }
 
 # Refresh all cities
 @app.post("/scrape/all")
@@ -202,28 +206,34 @@ async def subscribe(subscription: SubscriptionCreate, db=Depends(get_db)):
     from sqlalchemy import select
     from database import Subscription
     
-    # Check if already subscribed
-    existing = await db.execute(
-        select(Subscription).where(
-            Subscription.email == subscription.email,
-            Subscription.city_id == subscription.city_id
+    try:
+        # Check if already subscribed
+        existing = await db.execute(
+            select(Subscription).where(
+                (Subscription.email == subscription.email) &
+                (Subscription.city_id == subscription.city_id)
+            )
         )
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Already subscribed to this city")
-    
-    # Create subscription
-    new_subscription = Subscription(
-        email=subscription.email,
-        city_id=subscription.city_id,
-        is_active=True
-    )
-    
-    db.add(new_subscription)
-    await db.commit()
-    await db.refresh(new_subscription)
-    
-    return new_subscription
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Already subscribed to this city")
+        
+        # Create subscription
+        new_subscription = Subscription(
+            email=subscription.email,
+            city_id=subscription.city_id,
+            is_active=True
+        )
+        
+        db.add(new_subscription)
+        await db.commit()
+        await db.refresh(new_subscription)
+        
+        return new_subscription
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Subscription failed: {str(e)}")
 
 # Unsubscribe
 @app.delete("/subscribe/{subscription_id}")

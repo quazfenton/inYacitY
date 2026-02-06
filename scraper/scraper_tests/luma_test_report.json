@@ -1,0 +1,142 @@
+{
+  "scraper": "luma",
+  "timestamp": "2026-02-05T22:48:30.632178",
+  "metrics": {
+    "total_events": 22,
+    "errors": 0,
+    "duplicates": 0,
+    "completeness_rate": {
+      "title": 100.0,
+      "date": 100.0,
+      "time": 100.0,
+      "location": 100.0,
+      "link": 100.0,
+      "description": 0.0,
+      "price": 0.0,
+      "image": 0.0
+    },
+    "data_quality": {
+      "free_events": 0,
+      "paid_events": 0,
+      "valid_dates": 22,
+      "invalid_dates": 0,
+      "valid_times": 22,
+      "invalid_times": 0,
+      "avg_description_length": 0
+    },
+    "data_samples": {
+      "title_samples": [
+        "Bubbela Martinis & Manifestations",
+        "Philosophy Fridays",
+        "Monarch x Sweat Yoga: Yoga Flow Workshop"
+      ],
+      "location_samples": [
+        "LIVE",
+        "\u200bBy Venice Vedanta Club\u200b1601 Main St",
+        "\u200bBy Monarch Athletic Club\u200bMonarch Athletic Club - ",
+        "\u200bBy Obreanna @ Burden of Proof\u200bBurden of Proof",
+        "\u200bBy Ima Studio, Ellen Liu, Carrie & Yuki He\u200bLos An"
+      ],
+      "date_samples": [
+        "2026-02-05",
+        "2026-02-05",
+        "2026-02-07"
+      ]
+    }
+  },
+  "events_sample": [
+    {
+      "title": "Bubbela Martinis & Manifestations",
+      "date": "2026-02-05",
+      "time": "7:00 PM",
+      "location": "LIVE",
+      "link": "https://lu.ma/giwmtr64",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Philosophy Fridays",
+      "date": "2026-02-05",
+      "time": "9:00 AM",
+      "location": "\u200bBy Venice Vedanta Club\u200b1601 Main St",
+      "link": "https://lu.ma/fcesi49l",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Monarch x Sweat Yoga: Yoga Flow Workshop",
+      "date": "2026-02-07",
+      "time": "11:00 AM",
+      "location": "\u200bBy Monarch Athletic Club\u200bMonarch Athletic Club - West Hollywood",
+      "link": "https://lu.ma/7ljihw92",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Free Non-Alcoholic Wine Tasting w/ Kiki, Glamour Portraits & More!",
+      "date": "2026-02-07",
+      "time": "3:00 PM",
+      "location": "\u200bBy Obreanna @ Burden of Proof\u200bBurden of Proof",
+      "link": "https://lu.ma/gcbx1h4c",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Exploring AI Production - Brand Ads, Short Films & a $1,000 Creator Challenge",
+      "date": "2026-02-07",
+      "time": "3:30 PM",
+      "location": "\u200bBy Ima Studio, Ellen Liu, Carrie & Yuki He\u200bLos Angeles, California",
+      "link": "https://lu.ma/dbl78mqz",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "From Roadmaps to Agents: How AI Is Reshaping Product Management and Innovation Opportunities for Startups to Big Tech",
+      "date": "2026-02-11",
+      "time": "4:00 PM",
+      "location": "\u200bBy Easton Center for Tech Management\u200bUCLA Anderson School of Management",
+      "link": "https://lu.ma/l6eneqep",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Space Beach Industry Reception with Artist Richelle Ellis",
+      "date": "2026-02-11",
+      "time": "5:30 PM",
+      "location": "\u200bBy Drea Bernardi\u200b240 Pine Ave",
+      "link": "https://lu.ma/e4brqnsu",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Demo Day LA - Feb 2026",
+      "date": "2026-02-12",
+      "time": "4:00 PM",
+      "location": "\u200bBy Nerdstage\u200bBLANKSPACES Venice",
+      "link": "https://lu.ma/demodayLAFeb",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "Beyond the Game: The Business of Ownership @AllStar Weekend",
+      "date": "2026-02-12",
+      "time": "6:00 PM",
+      "location": "\u200bLos Angeles, California",
+      "link": "https://lu.ma/wyiljh1o",
+      "description": "",
+      "source": "Luma"
+    },
+    {
+      "title": "ENG Mixer @ Catcher In The Rye Bar",
+      "date": "2026-02-12",
+      "time": "6:00 PM",
+      "location": "\u200bBy Entertainment Networking Group\u200bCatcher In The Rye Bar",
+      "link": "https://lu.ma/jobt5301",
+      "description": "",
+      "source": "Luma"
+    }
+  ],
+  "total_events": 22,
+  "duplicates": 0,
+  "errors": []
+}

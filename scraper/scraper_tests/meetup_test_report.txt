@@ -1,0 +1,35 @@
+
+================================================================================
+SCRAPER TEST REPORT: MEETUP
+================================================================================
+
+Execution Time: 0:00:00.001656
+Total Events: 16
+Errors: 0
+Duplicates Found: 0
+
+--- DATA COMPLETENESS ---
+  ✓ date            100.0%
+  ✓ description     100.0%
+  ✗ image             0.0%
+  ✓ link            100.0%
+  ✓ location        100.0%
+  ✗ price             0.0%
+  ✗ time              0.0%
+  ✓ title           100.0%
+
+--- DATA QUALITY ---
+  Free Events: 0
+  Paid Events: 0
+  Valid Dates: 16
+  Invalid Dates: 0
+  Valid Times: 0
+  Invalid Times: 0
+  Avg Description Length: 140 chars
+
+--- DATA SAMPLES ---
+  Title: 650 HABITS FOR LIFE TO TEACH YOUR CHILDREN (Habits
+  Location: Location TBA
+  Date: 2026-02-08
+
+================================================================================

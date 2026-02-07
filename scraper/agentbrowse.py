@@ -64,6 +64,8 @@ def parse_event_date(date_str: str) -> datetime:
         try:
             return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
         except ValueError:
+            pass
+    return today.date()
             continue
     return today.date()
                 continue

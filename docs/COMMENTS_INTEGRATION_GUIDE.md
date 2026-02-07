@@ -9,12 +9,6 @@ Users can post comments, like comments, and view discussion threads for each eve
 ---
 
 ## Database Setup
-
-### Create Comments Table
-
-Run the SQL in `backend/models/COMMENTS_DATABASE_SCHEMA.sql` in Supabase:
-
-```sql
 CREATE TABLE comments (
   id BIGSERIAL PRIMARY KEY,
   comment_id VARCHAR(36) UNIQUE NOT NULL,
@@ -28,13 +22,14 @@ CREATE TABLE comments (
   is_deleted BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  INDEX idx_event_id (event_id),
-  INDEX idx_author_email (author_email),
-  INDEX idx_created_at (created_at),
-  INDEX idx_is_approved (is_approved),
-  INDEX idx_is_deleted (is_deleted),
   FOREIGN KEY (event_id) REFERENCES events(event_hash)
+);
+
+CREATE INDEX idx_event_id ON comments(event_id);
+CREATE INDEX idx_author_email ON comments(author_email);
+CREATE INDEX idx_created_at ON comments(created_at);
+CREATE INDEX idx_is_approved ON comments(is_approved);
+CREATE INDEX idx_is_deleted ON comments(is_deleted);
 );
 
 -- Views for moderation and analytics

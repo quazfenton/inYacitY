@@ -502,12 +502,12 @@ class DatabaseSyncManager:
             'new_duplicates_removed': 0,
             'past_events_removed': 0
         }
-        
+
         # Check if file exists
         if not os.path.exists(events_file):
             result['errors'].append(f"Events file not found: {events_file}")
             return result
-        
+
         # Load events
         try:
             with open(events_file, 'r') as f:
@@ -519,11 +519,14 @@ class DatabaseSyncManager:
         except Exception as e:
             result['errors'].append(f"Error reading file: {e}")
             return result
-        
+
         if not events:
-            result['success'] = True
+            if self.sync.is_configured():
+                result['success'] = True
+            else:
+                result['errors'].append("Supabase not configured: cannot sync empty events")
             return result
-        
+
         # Filter out tracked events (duplicates)
         new_events = []
         for event in events:

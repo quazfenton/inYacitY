@@ -152,32 +152,31 @@ async def scrape_eventbrite(city: str, output_file: str = "eventbrite_events.jso
         html = await fetch_with_firecrawl(url)
         if not html:
             print("Failed to fetch page")
-            continue
-        
-        events = extract_events_from_html(html)
-        print(f"Extracted {len(events)} events")
-        
-        # Add new events
-        new_count = 0
-        for event in events:
-            if event['link'] not in existing_links:
-                all_events.append(event)
-                existing_links.add(event['link'])
-                new_count += 1
-        
-        print(f"Added {new_count} new events")
-    
-    # Save
-    with open(output_file, 'w') as f:
-        json.dump({
-            'events': all_events,
-            'total': len(all_events),
-            'new': len([e for e in all_events if e['link'] in existing_links])
-        }, f, indent=2, default=str)
-    
-    print(f"\n✓ Saved {len(all_events)} total events to {output_file}")
-    return all_events
+                    continue
 
+                events = extract_events_from_html(html)
+                print(f"Extracted {len(events)} events")
+
+                # Add new events
+                new_count = 0
+                for event in events:
+                    if event['link'] not in existing_links:
+                        all_events.append(event)
+                        existing_links.add(event['link'])
+                        new_count += 1
+
+                print(f"Added {new_count} new events")
+
+            # Save
+            with open(output_file, 'w') as f:
+                json.dump({
+                    'events': all_events,
+                    'total': len(all_events),
+                    'new': new_count
+                }, f, indent=2, default=str)
+
+            print(f"\n✓ Saved {len(all_events)} total events to {output_file}")
+            return all_events
 
 async def main():
     config = {}

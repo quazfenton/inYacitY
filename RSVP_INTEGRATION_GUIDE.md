@@ -11,10 +11,6 @@ Users can RSVP directly on event pages and optionally add events to their Google
 ## Database Setup
 
 ### Create RSVP Tables
-
-Run the SQL in `scraper/RSVP_DATABASE_SCHEMA.sql` in Supabase:
-
-```sql
 CREATE TABLE rsvps (
   id BIGSERIAL PRIMARY KEY,
   rsvp_id VARCHAR(36) UNIQUE NOT NULL,
@@ -30,13 +26,14 @@ CREATE TABLE rsvps (
   reminder_sent BOOLEAN DEFAULT false,
   reminder_sent_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_event_id (event_id),
-  INDEX idx_user_email (user_email),
-  INDEX idx_event_date (event_date),
-  INDEX idx_reminder_enabled (reminder_enabled),
-  INDEX idx_reminder_sent (reminder_sent)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_event_id ON rsvps(event_id);
+CREATE INDEX idx_user_email ON rsvps(user_email);
+CREATE INDEX idx_event_date ON rsvps(event_date);
+CREATE INDEX idx_reminder_enabled ON rsvps(reminder_enabled);
+CREATE INDEX idx_reminder_sent ON rsvps(reminder_sent);
 
 -- Optional views for notifications
 CREATE VIEW active_rsvps AS

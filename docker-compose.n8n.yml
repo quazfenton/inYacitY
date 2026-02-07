@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: n8n
-      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-n8n_password_change_me}
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD}
       POSTGRES_DB: n8n
       # Remove SSL requirement for local connections
       POSTGRES_INITDB_ARGS: "-c ssl=off"

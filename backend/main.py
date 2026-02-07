@@ -238,7 +238,7 @@ async def subscribe(subscription: SubscriptionCreate, db=Depends(get_db)):
         raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Subscription failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Subscription failed due to an internal error")
 
 # Unsubscribe
 @app.delete("/subscribe/{subscription_id}")

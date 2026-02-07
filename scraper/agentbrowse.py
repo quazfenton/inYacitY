@@ -61,9 +61,11 @@ def parse_event_date(date_str: str) -> datetime:
     ]
 
     for pattern in date_patterns:
-            try:
-                return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
-            except ValueError:
+        try:
+            return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
+        except ValueError:
+            continue
+    return None
                 continue
 
         # If all parsing fails, return today's date as fallback

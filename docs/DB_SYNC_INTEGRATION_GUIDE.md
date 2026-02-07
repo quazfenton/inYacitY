@@ -147,32 +147,11 @@ CREATE TABLE IF NOT EXISTS events (
   INDEX idx_location (location),
   INDEX idx_category (category),
   INDEX idx_price_tier (price_tier),
-  INDEX idx_event_hash (event_hash),
-  INDEX idx_scraped_at (scraped_at)
-);
-```
+  );
+  CREATE INDEX idx_event_hash ON events (event_hash);
+  CREATE INDEX idx_scraped_at ON events (scraped_at);
 
-### Email Subscriptions Table
-
-```sql
-CREATE TABLE IF NOT EXISTS email_subscriptions (
-  id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  city VARCHAR(50) NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Unique constraint to prevent duplicate subscriptions
-  UNIQUE (email, city),
-  
-  -- Indexes
-  INDEX idx_email (email),
-  INDEX idx_city (city),
-  INDEX idx_is_active (is_active)
-);
-```
-
+  ### Email Subscriptions Table
 ---
 
 ## 4. Data Validation & Standardization

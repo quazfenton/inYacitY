@@ -65,12 +65,9 @@ def parse_event_date(date_str: str) -> datetime:
             return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
         except ValueError:
             pass
-    return today.date()
-            continue
-    return today.date()
-                continue
 
-        # If all parsing fails, return today's date as fallback
+    # If all parsing fails, return today's date as fallback
+    return today.date()
         return today.date()
 
     def format_date_for_header(date_obj: datetime.date) -> str:

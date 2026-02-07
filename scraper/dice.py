@@ -1,13 +1,15 @@
-        print(f"\n[3/5] Scraping Luma for {location}...")
-        print("-" * 70)
-        try:
-            # Convert location to Luma format
-            location_to_luma = {
-            print(f"✓ Luma total: {len(luma_events)} events")
-        except Exception as e:
-            print(f"✗ Error scraping Luma: {e}")
-    
-    # ===== DICE.FM SCRAPING =====
+            print(f"\n[3/5] Scraping Luma for {location}...")
+            print("-" * 70)
+            try:
+                # Convert location to Luma format
+                location_to_luma = {
+                    # dictionary content should be here
+                }
+                print(f"✓ Luma total: {len(luma_events)} events")
+            except Exception as e:
+                print(f"✗ Error scraping Luma: {e}")
+
+        # ===== DICE.FM SCRAPING =====
     if config.get("MODES", {}).get("ENABLE_DICE_FM_SCRAPING", True):
         print(f"\n[4/5] Scraping Dice.fm for {location}...")
         print("-" * 70)

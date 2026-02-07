@@ -137,7 +137,7 @@ async def scrape_eventbrite_page_agent(url: str, existing_links: set = None) -> 
             return events
 
         # Wait for page to load
-        time.sleep(5)
+        await asyncio.sleep(5)
 
         # Check if there's a captcha or verification screen after loading
         snapshot_result, success = run_agent_browser_command("agent-browser snapshot -i")

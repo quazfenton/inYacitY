@@ -39,7 +39,6 @@ def get_major_cities():
         - sort_by: 'name', 'population', or 'distance_from' (requires lat/lon)
         - country: Filter by country code (e.g., 'US', 'CA')
         - limit: Max results (default: 50)
-    
     Returns:
         List of major cities with coordinates and metadata
     """
@@ -59,7 +58,7 @@ def get_major_cities():
             # Calculate distance from provided coordinates
             lat = request.args.get('lat', type=float)
             lon = request.args.get('lon', type=float)
-            if lat and lon:
+            if lat is not None and lon is not None:
                 user_coords = Coordinates(lat, lon)
                 major_cities = sorted(
                     major_cities,

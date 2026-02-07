@@ -439,8 +439,12 @@ class EventStore:
             event: Event object
             
         Returns:
-            True if added, False if duplicate
+            True if added, False if duplicate (by ID or source URL)
         """
+        # Check for duplicate by event ID
+        if event.id in self.events:
+            return False
+
         # Check for duplicate by source URL
         if event.source_url and event.source_url in self.source_links:
             return False
@@ -450,7 +454,6 @@ class EventStore:
             self.source_links[event.source_url] = event.id
         
         return True
-
     def get_event(self, event_id: str) -> Optional[Event]:
         """Get event by ID"""
         return self.events.get(event_id)

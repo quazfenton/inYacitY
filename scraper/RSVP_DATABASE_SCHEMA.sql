@@ -16,15 +16,15 @@ CREATE TABLE IF NOT EXISTS rsvps (
   reminder_sent BOOLEAN DEFAULT false,
   reminder_sent_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Indexes for efficient queries
-  INDEX idx_event_id (event_id),
-  INDEX idx_user_email (user_email),
-  INDEX idx_event_date (event_date),
-  INDEX idx_reminder_enabled (reminder_enabled),
-  INDEX idx_reminder_sent (reminder_sent)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for efficient queries
+CREATE INDEX IF NOT EXISTS idx_event_id ON rsvps (event_id);
+CREATE INDEX IF NOT EXISTS idx_user_email ON rsvps (user_email);
+CREATE INDEX IF NOT EXISTS idx_event_date ON rsvps (event_date);
+CREATE INDEX IF NOT EXISTS idx_reminder_enabled ON rsvps (reminder_enabled);
+CREATE INDEX IF NOT EXISTS idx_reminder_sent ON rsvps (reminder_sent);
 
 -- Optional: Create a view for active RSVPs (not yet expired)
 CREATE OR REPLACE VIEW active_rsvps AS

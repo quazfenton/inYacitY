@@ -92,32 +92,32 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-noreply@nocturne.local}
-    volumes:
-      - n8n_data:/home/node/.n8n
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5678/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - nocturne_automation
-    labels:
-      - "com.example.description=Nocturne Daily Scraper Automation Engine"
+          SMTP_FROM: ${SMTP_FROM:-noreply@nocturne.local}
+        volumes:
+          - n8n_data:/home/node/.n8n
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:5678/api/v1/health"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+        networks:
+          - nocturne_automation
+        labels:
+          - "com.example.description=Nocturne Daily Scraper Automation Engine"
 
-  # Optional: pgAdmin for database management
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: nocturne_n8n_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nocturne.local}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-    ports:
-      - "5050:80"
-    networks:
-      - nocturne_automation
-    profiles:
+      # Optional: pgAdmin for database management
+      pgadmin:
+        image: dpage/pgadmin4:latest
+        container_name: nocturne_n8n_pgadmin
+        restart: unless-stopped
+        environment:
+          PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nocturne.local}
+          PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD environment variable is required}
+        ports:
+          - "5050:80"
+        networks:
+          - nocturne_automation
+        profiles:
       - tools  # Only start if explicitly requested: docker-compose --profile tools up
 
 volumes:

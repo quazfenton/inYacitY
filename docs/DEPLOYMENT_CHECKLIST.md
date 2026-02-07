@@ -140,8 +140,6 @@ CREATE TABLE subscriptions (
 
 CREATE INDEX idx_subscriptions_email ON subscriptions(email);
 CREATE INDEX idx_subscriptions_city ON subscriptions(city_id, is_active);
-```
-
 - [ ] All tables created successfully
 - [ ] No errors in SQL editor
 - [ ] Can see tables in "Table Editor" tab
@@ -159,9 +157,10 @@ For `events` table:
 For `subscriptions` table:
 1. Click "subscriptions" table
 2. Click "New Policy"
-3. Choose "FOR ALL"
-4. Leave "Using" empty (allows all)
-5. Click "Save"
+3. Choose "FOR INSERT" (Build a new policy from scratch)
+4. For "Roles", select `anon`.
+5. For "WITH CHECK expression", enter `is_active = TRUE`.
+6. Click "Save"
 
 - [ ] events table RLS policy created
 - [ ] subscriptions table RLS policy created

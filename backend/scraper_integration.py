@@ -367,12 +367,12 @@ async def scrape_city_events(city_id: str) -> Dict:
         finally:
             os.chdir(original_dir)
 
-    # Read the results after releasing the lock
-    all_events_file = os.path.join(scraper_dir, 'all_events.json')
+        # Read the results while holding the lock
+        all_events_file = os.path.join(scraper_dir, 'all_events.json')
 
-    if not os.path.exists(all_events_file):
-        logger.warning(f"No events found for {city_id}")
-        return {
+        if not os.path.exists(all_events_file):
+            logger.warning(f"No events found for {city_id}")
+            return {
             "city_id": city_id,
             "status": "error",
             "message": "No events found",

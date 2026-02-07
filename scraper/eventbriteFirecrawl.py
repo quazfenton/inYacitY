@@ -152,7 +152,7 @@ async def scrape_eventbrite(city: str, output_file: str = "eventbrite_events.jso
         html = await fetch_with_firecrawl(url)
         if not html:
             print("Failed to fetch page")
-                    continue
+            continue
 
                 events = extract_events_from_html(html)
                 print(f"Extracted {len(events)} events")

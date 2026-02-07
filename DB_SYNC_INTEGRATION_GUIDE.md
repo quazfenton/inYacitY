@@ -123,8 +123,6 @@ export SUPABASE_KEY="your_supabase_anon_key"
 Create the required tables in Supabase:
 
 ### Events Table
-
-```sql
 CREATE TABLE IF NOT EXISTS events (
   id BIGSERIAL PRIMARY KEY,
   title TEXT NOT NULL,
@@ -140,15 +138,16 @@ CREATE TABLE IF NOT EXISTS events (
   event_hash VARCHAR(32) UNIQUE NOT NULL,
   scraped_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Indexes for common queries
-  INDEX idx_date (date),
-  INDEX idx_location (location),
-  INDEX idx_category (category),
-  INDEX idx_price_tier (price_tier),
-  INDEX idx_event_hash (event_hash),
-  INDEX idx_scraped_at (scraped_at)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for common queries
+CREATE INDEX idx_date ON events (date);
+CREATE INDEX idx_location ON events (location);
+CREATE INDEX idx_category ON events (category);
+CREATE INDEX idx_price_tier ON events (price_tier);
+CREATE INDEX idx_event_hash ON events (event_hash);
+CREATE INDEX idx_scraped_at ON events (scraped_at);
 );
 ```
 

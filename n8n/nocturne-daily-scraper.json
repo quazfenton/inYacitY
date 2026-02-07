@@ -10,32 +10,32 @@
       "id": "cron_trigger",
       "name": "Daily Trigger (Midnight UTC)",
       "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
-      "position": [
-        250,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "name": "cities",
-              "value": "[\n  \"ca--los-angeles\",\n  \"ny--new-york\",\n  \"ca--san-francisco\",\n  \"il--chicago\",\n  \"tx--austin\",\n  \"fl--miami\",\n  \"dc--washington\",\n  \"co--denver\",\n  \"tx--dallas\",\n  \"wa--seattle\",\n  \"ma--boston\",\n  \"ga--atlanta\",\n  \"or--portland\",\n  \"az--phoenix\",\n  \"tx--houston\",\n  \"nv--las-vegas\",\n  \"mi--detroit\",\n  \"nc--charlotte\",\n  \"tn--nashville\",\n  \"pa--philadelphia\"\n]"
-            },
-            {
-              "name": "dayOfYear",
-              "value": "$today.dayOfYear()"
-            },
-            {
-              "name": "cityIndex",
-              "value": "{{ ($node[\"Daily Trigger (Midnight UTC)\"].context.dayOfYear - 1) % $node[\"Set Variables\"].context.cities.length }}"
-            },
-            {
-              "name": "cityToScrape",
-              "value": "{{ $node[\"Set Variables\"].context.cities[$node[\"Set Variables\"].context.cityIndex] }}"
-            }
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "cities",
+                "value": "[\n  \"ca--los-angeles\",\n  \"ny--new-york\",\n  \"ca--san-francisco\",\n  \"il--chicago\",\n  \"tx--austin\",\n  \"fl--miami\",\n  \"dc--washington\",\n  \"co--denver\",\n  \"tx--dallas\",\n  \"wa--seattle\",\n  \"ma--boston\",\n  \"ga--atlanta\",\n  \"or--portland\",\n  \"az--phoenix\",\n  \"tx--houston\",\n  \"nv--las-vegas\",\n  \"mi--detroit\",\n  \"nc--charlotte\",\n  \"tn--nashville\",\n  \"pa--philadelphia\"\n]"
+              },
+              {
+                "name": "dayOfYear",
+                "value": "$today.dayOfYear()"
+              },
+              {
+                "name": "cityIndex",
+                "value": "{{ ($node[\"Set Variables\"].context.dayOfYear - 1) % $node[\"Set Variables\"].context.cities.length }}"
+              },
+              {
+                "name": "cityToScrape",
+                "value": "{{ $node[\"Set Variables\"].context.cities[$node[\"Set Variables\"].context.cityIndex] }}"
+              }
           ]
         }
       },

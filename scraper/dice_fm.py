@@ -27,32 +27,41 @@ DICE_FM_CITY_MAP = {
     "pa--philadelphia": "https://dice.fm/browse/philadelphia-60f5b88857fe332ef6268244",
     "tx--austin": "https://dice.fm/browse/austin-5e3c24db136e51081e406ed3",
     "ca--san-francisco": "https://dice.fm/browse/sanfrancisco-60dee10ce5e339918757f0db",
-    "ca--los-angeles": "https://dice.fm/browse/losangeles-5982e13c613de866017c3e3a",
-    "ca--san-diego": "https://dice.fm/browse/san%20diego-5e3c28af136e51081e406ed5",
-    "wa--seattle": "https://dice.fm/browse/seattle-5e3c245c136e51081e406ed1",
-}
+        "ca--los-angeles": "https://dice.fm/browse/losangeles-5982e13c613de866017c3e3a",
+        "ca--san-diego": "https://dice.fm/browse/san%20diego-5e3c28af136e51081e406ed5",
+        "wa--seattle": "https://dice.fm/browse/seattle-5e3c245c136e51081e406ed1",
+    }
 
 
-def build_dice_fm_url(base_url: str, max_price: Optional[int] = None) -> str:
-    """
-    Build Dice.fm URL with price filter
+    def build_dice_fm_url(base_url: str, max_price: Optional[int] = None) -> str:
+        """
+        Build Dice.fm URL with price filter
     
-    Args:
-        base_url: Base Dice.fm browse URL
-        max_price: Maximum price in cents (None for no filter)
-                   0 or less = free events only
-                   1000+ = all events
-                   other = events under that price
+        Args:
+            base_url: Base Dice.fm browse URL
+            max_price: Maximum price in cents (None for no filter)
+                       0 or less = free events only
+                       1000+ = all events
+                       other = events under that price
     
-    Returns:
-        Full URL with price filter
-    """
-    if max_price is None or max_price == 0:
-        # Default: free events only
-        return f"{base_url}?priceTo=1"
-    elif max_price >= 1000:
-        # No price filtering - show all events
-        return base_url
+        Returns:
+            Full URL with price filter
+        """
+        if max_price is None or max_price >= 1000:
+            # No price filtering - show all events
+            return base_url
+        elif max_price <= 0:
+            # Free events only
+            return f"{base_url}?priceTo=1"
+        else:  # 0 < max_price < 1000
+            # Events under that price
+            # max_price is in cents. priceTo filter expects dollar values.
+            # "Events under that price" means strictly less than max_price cents.
+            # E.g., if max_price = 500 cents ($5), we want events up to $4.
+            # This translates to (max_price - 1) // 100.
+            # Ensure priceTo is at least 1, as priceTo=0 is likely invalid.
+            price_to_value = max(1, (max_price - 1) // 100)
+            return f"{base_url}?priceTo={price_to_value}"
     else:
         # Events under max_price
         return f"{base_url}?priceTo={max_price}"

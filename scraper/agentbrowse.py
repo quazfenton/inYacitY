@@ -60,32 +60,30 @@ def parse_event_date(date_str: str) -> datetime:
         "%m-%d-%Y"
     ]
 
-    for pattern in date_patterns:
+        for pattern in date_patterns:
+            try:
+                return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
+            except ValueError:
+                continue
+
+        # If all parsing fails, return today's date as fallback
+        return today.date()
+
+    def format_date_for_header(date_obj: datetime.date) -> str:
+        """Format date as 'Day, Month Date, Year' for markdown header."""
+        return date_obj.strftime("%A, %B %d, %Y")
+
+    def run_agent_browser_command(cmd: str) -> tuple[str, bool]:
+        """
+        Run an agent-browser command and return the output and success status.
+        """
         try:
-            return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
-        except ValueError:
-            continue
-
-    # If all parsing fails, return today's date as fallback
-    return today.date()
-
-
-def format_date_for_header(date_obj: datetime.date) -> str:
-    """Format date as 'Day, Month Date, Year' for markdown header."""
-    return date_obj.strftime("%A, %B %d, %Y")
-
-
-def run_agent_browser_command(cmd: str) -> tuple[str, bool]:
-    """
-    Run an agent-browser command and return the output and success status.
-    """
-    try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
-        if result.returncode != 0:
-            print(f"Error running command: {cmd}")
-            print(f"Error: {result.stderr}")
-            return result.stderr, False
-        return result.stdout, True
+            result = subprocess.run(cmd.split(), shell=False, capture_output=True, text=True, timeout=60)
+            if result.returncode != 0:
+                print(f"Error running command: {' '.join(cmd.split())}")
+                print(f"Error: {result.stderr}")
+                return result.stderr, False
+            return result.stdout, True
     except subprocess.TimeoutExpired:
         print(f"Command timed out: {cmd}")
         return "", False

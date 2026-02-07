@@ -308,6 +308,16 @@ CITY_MAPPING = {
 
 
 import logging
+import os
+import asyncio
+from pathlib import Path
+
+# Ensure logs directory exists
+log_dir = Path("logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+
+# Lock to prevent concurrent scraper runs that could interfere with each other
+scraper_lock = asyncio.Lock()
 
 # Configure logging
 logging.basicConfig(
@@ -331,32 +341,33 @@ async def scrape_city_events(city_id: str) -> Dict:
     import shutil
 
     logger.info(f"Starting scrape for city: {city_id}")
-    
+
     # Load current config
     config = load_config()
 
     # Update config for this city
     config['LOCATION'] = city_id
 
-    # Save temporary config
-    config_path = os.path.join(os.path.dirname(__file__), '../scraper/config.json')
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=2)
-
-    # Run the scrapers
+    # Run the scrapers - use lock to prevent concurrent access to shared resources
     logger.info(f"Running scrapers for {city_id}...")
 
-    # Change to scraper directory and run
+    # Change to scraper directory and run - protected by lock to prevent race conditions
     scraper_dir = os.path.join(os.path.dirname(__file__), '../scraper')
     original_dir = os.getcwd()
 
-    try:
-        os.chdir(scraper_dir)
-        await run_all_scrapers()
-    finally:
-        os.chdir(original_dir)
+    async with scraper_lock:
+        # Save temporary config (inside the lock to prevent race conditions)
+        config_path = os.path.join(os.path.dirname(__file__), '../scraper/config.json')
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
 
-    # Read the results
+        try:
+            os.chdir(scraper_dir)
+            await run_all_scrapers()
+        finally:
+            os.chdir(original_dir)
+
+    # Read the results after releasing the lock
     all_events_file = os.path.join(scraper_dir, 'all_events.json')
 
     if not os.path.exists(all_events_file):

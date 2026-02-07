@@ -57,11 +57,15 @@ cd ..
 # Check environment
 echo -e "${YELLOW}Checking environment...${NC}"
 if [ ! -f .env ]; then
-    echo -e "${RED}Error: .env file not found${NC}"
-    echo "Create .env with:"
-    echo "  SUPABASE_URL=..."
-    echo "  SUPABASE_KEY=..."
-    exit 1
+    echo -e "${YELLOW}Warning: .env file not found, copying from .env.example${NC}"
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        echo -e "${GREEN}✓ Created .env from .env.example${NC}"
+        echo "Please update .env with your specific values before running the application"
+    else
+        echo -e "${RED}Error: Neither .env nor .env.example found${NC}"
+        exit 1
+    fi
 fi
 echo -e "${GREEN}✓ .env file found${NC}"
 

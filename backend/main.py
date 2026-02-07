@@ -23,18 +23,21 @@ from database import (
 )
 from scraper_integration import scrape_city_events, refresh_all_cities
 
+# Import authentication utilities
+from auth import get_current_admin
+
 # Pydantic models for API
 class EventResponse(BaseModel):
     id: int
     title: str
     link: str
-    date: str
-    time: str
-    location: str
-    description: str
+    date: date
+    time: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
     source: str
     city_id: str
-    
+
     class Config:
         from_attributes = True
 
@@ -80,10 +83,12 @@ class HealthResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize database
-    init_db()
+    from database import init_db_async
+    await init_db_async()
     yield
     # Shutdown: Close database connections
-    pass
+    from database import engine
+    await engine.dispose()
 
 # Create FastAPI app
 app = FastAPI(
@@ -175,6 +180,13 @@ async def get_city_events(
 
     return events
 
+# Refresh all cities
+@app.post("/scrape/all")
+async def scrape_all(background_tasks: BackgroundTasks):
+    """Trigger scraping for all supported cities"""
+    background_tasks.add_task(refresh_all_cities)
+    return {"message": "Scraping initiated for all cities"}
+
 # Scrape events for a city
 @app.post("/scrape/{city_id}")
 async def scrape_events(city_id: str, background_tasks: BackgroundTasks):
@@ -182,22 +194,15 @@ async def scrape_events(city_id: str, background_tasks: BackgroundTasks):
     from config import CONFIG
     if city_id not in CONFIG.get('SUPPORTED_LOCATIONS', []):
         raise HTTPException(status_code=404, detail=f"City {city_id} not supported")
-    
+
     # Run scraping in background
     background_tasks.add_task(scrape_city_events, city_id)
-    
+
     return {
         "message": f"Scraping initiated for {city_id}",
         "city_id": city_id,
         "note": "Events will be synced to shared database in real-time"
     }
-
-# Refresh all cities
-@app.post("/scrape/all")
-async def scrape_all(background_tasks: BackgroundTasks):
-    """Trigger scraping for all supported cities"""
-    background_tasks.add_task(refresh_all_cities)
-    return {"message": "Scraping initiated for all cities"}
 
 # Subscribe to email updates
 @app.post("/subscribe", response_model=SubscriptionResponse)
@@ -255,28 +260,54 @@ async def unsubscribe(subscription_id: int, db=Depends(get_db)):
     
     return {"message": "Unsubscribed successfully"}
 
+# Admin login endpoint to generate tokens
+@app.post("/admin/login")
+async def admin_login(admin_credentials: dict, db=Depends(get_db)):
+    """Admin login to generate JWT token"""
+    from auth import create_access_token
+    import os
+    
+    # In a real implementation, you would verify admin credentials against a database
+    # For this implementation, we'll use a simple API key check
+    admin_api_key = os.getenv("ADMIN_API_KEY")
+    provided_api_key = admin_credentials.get("api_key")
+    
+    if not admin_api_key or provided_api_key != admin_api_key:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+    
+    # Create token with admin role
+    token_data = {
+        "sub": "admin_user",  # In a real app, this would be the actual user ID
+        "role": "admin",
+        "username": "admin"
+    }
+    
+    token = create_access_token(data=token_data)
+    return {"access_token": token, "token_type": "bearer"}
+
 # Get all subscriptions (admin endpoint)
 @app.get("/subscriptions", response_model=List[SubscriptionResponse])
 async def get_subscriptions(
     city_id: Optional[str] = None,
     active_only: bool = True,
+    current_user = Depends(get_current_admin),
     db=Depends(get_db)
 ):
-    """Get all subscriptions with optional filtering"""
+    """Get all subscriptions with optional filtering - Admin only"""
     from sqlalchemy import select
     from database import Subscription
-    
+
     query = select(Subscription)
-    
+
     if city_id:
         query = query.where(Subscription.city_id == city_id)
-    
+
     if active_only:
         query = query.where(Subscription.is_active == True)
-    
+
     result = await db.execute(query)
     subscriptions = result.scalars().all()
-    
+
     return subscriptions
 
 if __name__ == "__main__":

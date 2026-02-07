@@ -41,11 +41,15 @@ This document outlines the plan to integrate the existing `fronto/` frontend wit
 
 #### 1.2 API Layer Development
 - Create FastAPI backend with endpoints:
-  - `GET /api/cities` - List all available cities
-  - `GET /api/events/{city_slug}` - Get events for specific city
-  - `POST /api/subscribe` - Add email subscription
-  - `GET /api/events/search` - Search events by criteria
-  - `GET /api/stats/{city_slug}` - Get city statistics for vibe chart
+  - `GET /cities` - List all available cities
+  - `GET /events/{city_id}` - Get events for specific city
+  - `POST /subscribe` - Add email subscription
+  - `POST /scrape/{city_id}` - Trigger scraping for specific city
+  - `POST /scrape/all` - Trigger scraping for all cities
+  - `GET /health` - Health check
+  - `DELETE /subscribe/{subscription_id}` - Unsubscribe
+  - `GET /subscriptions` - Get all subscriptions (admin only)
+  - `POST /admin/login` - Admin login to generate JWT token
 
 #### 1.3 Data Migration
 - Modify existing scraper scripts to save to database instead of files

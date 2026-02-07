@@ -60,7 +60,7 @@ def parse_event_date(date_str: str) -> datetime:
         "%m-%d-%Y"
     ]
 
-        for pattern in date_patterns:
+    for pattern in date_patterns:
             try:
                 return datetime.strptime(date_str.split('(')[0].strip(), pattern).date()
             except ValueError:

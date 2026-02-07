@@ -14,14 +14,8 @@ CREATE TABLE IF NOT EXISTS comments (
   is_deleted BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Indexes for efficient queries
-  INDEX idx_event_id (event_id),
-  INDEX idx_author_email (author_email),
-  INDEX idx_created_at (created_at),
-  INDEX idx_is_approved (is_approved),
-  INDEX idx_is_deleted (is_deleted),
   CONSTRAINT fk_event_id FOREIGN KEY (event_id) REFERENCES events(event_hash)
+);
 );
 
 -- Optional: Create a view for active comments (not deleted, approved, event not passed)

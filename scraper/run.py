@@ -171,7 +171,7 @@ async def main():
         try:
             with open(run_counter_file, 'r') as f:
                 run_count = int(f.read().strip())
-        except:
+        except (FileNotFoundError, ValueError):
             run_count = 1
         
         # Determine if we should sync

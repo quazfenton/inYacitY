@@ -18,13 +18,16 @@ from scraper_integration import refresh_all_cities, send_weekly_digest
 from database import get_active_subscribers, AsyncSessionLocal, Event
 from sqlalchemy import select
 
+# Define deterministic logs directory
+LOGS_DIR = os.path.join(os.path.dirname(__file__), 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 # Configure logging
-os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/cron_scraping.log'),
+        logging.FileHandler(os.path.join(LOGS_DIR, 'cron_scraping.log')),
         logging.StreamHandler()
     ]
 )
@@ -87,7 +90,7 @@ async def run_daily_scrape():
             "status": "success"
         }
 
-        summary_file = os.path.join(os.path.dirname(__file__), 'logs', 'last_scrape_summary.json')
+        summary_file = os.path.join(LOGS_DIR, 'last_scrape_summary.json')
         with open(summary_file, 'w') as f:
             json.dump(summary, f, indent=2)
 
@@ -103,7 +106,7 @@ async def run_daily_scrape():
             "status": "failed"
         }
 
-        summary_file = os.path.join(os.path.dirname(__file__), 'logs', 'last_scrape_summary.json')
+        summary_file = os.path.join(LOGS_DIR, 'last_scrape_summary.json')
         with open(summary_file, 'w') as f:
             json.dump(error_summary, f, indent=2)
 

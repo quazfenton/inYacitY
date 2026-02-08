@@ -1,0 +1,58 @@
+
+================================================================================
+OVERALL SUMMARY
+================================================================================
+
+--- SCRAPER STATUS ---
+  ✓ luma               22 events,   0 errors
+  ✓ meetup             16 events,   0 errors
+  ✓ eventbrite         40 events,   0 errors
+  ✓ dice_fm            24 events,   0 errors
+  ✗ ra_co               0 events,   1 errors
+  ✗ posh_vip            0 events,   1 errors
+
+--- RECOMMENDATIONS ---
+
+  LUMA:
+    • description: 0.0% (needs improvement)
+    • price: 0.0% (needs improvement)
+    • image: 0.0% (needs improvement)
+
+  MEETUP:
+    • time: 0.0% (needs improvement)
+    • price: 0.0% (needs improvement)
+    • image: 0.0% (needs improvement)
+
+  EVENTBRITE:
+    • time: 60.0% (needs improvement)
+    • description: 0.0% (needs improvement)
+    • price: 0.0% (needs improvement)
+    • image: 0.0% (needs improvement)
+
+  DICE_FM:
+    • time: 0.0% (needs improvement)
+    • description: 0.0% (needs improvement)
+    • price: 0.0% (needs improvement)
+    • image: 0.0% (needs improvement)
+
+  RA_CO:
+    • title: 0% (needs improvement)
+    • date: 0% (needs improvement)
+    • time: 0% (needs improvement)
+    • location: 0% (needs improvement)
+    • link: 0% (needs improvement)
+    • description: 0% (needs improvement)
+    • price: 0% (needs improvement)
+    • image: 0% (needs improvement)
+
+  POSH_VIP:
+    • title: 0% (needs improvement)
+    • date: 0% (needs improvement)
+    • time: 0% (needs improvement)
+    • location: 0% (needs improvement)
+    • link: 0% (needs improvement)
+    • description: 0% (needs improvement)
+    • price: 0% (needs improvement)
+    • image: 0% (needs improvement)
+
+================================================================================

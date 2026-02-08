@@ -1,29 +1,37 @@
-# Backend dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic[email]==2.5.0
-pydantic-settings==2.1.0
-python-dotenv==1.0.0
-python-multipart==0.0.6
+# Flask and Web Framework
+Flask==2.3.2
+Flask-CORS==4.0.0
+Werkzeug==2.3.6
 
-# Database
-sqlalchemy[asyncio]==2.0.23
-asyncpg==0.29.0
-alembic==1.13.0
+# Database and ORM
+supabase==2.0.3
+psycopg2-binary==2.9.6
 
-# Email
-aiosmtplib==3.0.1
-aiohttp==3.9.0
-
-# HTTP client
-httpx==0.25.2
+# HTTP and API
 requests==2.31.0
+urllib3==2.0.4
 
-# Scraping dependencies (from scraper/)
-playwright>=1.40.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-pydoll-python>=0.1.0
+# Authentication and Security
+python-dotenv==1.0.0
+PyJWT==2.8.0
 
-# Utilities
+# Data Processing
 python-dateutil==2.8.2
+pytz==2023.3
+
+# Web Server
+gunicorn==21.2.0
+gevent==23.9.1
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+
+# Code Quality
+black==23.7.0
+flake8==6.0.0
+mypy==1.4.1
+
+# Async Support
+aiohttp==3.8.5
+asyncio-contextmanager==1.0.0

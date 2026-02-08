@@ -195,15 +195,21 @@ export function formatBackendEvent(backendEvent: BackendEvent) {
 function formatDate(dateStr: string): string {
   try {
     const date = new Date(dateStr);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return dateStr;
+    }
+    
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Reset time to compare dates only
     today.setHours(0, 0, 0, 0);
     tomorrow.setHours(0, 0, 0, 0);
     date.setHours(0, 0, 0, 0);
-    
+
     if (date.getTime() === today.getTime()) {
       return 'Tonight';
     } else if (date.getTime() === tomorrow.getTime()) {

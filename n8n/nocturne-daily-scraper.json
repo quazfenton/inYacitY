@@ -1,0 +1,309 @@
+{
+  "name": "Nocturne Daily Scraper - Rotating Cities",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerType": "everyDay",
+        "triggerAtHour": 0,
+        "triggerAtMinute": 0
+      },
+      "id": "cron_trigger",
+      "name": "Daily Trigger (Midnight UTC)",
+      "type": "n8n-nodes-base.cron",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "cities",
+                "value": "[\n  \"ca--los-angeles\",\n  \"ny--new-york\",\n  \"ca--san-francisco\",\n  \"il--chicago\",\n  \"tx--austin\",\n  \"fl--miami\",\n  \"dc--washington\",\n  \"co--denver\",\n  \"tx--dallas\",\n  \"wa--seattle\",\n  \"ma--boston\",\n  \"ga--atlanta\",\n  \"or--portland\",\n  \"az--phoenix\",\n  \"tx--houston\",\n  \"nv--las-vegas\",\n  \"mi--detroit\",\n  \"nc--charlotte\",\n  \"tn--nashville\",\n  \"pa--philadelphia\"\n]"
+              },
+              {
+                "name": "dayOfYear",
+                "value": "$today.dayOfYear()"
+              },
+              {
+                "name": "cityIndex",
+                "value": "{{ ($node[\"Set Variables\"].context.dayOfYear - 1) % $node[\"Set Variables\"].context.cities.length }}"
+              },
+              {
+                "name": "cityToScrape",
+                "value": "{{ $node[\"Set Variables\"].context.cities[$node[\"Set Variables\"].context.cityIndex] }}"
+              }
+          ]
+        }
+      },
+      "id": "set_variables",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOCTURNE_API_URL }}/scrape/{{ $node[\"Set Variables\"].context.cityToScrape }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger_scraper",
+      "name": "Trigger Backend Scraper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "wait_for_scraper",
+      "name": "Wait for Scraper (45 seconds)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.NOCTURNE_API_URL }}/events/{{ $node[\"Set Variables\"].context.cityToScrape }}?limit=500",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "fetch_scraped_events",
+      "name": "Fetch Scraped Events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "code": "// Transform events for Supabase/Notion\nconst events = $node.data.main[0];\nconst cityToScrape = $node[\"Set Variables\"].context.cityToScrape;\nconst today = new Date().toISOString().split('T')[0];\n\nreturn items.map(item => ({\n  title: item.json.title,\n  link: item.json.link,\n  date: item.json.date,\n  time: item.json.time,\n  location: item.json.location,\n  description: item.json.description,\n  source: item.json.source,\n  city_id: cityToScrape,\n  synced_at: new Date().toISOString(),\n  last_scraped: today\n}));"
+      },
+      "id": "transform_events",
+      "name": "Transform Events for Database",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/events",
+        "authentication": "genericCredentialType",
+        "genericCredentialType": "={{ $env.SUPABASE_CREDENTIAL_TYPE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.SUPABASE_KEY }}"
+            }
+          ]
+        },
+        "body": "={{ JSON.stringify($node[\"Transform Events for Database\"].json) }}",
+        "options": {}
+      },
+      "id": "sync_to_supabase",
+      "name": "Sync Events to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1450,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "append",
+        "databaseId": "={{ $env.NOTION_DATABASE_ID }}",
+        "columns": {
+          "mappingMode": "defineByMetaData",
+          "value": null
+        },
+        "optionalArguments": {}
+      },
+      "id": "sync_to_notion",
+      "name": "Sync Events to Notion (Optional)",
+      "type": "@n8n/n8n-nodes-notion",
+      "typeVersion": 2,
+      "position": [
+        1450,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "code": "const cityToScrape = $node[\"Set Variables\"].context.cityToScrape;\nconst eventCount = $node[\"Fetch Scraped Events\"].json.length || 0;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  city: cityToScrape,\n  eventCount: eventCount,\n  timestamp: timestamp,\n  status: eventCount > 0 ? 'SUCCESS' : 'NO_EVENTS'\n}];"
+      },
+      "id": "build_summary",
+      "name": "Build Execution Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "method": "POST",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "body": "{\n  \"text\": \"🌙 Nocturne Daily Scrape Complete\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🌙 Nocturne Daily Scrape\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*City:*\\n{{ $node[\\\"Build Execution Summary\\\"].json[0].city }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Events Found:*\\n{{ $node[\\\"Build Execution Summary\\\"].json[0].eventCount }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Status:*\\n{{ $node[\\\"Build Execution Summary\\\"].json[0].status }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Time:*\\n{{ $node[\\\"Build Execution Summary\\\"].json[0].timestamp }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "slack_notification",
+      "name": "Slack Notification (Optional)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Daily Trigger (Midnight UTC)": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Trigger Backend Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Backend Scraper": {
+      "main": [
+        [
+          {
+            "node": "Wait for Scraper (45 seconds)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Scraper (45 seconds)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Scraped Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Scraped Events": {
+      "main": [
+        [
+          {
+            "node": "Transform Events for Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Events for Database": {
+      "main": [
+        [
+          {
+            "node": "Sync Events to Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sync Events to Notion (Optional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Execution Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Execution Summary": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification (Optional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "meta": {
+    "instanceId": "unknown"
+  }
+}

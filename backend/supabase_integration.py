@@ -65,7 +65,7 @@ class SupabaseManager:
                     "location": event.get('location'),
                     "description": event.get('description'),
                     "source": event.get('source', 'unknown'),
-                    "city_id": event.get('city_id', city_id),  # Use event's city_id if available, otherwise use passed city_id
+                    "city_id": event.get('city_id') or city_id,  # Use event's city_id if available, otherwise use passed city_id
                     "synced_at": datetime.utcnow().isoformat(),
                     "last_scraped": datetime.utcnow().isoformat()
                 }

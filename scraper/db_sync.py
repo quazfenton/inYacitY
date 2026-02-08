@@ -341,11 +341,6 @@ class SupabaseSync:
             
             except Exception as e:
                 return (False, f"Subscription error: {str(e)}")
-
-                except ImportError:
-                    return (False, "Supabase client not installed")
-                except Exception as e:
-                    return (False, f"Error: {str(e)}")
         
         except ImportError:
             return (False, "Supabase client not installed")
@@ -398,26 +393,26 @@ class SupabaseSync:
         return re.match(pattern, email) is not None
 
 
-        class DeduplicationTracker:
-            """Track events for deduplication across runs"""
-    
-            def __init__(self, tracker_file: str = "event_tracker.json"):
-                self.tracker_file = tracker_file
-                self.data = self._load_tracker()
-    
-            def _load_tracker(self) -> Dict:
-                """Load existing tracker"""
-                if os.path.exists(self.tracker_file):
-                    try:
-                        with open(self.tracker_file, 'r') as f:
-                            return json.load(f)
-                    except (json.JSONDecodeError, OSError):
-                        # If file is corrupt or unreadable, start with empty tracker
-                        return {'events': {}, 'last_updated': None}
+class DeduplicationTracker:
+    """Track events for deduplication across runs"""
+
+    def __init__(self, tracker_file: str = "event_tracker.json"):
+        self.tracker_file = tracker_file
+        self.data = self._load_tracker()
+
+    def _load_tracker(self) -> Dict:
+        """Load existing tracker"""
+        if os.path.exists(self.tracker_file):
+            try:
+                with open(self.tracker_file, 'r') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, OSError):
+                # If file is corrupt or unreadable, start with empty tracker
                 return {'events': {}, 'last_updated': None}
-    
-            def _save_tracker(self) -> None:
-                """Save tracker"""
+        return {'events': {}, 'last_updated': None}
+
+    def _save_tracker(self) -> None:
+        """Save tracker"""
         with open(self.tracker_file, 'w') as f:
             json.dump(self.data, f, indent=2, default=str)
     
@@ -529,6 +524,11 @@ class DatabaseSyncManager:
         if not events:
             result['success'] = True
             return result
+
+        # Do not mutate local state if Supabase is not configured.
+        if not self.sync.is_configured():
+            result['errors'].append("Supabase not configured: skipping sync without modifying local events")
+            return result
         
         # Filter out tracked events (duplicates)
         new_events = []
@@ -545,17 +545,11 @@ class DatabaseSyncManager:
             return result
         
         print(f"Syncing {len(new_events)} events to database...")
-        
-        # Sync to database if configured
-        if self.sync.is_configured():
-            success, inserted, errors = await self.sync.insert_events(new_events)
-            result['success'] = success
-            result['events_synced'] = inserted
-            result['errors'].extend(errors)
-        else:
-            print("⚠ Supabase not configured, skipping database sync")
-            result['success'] = True
-            result['events_synced'] = len(new_events)
+
+        success, inserted, errors = await self.sync.insert_events(new_events)
+        result['success'] = success
+        result['events_synced'] = inserted
+        result['errors'].extend(errors)
         
         # Add new events to tracker
         if result['success']:

@@ -672,6 +672,11 @@ class DatabaseSyncManager:
                 result['errors'].append("Supabase not configured: cannot sync empty events")
             return result
 
+        # Do not mutate local state if Supabase is not configured.
+        if not self.sync.is_configured():
+            result['errors'].append("Supabase not configured: skipping sync without modifying local events")
+            return result
+
         # Filter out tracked events (duplicates)
         new_events = []
         for event in events:
@@ -688,16 +693,10 @@ class DatabaseSyncManager:
         
         print(f"Syncing {len(new_events)} events to database...")
         
-        # Sync to database if configured
-        if self.sync.is_configured():
-            success, inserted, errors = await self.sync.insert_events(new_events)
-            result['success'] = success
-            result['events_synced'] = inserted
-            result['errors'].extend(errors)
-        else:
-            print("⚠ Supabase not configured, skipping database sync")
-            result['success'] = True
-            result['events_synced'] = len(new_events)
+        success, inserted, errors = await self.sync.insert_events(new_events)
+        result['success'] = success
+        result['events_synced'] = inserted
+        result['errors'].extend(errors)
         
         # Add new events to tracker
         if result['success']:

@@ -6,6 +6,7 @@ Master runner for all scrapers
 import asyncio
 import json
 import os
+import argparse
 from datetime import datetime
 from typing import List, Dict
 
@@ -17,7 +18,15 @@ from eventbrite_fixed import scrape_eventbrite
 from meetup_simple import scrape_meetup_simple
 
 
-async def run_all_scrapers():
+def _write_frontend_cache(payload: dict) -> None:
+    frontend_public = os.path.join(os.path.dirname(__file__), '../fronto/public')
+    os.makedirs(frontend_public, exist_ok=True)
+    frontend_path = os.path.join(frontend_public, 'all_events.json')
+    with open(frontend_path, 'w') as f:
+        json.dump(payload, f, indent=2, default=lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
+
+
+async def run_all_scrapers(location_override: str = None):
     """Run all scrapers and merge results"""
     
     print("=" * 70)
@@ -33,7 +42,7 @@ async def run_all_scrapers():
         except Exception as e:
             print(f"Warning: Could not load config.json: {e}")
     
-    location = config.get('LOCATION', 'ca--los-angeles')
+    location = location_override or config.get('LOCATION', 'ca--los-angeles')
     print(f"\nLocation: {location}")
     print("=" * 70)
     
@@ -114,6 +123,8 @@ async def run_all_scrapers():
             seen_links[link] = event
     
     unique_events = list(seen_links.values())
+    for event in unique_events:
+        event.setdefault('city', location)
     
     # Sort by date
     try:
@@ -122,13 +133,30 @@ async def run_all_scrapers():
         pass
     
     # Save
+    existing_by_city = {}
+    if os.path.exists('all_events.json'):
+        try:
+            with open('all_events.json', 'r') as f:
+                existing_data = json.load(f)
+                existing_by_city = existing_data.get('events_by_city', {}) or {}
+        except Exception:
+            existing_by_city = {}
+
+    existing_by_city[location] = unique_events
+    merged_events = []
+    for city_events in existing_by_city.values():
+        merged_events.extend(city_events)
+
+    payload = {
+        'events': merged_events,
+        'total': len(merged_events),
+        'last_updated': datetime.now().isoformat(),
+        'location': location,
+        'events_by_city': existing_by_city
+    }
     with open('all_events.json', 'w') as f:
-        json.dump({
-            'events': unique_events,
-            'total': len(unique_events),
-            'last_updated': datetime.now().isoformat(),
-            'location': location
-        }, f, indent=2, default=lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
+        json.dump(payload, f, indent=2, default=lambda x: x.isoformat() if hasattr(x, 'isoformat') else str(x))
+    _write_frontend_cache(payload)
     
     print(f"✓ Merged {len(unique_events)} unique events")
     print(f"✓ Saved to all_events.json")
@@ -153,4 +181,7 @@ async def run_all_scrapers():
 
 
 if __name__ == '__main__':
-    asyncio.run(run_all_scrapers())
+    parser = argparse.ArgumentParser(description="Run scrapers (Firecrawl)")
+    parser.add_argument("-c", "--city", dest="city", help="Override city code (e.g., ca--san-francisco)")
+    args = parser.parse_args()
+    asyncio.run(run_all_scrapers(location_override=args.city))

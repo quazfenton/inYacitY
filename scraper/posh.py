@@ -129,6 +129,7 @@ async def fetch_posh_vip_events_from_page(page, url: str) -> List[Dict]:
                     'location': venue,
                     'link': event_link,
                     'source': 'Posh.vip',
+                    'city': city,
                     'category': 'club',  # Always tagged as club event
                     'price': price,
                     'has_open_bar': has_open_bar,

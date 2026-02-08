@@ -153,9 +153,10 @@ async def scrape_eventbrite(city: str, output_file: str = "eventbrite_events.jso
         if not html:
             print("Failed to fetch page")
             continue
-
-                events = extract_events_from_html(html)
-                print(f"Extracted {len(events)} events")
+        events = extract_events_from_html(html)
+        print(f"Extracted {len(events)} events")
+        for event in events:
+            event.setdefault('city', city)
                             # Add new events
                             new_count = 0
                             for event in events:

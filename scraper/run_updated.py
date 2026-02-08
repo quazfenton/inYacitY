@@ -8,6 +8,7 @@ Integrated with database sync based on sync mode configuration
 import asyncio
 import json
 import os
+import argparse
 from datetime import datetime
 from typing import List, Dict
 from config_loader import get_config
@@ -18,9 +19,18 @@ from meetup_scraper import scrape_meetup
 from luma_scraper import scrape_luma
 from dice_scraper import scrape_dice
 from posh_vip import scrape_posh_vip
+from ra_co import scrape_ra_co
 
 
-async def run_all_scrapers():
+def _write_frontend_cache(payload: dict) -> None:
+    frontend_public = os.path.join(os.path.dirname(__file__), '../fronto/public')
+    os.makedirs(frontend_public, exist_ok=True)
+    frontend_path = os.path.join(frontend_public, 'all_events.json')
+    with open(frontend_path, 'w') as f:
+        json.dump(payload, f, indent=2, default=str)
+
+
+async def run_all_scrapers(location_override: str = None):
     """Run all scrapers and merge results"""
     
     print("=" * 70)
@@ -29,7 +39,7 @@ async def run_all_scrapers():
     
     # Load configuration using config loader
     config = get_config()
-    location = config.get_location()
+    location = location_override or config.get_location()
     
     print(f"\nLocation: {location}")
     print(f"Browser Settings: Headless={config.get('BROWSER.HEADLESS')}")
@@ -95,7 +105,8 @@ async def run_all_scrapers():
         print("\n[5/5] Scraping RA.co...")
         print("-" * 70)
         try:
-            ra_events = await scrape_dice(location)  # Using correct function
+            ra_fetch = config.get_scraper_config('RA_CO').get('fetch_details', True)
+            ra_events = await scrape_ra_co(location, fetch_details=ra_fetch)
             all_events.extend(ra_events)
             scraper_results['RA.co'] = len(ra_events)
             print(f"✓ RA.co: {len(ra_events)} events")
@@ -115,6 +126,8 @@ async def run_all_scrapers():
             seen_links[link] = event
     
     unique_events = list(seen_links.values())
+    for event in unique_events:
+        event.setdefault('city', location)
     
     # Sort by date
     try:
@@ -126,14 +139,31 @@ async def run_all_scrapers():
     output_settings = config.get_output_settings()
     
     if output_settings.get('MERGE_ALL', True):
+        existing_by_city = {}
+        if os.path.exists('all_events.json'):
+            try:
+                with open('all_events.json', 'r') as f:
+                    existing_data = json.load(f)
+                    existing_by_city = existing_data.get('events_by_city', {}) or {}
+            except Exception:
+                existing_by_city = {}
+
+        existing_by_city[location] = unique_events
+        merged_events = []
+        for city_events in existing_by_city.values():
+            merged_events.extend(city_events)
+
+        payload = {
+            'events': merged_events,
+            'total': len(merged_events),
+            'location': location,
+            'events_by_city': existing_by_city,
+            'timestamp': datetime.now().isoformat(),
+            'sources': scraper_results
+        }
         with open('all_events.json', 'w') as f:
-            json.dump({
-                'events': unique_events,
-                'total': len(unique_events),
-                'location': location,
-                'timestamp': datetime.now().isoformat(),
-                'sources': scraper_results
-            }, f, indent=2, default=str)
+            json.dump(payload, f, indent=2, default=str)
+        _write_frontend_cache(payload)
         
         print(f"✓ Saved {len(unique_events)} merged events to all_events.json")
     
@@ -159,7 +189,11 @@ async def run_all_scrapers():
 async def main():
     """Main entry point"""
     try:
-        events = await run_all_scrapers()
+        parser = argparse.ArgumentParser(description="Run all scrapers")
+        parser.add_argument("-c", "--city", dest="city", help="Override city code (e.g., ca--san-francisco)")
+        args = parser.parse_args()
+
+        events = await run_all_scrapers(location_override=args.city)
         print(f"\n✓ Scraping completed successfully")
         
         # ===== DATABASE SYNC INTEGRATION =====

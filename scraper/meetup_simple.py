@@ -110,6 +110,7 @@ def parse_meetup_event(data: dict) -> dict:
         'link': data.get('url', ''),
         'description': data.get('description', 'Description not available')[:300],
         'source': 'Meetup',
+        'city': location_code,
         'organizer': organizer_name
     }
 

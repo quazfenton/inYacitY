@@ -83,6 +83,8 @@ export async function getCityEvents(
   limit: number = 100,
   retries: number = 3
 ): Promise<BackendEvent[]> {
+  const localCache = await loadLocalEvents();
+  const localCityEvents = filterLocalCityEvents(localCache, cityId);
   for (let i = 0; i < retries; i++) {
     try {
       const params = new URLSearchParams({ limit: limit.toString() });
@@ -94,7 +96,7 @@ export async function getCityEvents(
 
       if (!response.ok) {
         if (response.status === 404) {
-          return []; // No events found for this city
+          return localCityEvents; // Fallback to local cache
         }
         if (response.status >= 500 && i < retries - 1) {
           // Server error, retry after delay
@@ -106,12 +108,14 @@ export async function getCityEvents(
 
       return response.json();
     } catch (error) {
-      if (i === retries - 1) throw error;
+      if (i === retries - 1) {
+        return localCityEvents;
+      }
       // Retry after delay
       await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
     }
   }
-  throw new Error('Max retries exceeded');
+  return localCityEvents;
 }
 
 /**
@@ -187,6 +191,53 @@ export function formatBackendEvent(backendEvent: BackendEvent) {
     link: backendEvent.link,
     source: backendEvent.source,
   };
+}
+
+type LocalEventsFile = {
+  events?: Array<Record<string, unknown>>;
+  events_by_city?: Record<string, Array<Record<string, unknown>>>;
+};
+
+let localEventsCache: Array<Record<string, unknown>> | null = null;
+
+async function loadLocalEvents(): Promise<Array<Record<string, unknown>>> {
+  if (localEventsCache) return localEventsCache;
+  try {
+    const response = await fetch('/all_events.json', { cache: 'no-store' });
+    if (!response.ok) return [];
+    const data = (await response.json()) as LocalEventsFile;
+    if (data.events && Array.isArray(data.events)) {
+      localEventsCache = data.events;
+      return data.events;
+    }
+    if (data.events_by_city) {
+      const merged: Array<Record<string, unknown>> = [];
+      Object.values(data.events_by_city).forEach(events => merged.push(...events));
+      localEventsCache = merged;
+      return merged;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function filterLocalCityEvents(events: Array<Record<string, unknown>>, cityId: string): BackendEvent[] {
+  const filtered = events.filter(event => {
+    const city = (event.city as string) || (event.city_id as string);
+    return city === cityId;
+  });
+  return filtered.slice(0, 200).map((event, index) => ({
+    id: Number(event.id ?? index + 1),
+    title: String(event.title ?? 'Untitled Event'),
+    link: String(event.link ?? ''),
+    date: String(event.date ?? ''),
+    time: String(event.time ?? 'TBA'),
+    location: String(event.location ?? 'Location TBA'),
+    description: String(event.description ?? ''),
+    source: String(event.source ?? 'Local'),
+    city_id: cityId,
+  }));
 }
 
 /**

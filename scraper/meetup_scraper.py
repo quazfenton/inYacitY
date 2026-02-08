@@ -16,6 +16,7 @@ from config_loader import get_config
 async def scrape_meetup(location: str = None) -> list:
     """Scrape Meetup events"""
     config = get_config()
+    fetch_details = config.get_scraper_config('MEETUP').get('fetch_details', True)
     
     if not location:
         # Convert location format from config to Meetup format
@@ -53,11 +54,12 @@ async def scrape_meetup(location: str = None) -> list:
             
             for item in items:
                 if item.get('@type') == 'Event':
+                    date, time = _parse_iso_datetime(item.get('startDate', ''))
                     event = {
                         'title': item.get('name', 'Unknown'),
                         'link': item.get('url', ''),
-                        'date': item.get('startDate', '')[:10] if item.get('startDate') else '',
-                        'time': '',
+                        'date': date,
+                        'time': time,
                         'location': item.get('location', {}).get('name', 'Location TBA'),
                         'description': item.get('description', '')[:200],
                         'source': 'Meetup'
@@ -116,6 +118,13 @@ async def scrape_meetup(location: str = None) -> list:
         
         print(f"Found {len(events)} events from HTML parsing")
     
+    # Fetch detail pages for missing fields
+    for event in events:
+        if fetch_details and (not event.get('date') or not event.get('time') or event.get('location') == 'Location TBA'):
+            details = await _fetch_meetup_details(event.get('link', ''))
+            event.update({k: v for k, v in details.items() if v})
+        event.setdefault('city', config.get_location())
+
     # Save results
     with open(output_file, 'w') as f:
         json.dump({
@@ -137,3 +146,40 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+def _parse_iso_datetime(value: str) -> tuple:
+    if not value:
+        return ("", "")
+    cleaned = re.sub(r'\[.*?\]', '', value)
+    try:
+        dt = datetime.fromisoformat(cleaned)
+        return (dt.strftime("%Y-%m-%d"), dt.strftime("%I:%M %p").lstrip("0"))
+    except Exception:
+        return ("", "")
+
+
+async def _fetch_meetup_details(url: str) -> dict:
+    details = {}
+    try:
+        html = await fetch_page(url, use_firecrawl_fallback=True)
+        if not html:
+            return details
+        soup = BeautifulSoup(html, 'html.parser')
+        time_elem = soup.find('time')
+        if time_elem and time_elem.get('datetime'):
+            date, time = _parse_iso_datetime(time_elem.get('datetime', ''))
+            if date:
+                details['date'] = date
+            if time:
+                details['time'] = time
+        if time_elem and not details.get('time'):
+            text = time_elem.get_text(" ", strip=True)
+            match = re.search(r'(\d{1,2}:\d{2}\s*[AP]M)', text, re.I)
+            if match:
+                details['time'] = match.group(1).upper()
+
+        location_elem = soup.find('p', class_=re.compile(r'ds2-r16', re.I))
+        if location_elem:
+            details['location'] = location_elem.get_text(" ", strip=True)
+    except Exception:
+        return details
+    return details

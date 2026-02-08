@@ -299,7 +299,8 @@ async def scrape_meetup(location_code: str, output_file: str = "meetup_events.js
                         'link': event_url,
                         'description': detail['description'],
                         'location': detail['location'],
-                        'source': 'Meetup'
+                        'source': 'Meetup',
+                        'city': location_code
                     }
 
                     new_events.append(event_info)
@@ -393,7 +394,8 @@ async def scrape_meetup(location_code: str, output_file: str = "meetup_events.js
                                 'link': event_url,
                                 'description': detail['description'],
                                 'location': detail['location'],
-                                'source': 'Meetup'
+                                'source': 'Meetup',
+                                'city': location_code
                             }
 
                             new_events.append(event_info)

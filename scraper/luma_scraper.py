@@ -14,6 +14,29 @@ from typing import Optional
 from config_loader import get_config
 
 
+def _clean_luma_location(text: str) -> str:
+    cleaned = text.replace('\u200b', '').strip()
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    cleaned = re.sub(r'^By\s+.*?\s+', '', cleaned, flags=re.I)
+    return cleaned.strip()
+
+
+async def _fetch_luma_description(url: str) -> str:
+    try:
+        html = await fetch_page(url, use_firecrawl_fallback=True)
+        if not html:
+            return ""
+        soup = BeautifulSoup(html, 'html.parser')
+        about = soup.find('div', class_=re.compile(r'event-about-card', re.I))
+        if about:
+            content = about.find('div', class_=re.compile(r'spark-content', re.I))
+            if content:
+                text = content.get_text(" ", strip=True)
+                return text
+        return ""
+    except Exception:
+        return ""
+
 async def fetch_luma_page(url: str) -> Optional[str]:
     """Fetch Luma page with retry logic"""
     browser = None
@@ -40,18 +63,20 @@ async def fetch_luma_page(url: str) -> Optional[str]:
 async def scrape_luma(city: str = None) -> list:
     """Scrape Luma events for a city"""
     config = get_config()
+    fetch_details = config.get_scraper_config('LUMA').get('fetch_details', True)
     
     if not city:
         # Get location code and map to Luma format
         location = config.get_location()
-        luma_map = config.get_city_map('LUMA')
+        luma_map = config.get_scraper_config('LUMA').get('location_map', {})
         city = luma_map.get(location, 'la')
     
     output_file = "luma_events.json"
     
     # Convert city code
     if '--' in city:
-        city = LUMA_CITIES.get(city, 'la')
+        luma_map = config.get_scraper_config('LUMA').get('location_map', {})
+        city = luma_map.get(city, 'la')
     
     url = f"https://lu.ma/{city}"
     print(f"\nScraping Luma: {url}")
@@ -115,11 +140,13 @@ async def scrape_luma(city: str = None) -> list:
             location = "Location TBA"
             # Look for text with venue-like patterns
             for elem in card.find_all(['div', 'span']):
-                text = elem.get_text(strip=True)
+                text = _clean_luma_location(elem.get_text(strip=True))
                 if len(text) > 3 and len(text) < 100 and not any(x in text.lower() for x in ['am', 'pm', 'min', 'hour']):
                     if not elem.find('h3') and not elem.find('a'):
                         location = text
                         break
+
+            description = await _fetch_luma_description(event_url) if fetch_details else ""
             
             events.append({
                 'title': title,
@@ -127,8 +154,9 @@ async def scrape_luma(city: str = None) -> list:
                 'time': time_str,
                 'location': location,
                 'link': event_url,
-                'description': '',
-                'source': 'Luma'
+                'description': description,
+                'source': 'Luma',
+                'city': config.get_location()
             })
             
         except Exception as e:

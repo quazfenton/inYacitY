@@ -272,6 +272,8 @@ async def scrape_dice_fm(
         print(f"Scraping: {url}")
         events = await fetch_dice_events_from_page(page, url)
         print(f"Found {len(events)} events on listing page")
+        for event in events:
+            event.setdefault('city', city)
         
         # Filter duplicates and fetch details for new events
         for event in events:

@@ -30,15 +30,15 @@ class Config:
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     self._config = json.load(f)
-                print(f"✓ Config loaded from {config_file}")
+                print(f"Config loaded from {config_file}")
             else:
-                print(f"⚠ Config file not found: {config_file}, using defaults")
+                print(f"Config file not found: {config_file}, using defaults")
                 self._config = self._get_defaults()
         except json.JSONDecodeError as e:
-            print(f"✗ Error parsing config.json: {e}")
+            print(f"Error parsing config.json: {e}")
             self._config = self._get_defaults()
         except Exception as e:
-            print(f"✗ Error loading config: {e}")
+            print(f"Error loading config: {e}")
             self._config = self._get_defaults()
     
     @staticmethod
@@ -53,11 +53,11 @@ class Config:
             },
             "SCRAPER_SETTINGS": {
                 "EVENTBRITE": {"enabled": True},
-                "MEETUP": {"enabled": True},
-                "LUMA": {"enabled": True},
-                "DICE_FM": {"enabled": True},
-                "RA_CO": {"enabled": True},
-                "POSH_VIP": {"enabled": False}
+                "MEETUP": {"enabled": True, "fetch_details": True},
+                "LUMA": {"enabled": True, "fetch_details": True},
+                "DICE_FM": {"enabled": True, "fetch_details": True},
+                "RA_CO": {"enabled": True, "fetch_details": True},
+                "POSH_VIP": {"enabled": False, "fetch_details": False}
             }
         }
     

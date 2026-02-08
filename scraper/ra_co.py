@@ -14,6 +14,7 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 from simple_browser import create_browser, close_browser
+from browser import fetch_page
 
 
 # Mapping of city codes to RA.co URL segments
@@ -59,7 +60,66 @@ def build_ra_co_url(city_code: str) -> str:
     return f"https://ra.co/events/{country}/{city}"
 
 
-async def fetch_ra_co_events_from_page(page, url: str) -> List[Dict]:
+def _looks_blocked(html: str) -> bool:
+    if not html:
+        return True
+    text = html.lower()
+    indicators = [
+        'access denied',
+        'verify you are human',
+        'captcha',
+        'datadome',
+        'incident id',
+        'blocked',
+        'challenge',
+    ]
+    return any(indicator in text for indicator in indicators)
+
+
+def _parse_listing_html(html: str, city: str) -> List[Dict]:
+    events: List[Dict] = []
+    if not html:
+        return events
+
+    soup = BeautifulSoup(html, 'html.parser')
+    event_titles = soup.find_all('h3', attrs={"data-pw-test-id": "event-title"})
+
+    for title_elem in event_titles:
+        try:
+            link_elem = title_elem.find('a', attrs={"data-pw-test-id": "event-title-link"})
+            if not link_elem:
+                continue
+            event_link = link_elem.get('href', '')
+            title = link_elem.get_text(strip=True)
+            if not event_link.startswith('http'):
+                event_link = f"https://ra.co{event_link}"
+            if title and event_link:
+                event_info = {
+                    'title': title,
+                    'link': event_link,
+                    'date': 'TBA',
+                    'time': 'TBA',
+                    'location': 'TBA',
+                    'price': 'TBA',
+                    'source': 'RA.co',
+                    'city': city
+                }
+                parent = title_elem.find_parent()
+                if parent:
+                    date_elem = parent.find(string=re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*\d+\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', re.I))
+                    if date_elem:
+                        event_info['date'] = str(date_elem).strip()
+                    venue_link = parent.find('span', attrs={"data-pw-test-id": "event-venue-link"})
+                    if venue_link:
+                        event_info['location'] = venue_link.get_text(strip=True)
+                events.append(event_info)
+        except Exception:
+            continue
+
+    return events
+
+
+async def fetch_ra_co_events_from_page(page, url: str, city: str) -> List[Dict]:
     """
     Scrape events from RA.co listing page
     """
@@ -86,43 +146,8 @@ async def fetch_ra_co_events_from_page(page, url: str) -> List[Dict]:
             else:
                 content = str(result) if result is not None else ""
         
-        soup = BeautifulSoup(content, 'html.parser')
-        
-        # Find event titles and links
-        event_titles = soup.find_all('h3', attrs={"data-pw-test-id": "event-title"})
-        
-        print(f"Found {len(event_titles)} event titles on page")
-        
-        for title_elem in event_titles:
-            try:
-                # Extract title and link from the link inside h3
-                link_elem = title_elem.find('a', attrs={"data-pw-test-id": "event-title-link"})
-                
-                if not link_elem:
-                    continue
-                
-                event_link = link_elem.get('href', '')
-                title = link_elem.get_text(strip=True)
-                
-                if not event_link.startswith('http'):
-                    event_link = f"https://ra.co{event_link}"
-                
-                if title and event_link:
-                    event_info = {
-                        'title': title,
-                        'link': event_link,
-                        'date': 'TBA',
-                        'time': 'TBA',
-                        'location': 'TBA',
-                        'price': 'TBA',
-                        'source': 'RA.co'
-                    }
-                    events.append(event_info)
-                    
-            except Exception as e:
-                print(f"Error extracting event title: {e}")
-                continue
-        
+        events = _parse_listing_html(content, city)
+        print(f"Found {len(events)} event titles on page")
         return events
         
     except Exception as e:
@@ -293,7 +318,13 @@ async def scrape_ra_co(
         
         # Scrape listing page
         print(f"Scraping: {url}")
-        events = await fetch_ra_co_events_from_page(page, url)
+        events = await fetch_ra_co_events_from_page(page, url, city)
+        if not events:
+            content = await page.content()
+            if _looks_blocked(content):
+                print("Listing appears blocked. Trying Firecrawl/Playwright fallback.")
+                html = await fetch_page(url, use_firecrawl_fallback=True)
+                events = _parse_listing_html(html, city)
         print(f"Found {len(events)} events on listing page")
         
         # Filter duplicates
@@ -307,6 +338,7 @@ async def scrape_ra_co(
                     print(f"  Fetching details for: {event['title'][:50]}")
                     detail_info = await scrape_ra_co_detail_page(page, event['link'])
                     event.update(detail_info)
+                event.setdefault('city', city)
                 
                 print(f"  ✓ {event['title'][:50]}")
         
@@ -318,6 +350,32 @@ async def scrape_ra_co(
     finally:
         if browser:
             await close_browser(browser)
+
+    # Fallback: mobile context if still empty
+    if not events:
+        print("Retrying RA.co with mobile context...")
+        browser = None
+        try:
+            p = await async_playwright().start()
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+                viewport={'width': 375, 'height': 812},
+                device_scale_factor=2,
+                is_mobile=True,
+                has_touch=True,
+            )
+            page = await context.new_page()
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            await asyncio.sleep(2)
+            html = await page.content()
+            events = _parse_listing_html(html, city)
+            await browser.close()
+            await p.stop()
+        except Exception as e:
+            print(f"Mobile fallback failed: {e}")
+            if browser:
+                await browser.close()
     
     # Save all events
     with open(output_file, 'w') as f:

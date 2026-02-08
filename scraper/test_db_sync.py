@@ -22,6 +22,33 @@ from db_sync_enhanced import (
 )
 
 
+def _load_env_file(path: str) -> None:
+    """Lightweight .env loader (no external deps)."""
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, 'r') as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass
+
+
+# Load env vars from local .env files if present.
+_here = os.path.dirname(__file__)
+_load_env_file(os.path.join(_here, '.env'))
+_load_env_file(os.path.join(os.path.dirname(_here), '.env'))
+
+
 class SyncTester:
     """Test db_sync integration"""
     

@@ -290,7 +290,8 @@ async def scrape_luma(city: str, output_file: str = "luma_events.json"):
                                     'location': location,
                                     'link': event_url,
                                     'description': description,
-                                    'source': 'Luma'
+                                    'source': 'Luma',
+                                    'city': city
                                 }
 
                                 new_events.append(event_info)

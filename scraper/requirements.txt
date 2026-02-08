@@ -6,7 +6,7 @@ requests>=2.31.0
 lxml>=4.9.0
 
 # Enhanced anti-detection and CAPTCHA bypass
-pydoll-python>=0.1.0
+pydoll-python>=0.7.0
 
 # Alternative browsers (install separately if needed due to build issues)
 # Uncomment these lines if you want to try installing them:

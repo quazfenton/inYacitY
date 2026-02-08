@@ -13,9 +13,14 @@ from browser import fetch_page
 from config_loader import get_config
 
 
+def _clean_date_text(date_str: str) -> str:
+    return date_str.replace('•', ' ').replace('|', ' ').strip()
+
+
 def parse_event_date(date_str: str) -> str:
     """Parse various date formats to YYYY-MM-DD"""
     today = datetime.now()
+    date_str = _clean_date_text(date_str)
     
     # Handle relative dates
     if "today" in date_str.lower():
@@ -35,8 +40,8 @@ def parse_event_date(date_str: str) -> str:
         if match:
             try:
                 # Try to parse with current year if not provided
-                if len(match.groups()) >= 3:
-                    month_str = match.group(2) if len(match.groups()) > 2 else match.group(1)
+                if len(match.groups()) >= 2:
+                    month_str = match.group(2) if len(match.groups()) > 1 else match.group(1)
                     day_str = match.group(3) if len(match.groups()) > 2 else match.group(2)
                     
                     month_map = {
@@ -59,11 +64,27 @@ def parse_event_date(date_str: str) -> str:
             except:
                 pass
     
+    # Fallback to month name detection
+    month_match = re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', date_str, re.I)
+    day_match = re.search(r'\b(\d{1,2})\b', date_str)
+    if month_match and day_match:
+        month_map = {
+            'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+            'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+        }
+        month = month_map.get(month_match.group(1).lower(), today.month)
+        day = int(day_match.group(1))
+        event_date = datetime(today.year, month, day)
+        if event_date < today:
+            event_date = datetime(today.year + 1, month, day)
+        return event_date.strftime("%Y-%m-%d")
+
     return today.strftime("%Y-%m-%d")
 
 
 def extract_time(date_str: str) -> str:
     """Extract time from date string"""
+    date_str = _clean_date_text(date_str)
     time_match = re.search(r'(\d{1,2}:\d{2}\s*[AP]M)', date_str, re.I)
     if time_match:
         return time_match.group(1).upper().replace(' ', '')
@@ -109,13 +130,25 @@ def parse_events_from_html(html: str) -> list:
                 title_elem = card.find(['h3', 'h2', 'h1']) or card.find(class_=re.compile(r'title', re.I))
                 if title_elem:
                     title = title_elem.get_text(strip=True)
-            
+
             if not title:
                 continue
+            if title.lower().startswith('view '):
+                title = title[5:].strip()
+            if title.lower().startswith('view'):
+                title = title[4:].strip()
             
             # Get date/time
+            date_text = ""
             date_elem = card.find(attrs={'data-testid': re.compile(r'date|time', re.I)})
-            date_text = date_elem.get_text(strip=True) if date_elem else ""
+            if date_elem:
+                date_text = date_elem.get_text(strip=True)
+            if not date_text:
+                for p in card.find_all('p'):
+                    text = p.get_text(" ", strip=True)
+                    if re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', text, re.I):
+                        date_text = text
+                        break
             
             if not date_text:
                 # Try finding in any text
@@ -133,10 +166,15 @@ def parse_events_from_html(html: str) -> list:
             if location_elem:
                 location = location_elem.get_text(strip=True)
             else:
-                # Try finding address patterns
-                loc_match = re.search(r'([A-Za-z\s]+,\s*[A-Z]{2})', card.get_text())
-                if loc_match:
-                    location = loc_match.group(1)
+                for p in card.find_all('p'):
+                    text = p.get_text(" ", strip=True)
+                    if '·' in text and not re.search(r'\b(?:am|pm)\b', text, re.I):
+                        location = text
+                        break
+                if location == "Location TBA":
+                    loc_match = re.search(r'([A-Za-z\s]+,\s*[A-Z]{2})', card.get_text())
+                    if loc_match:
+                        location = loc_match.group(1)
             
             events.append({
                 'title': title,
@@ -171,16 +209,18 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
     
     # Load existing events
     existing_links = set()
+    existing_events = []
     if os.path.exists(output_file):
         try:
             with open(output_file, 'r') as f:
                 data = json.load(f)
-                existing_links = {e.get('link', '') for e in data.get('events', [])}
+                existing_events = data.get('events', [])
+                existing_links = {e.get('link', '') for e in existing_events}
             print(f"Loaded {len(existing_links)} existing events")
         except:
             pass
     
-    all_events = []
+    all_events = list(existing_events)
     base_url = eb_config.get('base_url', 'https://www.eventbrite.com/d/{location}/free--events/').format(location=location)
     
     # Scrape multiple pages
@@ -198,6 +238,8 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         print(f"Extracted {len(events)} events from page {page}")
         
         # Filter duplicates
+        for e in events:
+            e.setdefault('city', location)
         new_events = [e for e in events if e['link'] not in existing_links]
         all_events.extend(new_events)
         existing_links.update(e['link'] for e in new_events)
@@ -206,7 +248,7 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         
         await asyncio.sleep(1)  # Be nice
     
-    # Save results
+    # Save results (preserve existing and append new)
     with open(output_file, 'w') as f:
         json.dump({
             'events': all_events,

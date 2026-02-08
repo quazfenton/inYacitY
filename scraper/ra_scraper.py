@@ -106,7 +106,8 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
                 'location': 'TBA',
                 'link': href,
                 'description': '',
-                'source': 'RA.co'
+                'source': 'RA.co',
+                'city': location
             })
             
         except Exception as e:

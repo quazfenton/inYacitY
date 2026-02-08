@@ -24,8 +24,8 @@ if [ ! -f .env ]; then
 fi
 
 # Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Error: docker-compose is not installed"
+if ! command -v docker compose &> /dev/null; then
+    echo "❌ Error: dockercompose is not installed"
     echo "   Install Docker Compose: https://docs.docker.com/compose/install/"
     exit 1
 fi

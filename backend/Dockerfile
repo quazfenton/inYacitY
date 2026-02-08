@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Install Playwright browsers
+RUN pip install playwright
 RUN playwright install --with-deps chromium
 
 # Create logs directory

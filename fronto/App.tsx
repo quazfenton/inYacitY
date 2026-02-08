@@ -302,7 +302,6 @@ const App: React.FC = () => {
                             key={event.id} 
                             className="animate-slide-in-up" 
                             style={{ 
-                              animationDelay: `${idx * 120}ms`,
                               opacity: 0,
                               animation: `slideInUp 0.6s ease-out forwards`,
                               animationDelay: `${idx * 120}ms`

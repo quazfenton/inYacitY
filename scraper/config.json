@@ -1,5 +1,5 @@
 {
-  "LOCATION": "ca--los-angeles",
+  "LOCATION": "fl--miami",
   "SUPPORTED_LOCATIONS": [
     "ca--los-angeles",
     "ny--new-york",
@@ -38,10 +38,12 @@
     },
     "MEETUP": {
       "enabled": true,
-      "use_graphql": true
+      "use_graphql": true,
+      "fetch_details": true
     },
     "LUMA": {
       "enabled": true,
+      "fetch_details": true,
       "location_map": {
         "dc--washington": "dc",
         "ny--new-york": "nyc",
@@ -54,6 +56,7 @@
     },
     "DICE_FM": {
       "enabled": true,
+      "fetch_details": true,
       "max_price": 0,
       "city_map": {
         "ca--los-angeles": "losangeles-5982e13c613de866017c3e3a",
@@ -70,6 +73,7 @@
     },
     "RA_CO": {
       "enabled": true,
+      "fetch_details": true,
       "fetch_detail_pages": true,
       "city_map": {
         "ca--los-angeles": "us/losangeles",
@@ -88,6 +92,7 @@
     },
     "POSH_VIP": {
       "enabled": false,
+      "fetch_details": false,
       "manual_trigger_only": true,
       "category_tag": "club",
       "city_map": {

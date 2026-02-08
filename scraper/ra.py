@@ -58,7 +58,7 @@ def build_ra_co_url(city_code: str) -> str:
     return f"https://ra.co/events/{country}/{city}"
 
 
-async def fetch_ra_co_events_from_page(page, url: str) -> List[Dict]:
+async def fetch_ra_co_events_from_page(page, url: str, city: str) -> List[Dict]:
     """
     Scrape events from RA.co listing page
     """
@@ -98,7 +98,8 @@ async def fetch_ra_co_events_from_page(page, url: str) -> List[Dict]:
                         'time': 'TBA',
                         'location': 'TBA',
                         'price': 'TBA',
-                        'source': 'RA.co'
+                        'source': 'RA.co',
+                        'city': city
                     }
                     events.append(event_info)
                     
@@ -269,7 +270,7 @@ async def scrape_ra_co(
         
         # Scrape listing page
         print(f"Scraping: {url}")
-        events = await fetch_ra_co_events_from_page(page, url)
+        events = await fetch_ra_co_events_from_page(page, url, city)
         print(f"Found {len(events)} events on listing page")
         
         # Filter duplicates

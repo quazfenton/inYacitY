@@ -106,7 +106,8 @@ async def scrape_posh_vip(city: str = "ca--los-angeles") -> list:
                     'date': 'TBA',
                     'time': 'TBA',
                     'location': 'TBA',
-                    'source': 'Posh.vip'
+                    'source': 'Posh.vip',
+                    'city': city
                 })
         except Exception as e:
             continue

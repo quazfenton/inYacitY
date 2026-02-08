@@ -2,7 +2,6 @@
 """
 Master runner for all scrapers
 Uses centralized config.json for modularity and easy configuration
-Integrated with database sync based on sync mode configuration
 """
 
 import asyncio
@@ -161,62 +160,9 @@ async def main():
     try:
         events = await run_all_scrapers()
         print(f"\n✓ Scraping completed successfully")
-        
-        # ===== DATABASE SYNC INTEGRATION =====
-        config = get_config()
-        sync_mode = config.get('DATABASE.SYNC_MODE', 0)
-        
-        # Track runs using a file-based counter
-        run_counter_file = "scraper_run_counter.txt"
-        try:
-            with open(run_counter_file, 'r') as f:
-                run_count = int(f.read().strip())
-        except:
-            run_count = 1
-        
-        # Determine if we should sync
-        should_sync = False
-        if sync_mode == 0:
-            should_sync = False
-        elif 1 <= sync_mode <= 4:
-            # Batch mode: sync every Nth run
-            should_sync = (run_count % sync_mode == 0)
-        elif sync_mode >= 5:
-            # Always sync
-            should_sync = True
-        
-        # Perform sync if needed
-        if should_sync:
-            print("\n" + "=" * 70)
-            print("DATABASE SYNC")
-            print("=" * 70)
-            
-            from db_sync import DatabaseSyncManager
-            manager = DatabaseSyncManager()
-            sync_result = await manager.sync_events()
-            
-            print(f"\n✓ Sync Status: {'SUCCESS' if sync_result['success'] else 'FAILED'}")
-            print(f"  - Events synced: {sync_result['events_synced']}")
-            print(f"  - Duplicates removed: {sync_result['new_duplicates_removed']}")
-            print(f"  - Past events cleaned: {sync_result['past_events_removed']}")
-            
-            if sync_result['errors']:
-                print("  - Errors encountered:")
-                for error in sync_result['errors']:
-                    print(f"    • {error}")
-        else:
-            sync_interval = sync_mode if sync_mode > 0 else "never"
-            print(f"\n[SYNC] Skipped (run {run_count}, interval: every {sync_interval} run{'s' if sync_mode != 1 else ''})")
-        
-        # Increment and save run counter
-        with open(run_counter_file, 'w') as f:
-            f.write(str(run_count + 1))
-        
         return 0
     except Exception as e:
         print(f"\n✗ Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
         return 1
 
 

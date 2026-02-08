@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """
 Database synchronization module for Supabase
-Enhanced with email subscription support and frontend integration
-
 Handles:
 - Data validation and standardization
 - Batch insertion to Supabase
 - Deduplication tracking
 - Email subscription syncing
-- Price tier and category tagging
-- Frontend live update triggering
 """
 
 import asyncio
@@ -23,78 +19,6 @@ from config_loader import get_config
 
 class EventDataValidator:
     """Validate and standardize event data"""
-    
-    # Price tier mapping
-    PRICE_TIERS = {
-        0: "Free",
-        1: "<$20",
-        2: "<$50",
-        3: "<$100",
-        4: "$100+"
-    }
-    
-    # Default categories
-    DEFAULT_CATEGORIES = [
-        "Concert", "Nightlife", "Club", "Workshop", "Networking",
-        "Sports", "Arts", "Food", "Community", "Tech", "Business", "Other"
-    ]
-    
-    @staticmethod
-    def categorize_event(event: Dict) -> str:
-        """
-        Categorize event based on title and description
-        Uses keywords to assign to one of the default categories
-        """
-        text = f"{event.get('title', '')} {event.get('description', '')}".lower()
-        
-        category_keywords = {
-            "Concert": ["concert", "music", "band", "dj", "performance", "show", "festival"],
-            "Nightlife": ["club", "bar", "lounge", "nightlife", "dancing", "party"],
-            "Workshop": ["workshop", "class", "training", "tutorial", "seminar", "course"],
-            "Networking": ["networking", "meetup", "conference", "summit", "forum"],
-            "Sports": ["sports", "game", "tournament", "match", "fitness", "yoga", "run"],
-            "Arts": ["art", "gallery", "exhibition", "theater", "film", "screening", "show"],
-            "Food": ["food", "restaurant", "tasting", "cooking", "brunch", "dinner"],
-            "Community": ["community", "social", "gathering", "event", "celebration"],
-            "Tech": ["tech", "startup", "coding", "development", "innovation", "app"],
-            "Business": ["business", "entrepreneurship", "investment", "startup", "finance"]
-        }
-        
-        for category, keywords in category_keywords.items():
-            if any(keyword in text for keyword in keywords):
-                return category
-        
-        return "Other"
-    
-    @staticmethod
-    def determine_price_tier(event: Dict) -> int:
-        """
-        Determine price tier from event price
-        Returns: 0=Free, 1=<$20, 2=<$50, 3=<$100, 4=$100+
-        """
-        try:
-            price = int(event.get('price', 0))
-            if price == 0:
-                return 0
-            elif price < 20:
-                return 1
-            elif price < 50:
-                return 2
-            elif price < 100:
-                return 3
-            else:
-                return 4
-        except (ValueError, TypeError):
-            return 0
-    
-    @staticmethod
-    def clean_location(location: str) -> str:
-        """Clean location string (remove zero-width characters, extra spaces)"""
-        # Remove zero-width characters
-        location = location.replace('\u200b', '').strip()
-        # Clean up multiple spaces
-        location = ' '.join(location.split())
-        return location
     
     @staticmethod
     def validate_event(event: Dict) -> Tuple[bool, Dict, List[str]]:
@@ -128,7 +52,7 @@ class EventDataValidator:
         else:
             cleaned['description'] = ""
         
-        # Validate date format (YYYY-MM-DD or flexible parsing)
+        # Validate date format (YYYY-MM-DD)
         if 'date' in cleaned:
             try:
                 datetime.strptime(cleaned['date'], '%Y-%m-%d')
@@ -149,18 +73,8 @@ class EventDataValidator:
         else:
             cleaned['price'] = 0
         
-        # Clean location (remove zero-width chars)
-        if 'location' in cleaned:
-            cleaned['location'] = EventDataValidator.clean_location(cleaned['location'])
-        
-        # Add computed fields
+        # Add metadata
         cleaned['scraped_at'] = datetime.utcnow().isoformat()
-        
-        # 2D Tagging: Price Tier and Category
-        cleaned['price_tier'] = EventDataValidator.determine_price_tier(cleaned)
-        cleaned['category'] = EventDataValidator.categorize_event(cleaned)
-        
-        # Event hash for deduplication
         cleaned['event_hash'] = EventDataValidator.generate_event_hash(cleaned)
         
         return (len(errors) == 0, cleaned, errors)
@@ -211,8 +125,7 @@ class SupabaseSync:
         """Initialize Supabase connection"""
         self.api_url = api_url or os.environ.get('SUPABASE_URL')
         self.api_key = api_key or os.environ.get('SUPABASE_KEY')
-        self.events_table = 'events'
-        self.subscriptions_table = 'email_subscriptions'
+        self.table_name = 'events'
     
     def is_configured(self) -> bool:
         """Check if Supabase is configured"""
@@ -251,7 +164,7 @@ class SupabaseSync:
             # Check for duplicates by event_hash
             existing_hashes = set()
             try:
-                response = client.table(self.events_table).select('event_hash').execute()
+                response = client.table(self.table_name).select('event_hash').execute()
                 existing_hashes = {row['event_hash'] for row in response.data if response.data}
             except Exception as e:
                 print(f"⚠ Could not check for existing events: {e}")
@@ -270,7 +183,7 @@ class SupabaseSync:
                 batch = new_events[i:i + batch_size]
                 
                 try:
-                    response = client.table(self.events_table).insert(batch).execute()
+                    response = client.table(self.table_name).insert(batch).execute()
                     total_inserted += len(batch)
                 except Exception as e:
                     return (False, total_inserted, [f"Batch insert failed: {str(e)}"])
@@ -283,16 +196,7 @@ class SupabaseSync:
             return (False, 0, [f"Database error: {str(e)}"])
     
     async def insert_email_subscription(self, email: str, city: str) -> Tuple[bool, str]:
-        """
-        Insert or update email subscription
-        
-        Args:
-            email: User email address
-            city: City code (e.g., 'ca--los-angeles')
-        
-        Returns:
-            (success, message)
-        """
+        """Insert or update email subscription"""
         if not self.is_configured():
             return (False, "Supabase not configured")
         
@@ -301,123 +205,58 @@ class SupabaseSync:
             
             client = create_client(self.api_url, self.api_key)
             
-            # Validate email format
-            if not self._validate_email(email):
-                return (False, "Invalid email format")
-            
             # Check if subscription exists
             try:
-                response = client.table(self.subscriptions_table)\
-                    .select('*')\
-                    .eq('email', email)\
-                    .eq('city', city)\
-                    .execute()
+                response = client.table('email_subscriptions').select('*').eq('email', email).eq('city', city).execute()
                 
                 if response.data:
-                    # Update existing subscription
-                    client.table(self.subscriptions_table)\
-                        .update({
-                            'updated_at': datetime.utcnow().isoformat(),
-                            'is_active': True
-                        })\
-                        .eq('email', email)\
-                        .eq('city', city)\
-                        .execute()
+                    # Update existing
+                    client.table('email_subscriptions').update({
+                        'updated_at': datetime.utcnow().isoformat(),
+                        'is_active': True
+                    }).eq('email', email).eq('city', city).execute()
                     
                     return (True, f"Subscription updated for {email} in {city}")
                 else:
-                    # Create new subscription
-                    client.table(self.subscriptions_table)\
-                        .insert({
-                            'email': email,
-                            'city': city,
-                            'is_active': True,
-                            'created_at': datetime.utcnow().isoformat(),
-                            'updated_at': datetime.utcnow().isoformat()
-                        })\
-                        .execute()
+                    # Create new
+                    client.table('email_subscriptions').insert({
+                        'email': email,
+                        'city': city,
+                        'is_active': True,
+                        'created_at': datetime.utcnow().isoformat(),
+                        'updated_at': datetime.utcnow().isoformat()
+                    }).execute()
                     
                     return (True, f"Subscription created for {email} in {city}")
             
             except Exception as e:
                 return (False, f"Subscription error: {str(e)}")
-
-                except ImportError:
-                    return (False, "Supabase client not installed")
-                except Exception as e:
-                    return (False, f"Error: {str(e)}")
         
         except ImportError:
             return (False, "Supabase client not installed")
         except Exception as e:
             return (False, f"Error: {str(e)}")
-    
-    async def unsubscribe_email(self, email: str, city: Optional[str] = None) -> Tuple[bool, str]:
-        """
-        Unsubscribe email from a city (or all cities if city is None)
-        
-        Args:
-            email: User email address
-            city: City code, or None to unsubscribe from all cities
-        
-        Returns:
-            (success, message)
-        """
-        if not self.is_configured():
-            return (False, "Supabase not configured")
-        
-        try:
-            from supabase import create_client
-            
-            client = create_client(self.api_url, self.api_key)
-            
-            if city:
-                # Unsubscribe from specific city
-                client.table(self.subscriptions_table)\
-                    .update({'is_active': False})\
-                    .eq('email', email)\
-                    .eq('city', city)\
-                    .execute()
-                return (True, f"Unsubscribed {email} from {city}")
-            else:
-                # Unsubscribe from all cities
-                client.table(self.subscriptions_table)\
-                    .update({'is_active': False})\
-                    .eq('email', email)\
-                    .execute()
-                return (True, f"Unsubscribed {email} from all cities")
-        
-        except Exception as e:
-            return (False, f"Unsubscribe error: {str(e)}")
-    
-    @staticmethod
-    def _validate_email(email: str) -> bool:
-        """Basic email validation"""
-        import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(pattern, email) is not None
 
 
-        class DeduplicationTracker:
-            """Track events for deduplication across runs"""
+class DeduplicationTracker:
+    """Track events for deduplication across runs"""
     
-            def __init__(self, tracker_file: str = "event_tracker.json"):
-                self.tracker_file = tracker_file
-                self.data = self._load_tracker()
+    def __init__(self, tracker_file: str = "event_tracker.json"):
+        self.tracker_file = tracker_file
+        self.data = self._load_tracker()
     
-            def _load_tracker(self) -> Dict:
-                """Load existing tracker"""
-                if os.path.exists(self.tracker_file):
-                    try:
-                        with open(self.tracker_file, 'r') as f:
-                            return json.load(f)
-                    except (json.JSONDecodeError, OSError):
-                        # If file is corrupt or unreadable, start with empty tracker
-                        return {'events': {}, 'last_updated': None}
+    def _load_tracker(self) -> Dict:
+        """Load existing tracker"""
+        if os.path.exists(self.tracker_file):
+            try:
+                with open(self.tracker_file, 'r') as f:
+                    return json.load(f)
+            except:
                 return {'events': {}, 'last_updated': None}
+        return {'events': {}, 'last_updated': None}
     
-            def _save_tracker(self) -> None:
-                """Save tracker"""
+    def _save_tracker(self) -> None:
+        """Save tracker"""
         with open(self.tracker_file, 'w') as f:
             json.dump(self.data, f, indent=2, default=str)
     
@@ -570,6 +409,10 @@ class DatabaseSyncManager:
                 json.dump({'events': [], 'count': 0}, f)
         
         return result
+    
+    def get_dedup_stats(self) -> Dict:
+        """Get deduplication tracking stats"""
+        return self.tracker.get_stats()
 
 
 async def main():

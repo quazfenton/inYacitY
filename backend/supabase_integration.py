@@ -56,7 +56,7 @@ class SupabaseManager:
             updated_count = 0
             
             for event in events_data:
-                # Prepare event data for Supabase
+                # Prepare event data for Supabase, ensuring city_id is properly set
                 supabase_event = {
                     "title": event.get('title'),
                     "link": event.get('link'),
@@ -65,7 +65,7 @@ class SupabaseManager:
                     "location": event.get('location'),
                     "description": event.get('description'),
                     "source": event.get('source', 'unknown'),
-                    "city_id": city_id,
+                    "city_id": event.get('city_id', city_id),  # Use event's city_id if available, otherwise use passed city_id
                     "synced_at": datetime.utcnow().isoformat(),
                     "last_scraped": datetime.utcnow().isoformat()
                 }

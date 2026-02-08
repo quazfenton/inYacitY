@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import hashlib
 from config_loader import get_config
+import re
 
 
 class EventDataValidator:
@@ -97,16 +98,101 @@ class EventDataValidator:
         return location
     
     @staticmethod
+    def parse_flexible_date(date_str: str) -> Optional[str]:
+        """
+        Parse various date formats and return standardized YYYY-MM-DD format
+        
+        Supported formats:
+        - Mon, Feb 9
+        - Sat, Feb 7
+        - YYYY-MM-DD
+        - MM/DD/YYYY
+        - DD/MM/YYYY
+        - Month DD, YYYY
+        - DD Month YYYY
+        """
+        if not date_str:
+            return None
+            
+        # Remove extra whitespace
+        date_str = date_str.strip()
+        
+        # Define common date patterns and their corresponding format strings
+        patterns = [
+            # Mon, Feb 9 or Sat, Feb 7
+            (r'^[A-Za-z]{3},\s*[A-Za-z]{3}\s*(\d{1,2})$', '%a, %b %d'),
+            # Mon, Feb 9, YYYY
+            (r'^[A-Za-z]{3},\s*[A-Za-z]{3}\s*(\d{1,2}),\s*(\d{4})$', '%a, %b %d, %Y'),
+            # YYYY-MM-DD
+            (r'^\d{4}-\d{2}-\d{2}$', '%Y-%m-%d'),
+            # MM/DD/YYYY or MM/DD/YY
+            (r'^\d{1,2}/\d{1,2}/\d{4}$', '%m/%d/%Y'),
+            (r'^\d{1,2}/\d{1,2}/\d{2}$', '%m/%d/%y'),
+            # DD/MM/YYYY or DD/MM/YY
+            (r'^\d{1,2}/\d{1,2}/\d{4}$', '%d/%m/%Y'),
+            (r'^\d{1,2}/\d{1,2}/\d{2}$', '%d/%m/%y'),
+            # Month DD, YYYY (e.g., Feb 9, 2026)
+            (r'^[A-Za-z]{3}\s+\d{1,2},\s*\d{4}$', '%b %d, %Y'),
+            # Full Month DD, YYYY (e.g., February 9, 2026)
+            (r'^[A-Za-z]+\s+\d{1,2},\s*\d{4}$', '%B %d, %Y'),
+            # DD Month YYYY
+            (r'^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$', '%d %b %Y'),
+            # DD Full Month YYYY
+            (r'^\d{1,2}\s+[A-Za-z]+\s+\d{4}$', '%d %B %Y'),
+            # Month DD (abbreviated, e.g., Feb 9)
+            (r'^[A-Za-z]{3}\s+\d{1,2}$', '%b %d'),
+            # Month DD (full, e.g., February 9)
+            (r'^[A-Za-z]+\s+\d{1,2}$', '%B %d'),
+        ]
+        
+        for pattern, fmt in patterns:
+            if re.match(pattern, date_str):
+                try:
+                    # Check if the date string actually contains a 4-digit year
+                    has_year = bool(re.search(r'\d{4}', date_str))
+                    
+                    if '%Y' not in fmt:
+                        # Format doesn't include year, so we need to add it
+                        current_year = datetime.now().year
+                        formatted_date = f"{date_str}, {current_year}"
+                        parsed_date = datetime.strptime(formatted_date, f'{fmt}, %Y')
+                    elif not has_year:
+                        # Format expects year but date string doesn't have it
+                        current_year = datetime.now().year
+                        formatted_date = f"{date_str}, {current_year}"
+                        parsed_date = datetime.strptime(formatted_date, f'{fmt}, %Y')
+                    else:
+                        # Both format and date string have year
+                        parsed_date = datetime.strptime(date_str, fmt)
+
+                    # Handle cases where the parsed date is in the past but we expect future dates
+                    # If the parsed date is in the past compared to current date, assume next year
+                    today = datetime.now()
+                    if parsed_date < today:
+                        # Check if the date is just a few days in the past, possibly meaning next year
+                        # For example, if today is Dec 30 and the event is Jan 2, it's probably next year
+                        if parsed_date.month < today.month or (parsed_date.month == today.month and parsed_date.day < today.day):
+                            # If the month is earlier in the year, assume it's for next year
+                            parsed_date = parsed_date.replace(year=today.year + 1)
+
+                    return parsed_date.strftime('%Y-%m-%d')
+                except ValueError:
+                    continue  # Try next pattern
+        
+        # If no pattern matched, return None
+        return None
+
+    @staticmethod
     def validate_event(event: Dict) -> Tuple[bool, Dict, List[str]]:
         """
         Validate event data
-        
+
         Returns:
             (is_valid, cleaned_event, errors)
         """
         errors = []
         cleaned = {}
-        
+
         # Required fields
         required = ['title', 'date', 'location', 'link', 'source']
         for field in required:
@@ -114,32 +200,33 @@ class EventDataValidator:
                 errors.append(f"Missing required field: {field}")
             else:
                 cleaned[field] = str(event[field]).strip()
-        
+
         # Optional fields with validation
         if 'time' in event:
             cleaned['time'] = str(event.get('time', 'TBA')).strip()
         else:
             cleaned['time'] = 'TBA'
-        
+
         if 'description' in event:
             desc = str(event.get('description', '')).strip()
             # Limit description length
             cleaned['description'] = desc[:1000] if desc else ""
         else:
             cleaned['description'] = ""
-        
-        # Validate date format (YYYY-MM-DD or flexible parsing)
+
+        # Validate and normalize date format
         if 'date' in cleaned:
-            try:
-                datetime.strptime(cleaned['date'], '%Y-%m-%d')
-            except ValueError:
+            normalized_date = EventDataValidator.parse_flexible_date(cleaned['date'])
+            if normalized_date:
+                cleaned['date'] = normalized_date  # Replace with normalized date
+            else:
                 errors.append(f"Invalid date format: {cleaned['date']}")
-        
+
         # Validate URL
         if 'link' in cleaned:
             if not cleaned['link'].startswith(('http://', 'https://')):
                 errors.append(f"Invalid URL format: {cleaned['link']}")
-        
+
         # Price field (optional, default 0)
         if 'price' in event:
             try:
@@ -148,21 +235,30 @@ class EventDataValidator:
                 cleaned['price'] = 0
         else:
             cleaned['price'] = 0
-        
+
         # Clean location (remove zero-width chars)
         if 'location' in cleaned:
             cleaned['location'] = EventDataValidator.clean_location(cleaned['location'])
-        
+
         # Add computed fields
-        cleaned['scraped_at'] = datetime.utcnow().isoformat()
-        
+        try:
+            cleaned['scraped_at'] = datetime.now(datetime.timezone.utc).isoformat()
+        except AttributeError:
+            # Fallback for older Python versions
+            from datetime import timezone
+            try:
+                cleaned['scraped_at'] = datetime.now(timezone.utc).isoformat()
+            except AttributeError:
+                # Even older Python versions
+                cleaned['scraped_at'] = datetime.utcnow().isoformat()
+
         # 2D Tagging: Price Tier and Category
         cleaned['price_tier'] = EventDataValidator.determine_price_tier(cleaned)
         cleaned['category'] = EventDataValidator.categorize_event(cleaned)
-        
+
         # Event hash for deduplication
         cleaned['event_hash'] = EventDataValidator.generate_event_hash(cleaned)
-        
+
         return (len(errors) == 0, cleaned, errors)
     
     @staticmethod
@@ -315,9 +411,21 @@ class SupabaseSync:
                 
                 if response.data:
                     # Update existing subscription
+                    # Prepare update data with timezone-safe datetime
+                    try:
+                        updated_at_value = datetime.now(datetime.timezone.utc).isoformat()
+                    except AttributeError:
+                        # Fallback for older Python versions
+                        from datetime import timezone
+                        try:
+                            updated_at_value = datetime.now(timezone.utc).isoformat()
+                        except AttributeError:
+                            # Even older Python versions
+                            updated_at_value = datetime.utcnow().isoformat()
+                    
                     client.table(self.subscriptions_table)\
                         .update({
-                            'updated_at': datetime.utcnow().isoformat(),
+                            'updated_at': updated_at_value,
                             'is_active': True
                         })\
                         .eq('email', email)\
@@ -327,13 +435,25 @@ class SupabaseSync:
                     return (True, f"Subscription updated for {email} in {city}")
                 else:
                     # Create new subscription
+                    # Prepare timestamps with timezone-safe datetime
+                    try:
+                        timestamp = datetime.now(datetime.timezone.utc).isoformat()
+                    except AttributeError:
+                        # Fallback for older Python versions
+                        from datetime import timezone
+                        try:
+                            timestamp = datetime.now(timezone.utc).isoformat()
+                        except AttributeError:
+                            # Even older Python versions
+                            timestamp = datetime.utcnow().isoformat()
+                    
                     client.table(self.subscriptions_table)\
                         .insert({
                             'email': email,
                             'city': city,
                             'is_active': True,
-                            'created_at': datetime.utcnow().isoformat(),
-                            'updated_at': datetime.utcnow().isoformat()
+                            'created_at': timestamp,
+                            'updated_at': timestamp
                         })\
                         .execute()
                     
@@ -419,13 +539,38 @@ class DeduplicationTracker:
         """Add events to tracker"""
         for event in events:
             event_hash = event.get('event_hash', EventDataValidator.generate_event_hash(event))
+            
+            # Prepare timestamp with timezone-safe datetime
+            try:
+                added_at_value = datetime.now(datetime.timezone.utc).isoformat()
+            except AttributeError:
+                # Fallback for older Python versions
+                from datetime import timezone
+                try:
+                    added_at_value = datetime.now(timezone.utc).isoformat()
+                except AttributeError:
+                    # Even older Python versions
+                    added_at_value = datetime.utcnow().isoformat()
+            
             self.data['events'][event_hash] = {
                 'title': event.get('title'),
                 'date': event.get('date'),
-                'added_at': datetime.utcnow().isoformat()
+                'added_at': added_at_value
             }
         
-        self.data['last_updated'] = datetime.utcnow().isoformat()
+        # Prepare timestamp with timezone-safe datetime
+        try:
+            last_updated_value = datetime.now(datetime.timezone.utc).isoformat()
+        except AttributeError:
+            # Fallback for older Python versions
+            from datetime import timezone
+            try:
+                last_updated_value = datetime.now(timezone.utc).isoformat()
+            except AttributeError:
+                # Even older Python versions
+                last_updated_value = datetime.utcnow().isoformat()
+        
+        self.data['last_updated'] = last_updated_value
         self._save_tracker()
     
     def is_tracked(self, event_hash: str) -> bool:

@@ -1,10 +1,18 @@
 /**
  * API Service for communicating with the Nocturne backend
+ * 
+ * Data source priority:
+ * 1. Backend API (if running)
+ * 2. Supabase REST API (direct query with anon key)
+ * 3. Local cache file (all_events.json)
  */
 
-import { API_BASE_URL } from '../constants';
+import { API_BASE_URL, CITIES } from '../constants';
 
 const API_URL = API_BASE_URL;
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export interface BackendEvent {
   id: number;
@@ -60,12 +68,66 @@ export async function getHealthStatus(): Promise<HealthStatus> {
  * Get all available cities
  */
 export async function getCities(): Promise<BackendCity[]> {
-  const response = await fetch(`${API_URL}/cities`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch cities: ${response.statusText}`);
+  // Try backend API first
+  try {
+    const response = await fetch(`${API_URL}/cities`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.cities;
+    }
+  } catch {
+    // Backend not available, fall through
   }
-  const data = await response.json();
-  return data.cities;
+
+  // Fallback to static cities
+  return CITIES.map(c => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    coordinates: c.coordinates,
+  }));
+}
+
+/**
+ * Query Supabase REST API directly
+ */
+async function fetchEventsFromSupabase(cityId: string, limit: number = 100): Promise<BackendEvent[]> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return [];
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const url = `${SUPABASE_URL}/rest/v1/events?city_id=eq.${encodeURIComponent(cityId)}&date=gte.${today}&order=date.asc&limit=${limit}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`Supabase query failed: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.map((row: any) => ({
+      id: row.id,
+      title: row.title || '',
+      link: row.link || '',
+      date: row.date || '',
+      time: row.time || 'TBA',
+      location: row.location || '',
+      description: row.description || '',
+      source: row.source || 'unknown',
+      city_id: row.city_id || cityId,
+    }));
+  } catch (error) {
+    console.warn('Supabase fetch failed:', error);
+    return [];
+  }
 }
 
 /**
@@ -73,7 +135,7 @@ export async function getCities(): Promise<BackendCity[]> {
  */
 async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
   try {
-    const response = await fetch('/cache/all_events.json');
+    const response = await fetch('/all_events.json');
     if (!response.ok) {
       return [];
     }
@@ -121,68 +183,51 @@ async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
 }
 
 /**
- * Get events for a specific city with retry logic and cache fallback
- * @param cityId - The backend city ID (e.g., 'ca--los-angeles')
- * @param startDate - Optional start date filter
- * @param endDate - Optional end date filter
- * @param limit - Maximum number of events to return (default: 100)
- * @param retries - Number of retry attempts (default: 3)
+ * Get events for a specific city
+ * Tries: Backend API → Supabase direct → Local cache
  */
 export async function getCityEvents(
   cityId: string,
   startDate?: string,
   endDate?: string,
   limit: number = 100,
-  retries: number = 3
 ): Promise<BackendEvent[]> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const params = new URLSearchParams({ limit: limit.toString() });
+  // 1. Try backend API
+  try {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
 
-      if (startDate) params.append('start_date', startDate);
-      if (endDate) params.append('end_date', endDate);
-
-      const response = await fetch(`${API_URL}/events/${cityId}?${params}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Try cache as fallback
-          const cachedEvents = await loadEventsFromCache(cityId);
-          if (cachedEvents.length > 0) {
-            console.log(`[Cache Fallback] Loaded ${cachedEvents.length} events for ${cityId}`);
-            return cachedEvents;
-          }
-          return []; // No events found for this city
-        }
-        if (response.status >= 500 && i < retries - 1) {
-          // Server error, retry after delay
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
-          continue;
-        }
-        throw new Error(`Failed to fetch events: ${response.statusText}`);
+    const response = await fetch(`${API_URL}/events/${cityId}?${params}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data;
       }
-
-      return response.json();
-    } catch (error) {
-      if (i === retries - 1) {
-        // Last attempt failed, try cache
-        const cachedEvents = await loadEventsFromCache(cityId);
-        if (cachedEvents.length > 0) {
-          console.log(`[Cache Fallback] Loaded ${cachedEvents.length} events for ${cityId} after API error`);
-          return cachedEvents;
-        }
-        throw error;
-      }
-      // Retry after delay
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
     }
+  } catch {
+    // Backend not available
   }
-  throw new Error('Max retries exceeded');
+
+  // 2. Try Supabase direct
+  const supabaseEvents = await fetchEventsFromSupabase(cityId, limit);
+  if (supabaseEvents.length > 0) {
+    console.log(`[Supabase] Loaded ${supabaseEvents.length} events for ${cityId}`);
+    return supabaseEvents;
+  }
+
+  // 3. Try local cache
+  const cachedEvents = await loadEventsFromCache(cityId);
+  if (cachedEvents.length > 0) {
+    console.log(`[Cache] Loaded ${cachedEvents.length} events for ${cityId}`);
+    return cachedEvents;
+  }
+
+  return [];
 }
 
 /**
  * Trigger scraping for a specific city
- * @param cityId - The backend city ID
  */
 export async function scrapeCity(cityId: string): Promise<{ message: string; city_id: string }> {
   const response = await fetch(`${API_URL}/scrape/${cityId}`, {
@@ -213,8 +258,6 @@ export async function scrapeAllCities(): Promise<{ message: string }> {
 
 /**
  * Subscribe to email updates for a city
- * @param email - User's email address
- * @param cityId - The backend city ID
  */
 export async function subscribeToCity(
   email: string,
@@ -248,7 +291,7 @@ export function formatBackendEvent(backendEvent: BackendEvent) {
     time: backendEvent.time || 'TBA',
     description: backendEvent.description || 'Description not available',
     tags: [backendEvent.source, 'Event'],
-    price: 'Free', // Default price, could be enhanced
+    price: 'Free',
     imageUrl: `https://picsum.photos/600/400?random=${backendEvent.id}`,
     link: backendEvent.link,
     source: backendEvent.source,
@@ -262,7 +305,6 @@ function formatDate(dateStr: string): string {
   try {
     const date = new Date(dateStr);
     
-    // Check if the date is valid
     if (isNaN(date.getTime())) {
       return dateStr;
     }
@@ -271,7 +313,6 @@ function formatDate(dateStr: string): string {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Reset time to compare dates only
     today.setHours(0, 0, 0, 0);
     tomorrow.setHours(0, 0, 0, 0);
     date.setHours(0, 0, 0, 0);
@@ -281,7 +322,6 @@ function formatDate(dateStr: string): string {
     } else if (date.getTime() === tomorrow.getTime()) {
       return 'Tomorrow';
     } else {
-      // Format as "Mon, Jan 15"
       return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',

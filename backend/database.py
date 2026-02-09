@@ -273,3 +273,154 @@ async def log_email_sent(subscription_id: int, email: str, city_id: str, events_
         )
         session.add(log_entry)
         await session.commit()
+
+
+async def get_upcoming_events(city_id: str = None, days_ahead: int = 7, limit: int = None):
+    """
+    Get upcoming events (not in the past) for a city or all cities
+    
+    Args:
+        city_id: Optional city filter
+        days_ahead: Number of days ahead to include (default 7 for weekly digest)
+        limit: Optional limit on results
+    
+    Returns:
+        List of Event objects
+    """
+    from sqlalchemy import select, and_
+    
+    today = date.today()
+    future_date = today + __import__('datetime').timedelta(days=days_ahead)
+    
+    async with AsyncSessionLocal() as session:
+        query = select(Event).where(
+            and_(
+                Event.date >= today,  # Only future events
+                Event.date <= future_date  # Within specified days ahead
+            )
+        )
+        
+        if city_id:
+            query = query.where(Event.city_id == city_id)
+        
+        query = query.order_by(Event.date, Event.time)
+        
+        if limit:
+            query = query.limit(limit)
+        
+        result = await session.execute(query)
+        return result.scalars().all()
+
+
+async def get_future_events_for_city(city_id: str, start_date: date = None, end_date: date = None, limit: int = 100):
+    """
+    Get future events for a specific city, filtering out past events
+    Results are ordered by date and time (ascending) - already sorted from database
+    
+    Args:
+        city_id: City ID to filter by
+        start_date: Optional start date (defaults to today)
+        end_date: Optional end date
+        limit: Maximum results
+    
+    Returns:
+        List of Event objects sorted by date (ascending), then time
+    """
+    from sqlalchemy import select, and_
+    
+    if start_date is None:
+        start_date = date.today()
+    
+    async with AsyncSessionLocal() as session:
+        # Build query - ordered by date and time (no redundant sorting needed by caller)
+        query = select(Event).where(
+            and_(
+                Event.city_id == city_id,
+                Event.date >= start_date
+            )
+        )
+        
+        if end_date:
+            query = query.where(Event.date <= end_date)
+        
+        # Single order_by at database level - returns pre-sorted results
+        query = query.order_by(Event.date.asc(), Event.time.asc()).limit(limit)
+        
+        result = await session.execute(query)
+        return result.scalars().all()
+
+
+async def cleanup_past_events(days_to_keep: int = 30):
+    """
+    Remove events from the database that are past their date
+    Keeps events within the specified retention period
+    
+    Args:
+        days_to_keep: Number of days to keep past events (default 30)
+    
+    Returns:
+        Number of events deleted
+    """
+    from sqlalchemy import delete, and_
+    
+    cutoff_date = date.today() - __import__('datetime').timedelta(days=days_to_keep)
+    
+    async with AsyncSessionLocal() as session:
+        # Get count before deletion
+        result = await session.execute(
+            select(Event).where(Event.date < cutoff_date)
+        )
+        events_to_delete = result.scalars().all()
+        deleted_count = len(events_to_delete)
+        
+        if deleted_count > 0:
+            # Delete past events
+            await session.execute(
+                delete(Event).where(Event.date < cutoff_date)
+            )
+            await session.commit()
+            print(f"[DB CLEANUP] Deleted {deleted_count} past events older than {days_to_keep} days")
+        
+        return deleted_count
+
+
+async def get_cities_with_active_subscribers():
+    """
+    Get all cities that have active subscribers
+    
+    Returns:
+        List of unique city_ids
+    """
+    from sqlalchemy import select, func, distinct
+    
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(distinct(Subscription.city_id)).where(
+                Subscription.is_active == True
+            )
+        )
+        return [row[0] for row in result.fetchall()]
+
+
+async def get_subscribers_by_city(city_id: str):
+    """
+    Get all active subscribers for a specific city
+    
+    Args:
+        city_id: City ID
+    
+    Returns:
+        List of Subscription objects
+    """
+    from sqlalchemy import select
+    
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Subscription).where(
+                and_(
+                    Subscription.city_id == city_id,
+                    Subscription.is_active == True
+                )
+            )
+        )
+        return result.scalars().all()

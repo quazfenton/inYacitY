@@ -30,8 +30,11 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({ events, onFilterChange 
     // Apply other filters
     filtered = filterEvents(filtered, filter);
 
-    // Apply sort
-    filtered = sortEvents(filtered, sort);
+    // Apply sort only if not default (database already returns events sorted by date ascending)
+    // Skip sorting when sort.by is 'date' and ascending is true (same as database order)
+    if (sort.by !== 'date' || !sort.ascending) {
+      filtered = sortEvents(filtered, sort);
+    }
 
     onFilterChange(filtered);
   }, [events, filter, sort, searchQuery, onFilterChange]);
@@ -69,6 +72,7 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({ events, onFilterChange 
   const clearFilters = () => {
     setFilter({});
     setSearchQuery('');
+    // Reset to default - no need to specify date-asc as database already sorts by date
     setSort({ by: 'date', ascending: true });
   };
 

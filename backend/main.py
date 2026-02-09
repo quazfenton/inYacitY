@@ -310,6 +310,20 @@ async def get_subscriptions(
 
     return subscriptions
 
+
+# ============================================================================
+# LOCATION API ROUTER
+# ============================================================================
+
+# Import and register location router
+try:
+    from backend.api.locations_router import router as locations_router
+    app.include_router(locations_router)
+    print("[OK] Location API router registered")
+except ImportError as e:
+    print(f"[WARN] Could not register location router: {e}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

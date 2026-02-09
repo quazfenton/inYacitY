@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 # Complete n8n setup for Nocturne Daily Scraper
 # Usage: docker-compose -f docker-compose.n8n.yml up -d

@@ -23,28 +23,41 @@ if [ ! -f .env ]; then
     read -p "Press Enter to continue, or Ctrl+C to edit .env first..."
 fi
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Error: docker-compose is not installed"
+# Determine docker compose command (test actual execution, not just presence)
+if docker compose version &> /dev/null; then
+    DC="docker compose"
+elif docker.exe compose version &> /dev/null; then
+    DC="docker.exe compose"
+elif docker-compose version &> /dev/null; then
+    DC="docker-compose"
+elif docker-compose.exe version &> /dev/null; then
+    DC="docker-compose.exe"
+else
+    echo "❌ Error: No working docker compose command found"
     echo "   Install Docker Compose: https://docs.docker.com/compose/install/"
+    echo "   If using WSL, enable Docker Desktop WSL integration in Settings > Resources > WSL Integration"
     exit 1
 fi
+echo "Using: $DC"
+
+# Derive the docker executable for non-compose commands (e.g. docker exec)
+DOCKER="${DC%% *}"
 
 # Stop existing containers
 echo "Stopping any existing containers..."
-docker-compose down 2>/dev/null || true
+$DC down 2>/dev/null || true
 
 # Build and start services
 echo ""
 echo "Building and starting services..."
-docker-compose up -d --build
+$DC up -d --build
 
 # Wait for database to be ready
 echo ""
 echo "Waiting for database to be ready..."
 database_ready=false
 for i in {1..30}; do
-    if docker exec nocturne_db psql -U nocturne -c "SELECT 1" &> /dev/null; then
+    if $DOCKER exec nocturne_db psql -U nocturne -c "SELECT 1" &> /dev/null; then
         echo "✓ Database is ready!"
         database_ready=true
         break
@@ -56,14 +69,14 @@ done
 # Check if database became ready
 if [ "$database_ready" = false ]; then
     echo "❌ Error: Database did not become ready within the timeout period"
-    echo "   Please check the database logs: docker-compose logs postgres"
+    echo "   Please check the database logs: $DC logs postgres"
     exit 1
 fi
 
 # Initialize database
 echo ""
 echo "Initializing database..."
-docker exec nocturne_backend python3 -c "from database import init_db; init_db()"
+$DOCKER exec nocturne_backend python3 -c "from database import init_db; init_db()"
 echo "✓ Database initialized"
 
 # Check services
@@ -102,11 +115,11 @@ echo "  3. Subscribe to email updates"
 echo "  4. Click 'SCAN FOR UNDERGROUND' to refresh events"
 echo ""
 echo "Useful commands:"
-echo "  - View logs:        docker-compose logs -f"
-echo "  - Stop services:    docker-compose down"
-echo "  - Restart services: docker-compose restart"
-echo "  - Backend logs:     docker-compose logs -f backend"
-echo "  - Frontend logs:    docker-compose logs -f frontend"
+echo "  - View logs:        $DC logs -f"
+echo "  - Stop services:    $DC down"
+echo "  - Restart services: $DC restart"
+echo "  - Backend logs:     $DC logs -f backend"
+echo "  - Frontend logs:    $DC logs -f frontend"
 echo ""
 echo "For testing, see TESTING_GUIDE.md"
 echo "For documentation, see README.md"

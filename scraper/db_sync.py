@@ -341,11 +341,6 @@ class SupabaseSync:
             
             except Exception as e:
                 return (False, f"Subscription error: {str(e)}")
-
-                except ImportError:
-                    return (False, "Supabase client not installed")
-                except Exception as e:
-                    return (False, f"Error: {str(e)}")
         
         except ImportError:
             return (False, "Supabase client not installed")
@@ -398,29 +393,28 @@ class SupabaseSync:
         return re.match(pattern, email) is not None
 
 
-        class DeduplicationTracker:
-            """Track events for deduplication across runs"""
-    
-            def __init__(self, tracker_file: str = "event_tracker.json"):
-                self.tracker_file = tracker_file
-                self.data = self._load_tracker()
-    
-            def _load_tracker(self) -> Dict:
-                """Load existing tracker"""
-                if os.path.exists(self.tracker_file):
-                    try:
-                        with open(self.tracker_file, 'r') as f:
-                            return json.load(f)
-                    except (json.JSONDecodeError, OSError):
-                        # If file is corrupt or unreadable, start with empty tracker
-                        return {'events': {}, 'last_updated': None}
+class DeduplicationTracker:
+    """Track events for deduplication across runs"""
+
+    def __init__(self, tracker_file: str = "event_tracker.json"):
+        self.tracker_file = tracker_file
+        self.data = self._load_tracker()
+
+    def _load_tracker(self) -> Dict:
+        """Load existing tracker"""
+        if os.path.exists(self.tracker_file):
+            try:
+                with open(self.tracker_file, 'r') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, OSError):
                 return {'events': {}, 'last_updated': None}
-    
-            def _save_tracker(self) -> None:
-                """Save tracker"""
+        return {'events': {}, 'last_updated': None}
+
+    def _save_tracker(self) -> None:
+        """Save tracker"""
         with open(self.tracker_file, 'w') as f:
             json.dump(self.data, f, indent=2, default=str)
-    
+
     def add_events(self, events: List[Dict]) -> None:
         """Add events to tracker"""
         for event in events:
@@ -433,11 +427,11 @@ class SupabaseSync:
         
         self.data['last_updated'] = datetime.utcnow().isoformat()
         self._save_tracker()
-    
+
     def is_tracked(self, event_hash: str) -> bool:
         """Check if event already tracked"""
         return event_hash in self.data['events']
-    
+
     def remove_past_events(self, days: int = 30) -> int:
         """Remove events with dates older than X days"""
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
@@ -456,7 +450,7 @@ class SupabaseSync:
             self._save_tracker()
         
         return removed
-    
+
     def get_stats(self) -> Dict:
         """Get tracker statistics"""
         return {
@@ -519,6 +513,9 @@ class DatabaseSyncManager:
             with open(events_file, 'r') as f:
                 data = json.load(f)
                 events = data.get('events', [])
+                if not events and isinstance(data, dict) and data.get('cities'):
+                    for _, city_block in data.get('cities', {}).items():
+                        events.extend(city_block.get('events', []))
         except json.JSONDecodeError as e:
             result['errors'].append(f"Invalid JSON: {e}")
             return result
@@ -563,12 +560,7 @@ class DatabaseSyncManager:
             
             # Clean up old events from tracker
             removed = self.tracker.remove_past_events(days=30)
-            result['past_events_removed'] = removed
-            
-            # Clear events file after sync
-            with open(events_file, 'w') as f:
-                json.dump({'events': [], 'count': 0}, f)
-        
+            result['past_events_removed'] = removed\n            # NOTE: keep events file for frontend cache\n        
         return result
 
 
@@ -597,3 +589,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+

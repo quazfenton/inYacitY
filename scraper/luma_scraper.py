@@ -19,14 +19,14 @@ async def fetch_luma_page(url: str) -> Optional[str]:
     browser = None
     try:
         browser, page = await create_browser(headless=True)
-        
+
         # Try networkidle with longer timeout
         try:
             await page.goto(url, wait_until="networkidle", timeout=60000)
         except:
             # Fallback to domcontentloaded if networkidle times out
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        
+
         await asyncio.sleep(2)
         html = await page.content()
         await close_browser(browser)
@@ -37,56 +37,101 @@ async def fetch_luma_page(url: str) -> Optional[str]:
         raise e
 
 
+def clean_luma_location(text: str) -> str:
+    """Clean Luma location text and remove organizer prefixes."""
+    if not text:
+        return "Location TBA"
+    cleaned = text.replace('\u200b', ' ')
+    cleaned = ' '.join(cleaned.split())
+    if "By " in cleaned:
+        cleaned = cleaned.split("By ", 1)[1].strip()
+    # Prefer address-like segment if present
+    addr_match = re.search(r'(\d{1,5}\s+\S.*)', cleaned)
+    if addr_match:
+        return addr_match.group(1).strip()
+    for sep in ['·', '|', '•', '—', '-']:
+        if sep in cleaned:
+            return cleaned.split(sep)[-1].strip()
+    return cleaned or "Location TBA"
+
+
+async def fetch_luma_details(url: str) -> dict:
+    """Fetch description and improved location from Luma event page."""
+    html = await fetch_page(url, use_firecrawl_fallback=True)
+    if not html:
+        return {}
+    soup = BeautifulSoup(html, 'html.parser')
+    details = {}
+
+    desc_elem = soup.select_one('div.content-card.event-about-card .spark-content') or soup.select_one('.spark-content')
+    if desc_elem:
+        details['description'] = desc_elem.get_text(" ", strip=True)[:500]
+
+    loc_elem = soup.select_one('[data-testid="event-venue"]')
+    if loc_elem:
+        details['location'] = clean_luma_location(loc_elem.get_text(strip=True))
+
+    time_elem = soup.find('time')
+    if time_elem and time_elem.get('datetime'):
+        details['datetime'] = time_elem.get('datetime')
+
+    return details
+
+
 async def scrape_luma(city: str = None) -> list:
     """Scrape Luma events for a city"""
     config = get_config()
-    
+
+    luma_config = config.get_scraper_config('LUMA')
+    luma_map = luma_config.get('location_map', {})
+
+    city_code = None
     if not city:
-        # Get location code and map to Luma format
         location = config.get_location()
-        luma_map = config.get_city_map('LUMA')
+        city_code = location
         city = luma_map.get(location, 'la')
-    
-    output_file = "luma_events.json"
-    
-    # Convert city code
-    if '--' in city:
-        city = LUMA_CITIES.get(city, 'la')
-    
+    elif '--' in city:
+        city_code = city
+        city = luma_map.get(city, 'la')
+    else:
+        city_code = city
+
+    output_file = os.path.join(os.path.dirname(__file__), "luma_events.json")
+
     url = f"https://lu.ma/{city}"
     print(f"\nScraping Luma: {url}")
-    
+
     # Fetch page
     html = await fetch_luma_page(url)
     if not html:
         print("Failed to fetch Luma page")
         return []
-    
+
     soup = BeautifulSoup(html, 'html.parser')
     events = []
-    
+
     # Find all content cards directly
     cards = soup.find_all('div', class_='content-card')
     print(f"Found {len(cards)} event cards")
-    
+
     for card in cards:
         try:
             # Get event link - handle query params
             link_elem = card.find('a', href=re.compile(r'/[a-z0-9]+'))
             if not link_elem:
                 continue
-            
+
             href = link_elem.get('href', '')
             event_id = href.strip('/').split('?')[0]
             event_url = f"https://lu.ma/{event_id}"
-            
+
             # Get title
             h3 = card.find('h3')
             title = h3.get_text(strip=True) if h3 else "Unknown Event"
-            
+
             # Get date from parent context or card text
             card_text = card.get_text()
-            
+
             # Try to find date in nearby date header
             date_str = datetime.now().strftime("%Y-%m-%d")
             prev = card.find_previous('div', class_='date-title')
@@ -106,21 +151,20 @@ async def scrape_luma(city: str = None) -> list:
                         if event_date < datetime.now():
                             event_date = datetime(year + 1, month, day)
                         date_str = event_date.strftime("%Y-%m-%d")
-            
+
             # Get time
-            time_match = re.search(r'(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?)', card_text)
+            time_match = re.search(r'(\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)', card_text)
             time_str = time_match.group(1) if time_match else "TBA"
-            
+
             # Get location
             location = "Location TBA"
-            # Look for text with venue-like patterns
             for elem in card.find_all(['div', 'span']):
                 text = elem.get_text(strip=True)
                 if len(text) > 3 and len(text) < 100 and not any(x in text.lower() for x in ['am', 'pm', 'min', 'hour']):
                     if not elem.find('h3') and not elem.find('a'):
-                        location = text
+                        location = clean_luma_location(text)
                         break
-            
+
             events.append({
                 'title': title,
                 'date': date_str,
@@ -128,23 +172,46 @@ async def scrape_luma(city: str = None) -> list:
                 'location': location,
                 'link': event_url,
                 'description': '',
-                'source': 'Luma'
+                'source': 'Luma',
+                'city': city_code
             })
-            
+
         except Exception as e:
             print(f"Error parsing card: {e}")
             continue
-    
+
     print(f"Extracted {len(events)} events")
-    
-    # Save results
+
+    # Enrich from event pages when missing description/location
+    for event in events:
+        if not event.get('description') or event.get('location') == "Location TBA":
+            details = await fetch_luma_details(event['link'])
+            if details.get('description') and not event.get('description'):
+                event['description'] = details['description']
+            if details.get('location') and event.get('location') == "Location TBA":
+                event['location'] = details['location']
+        await asyncio.sleep(0.3)
+
+    # Save results (city-scoped)
+    out_data = {'cities': {}, 'last_updated': datetime.now().isoformat()}
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, 'r') as f:
+                existing = json.load(f)
+                if isinstance(existing, dict) and existing.get('cities'):
+                    out_data['cities'] = existing['cities']
+        except:
+            pass
+
+    out_data['cities'][city_code] = {
+        'events': events,
+        'total': len(events),
+        'last_updated': datetime.now().isoformat()
+    }
+
     with open(output_file, 'w') as f:
-        json.dump({
-            'events': events,
-            'total': len(events),
-            'last_updated': datetime.now().isoformat()
-        }, f, indent=2)
-    
+        json.dump(out_data, f, indent=2)
+
     print(f"✓ Saved {len(events)} events to {output_file}")
     return events
 
@@ -158,3 +225,4 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+

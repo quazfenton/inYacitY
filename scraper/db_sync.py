@@ -15,7 +15,7 @@ Handles:
 import asyncio
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Tuple
 import hashlib
 from config_loader import get_config
@@ -181,7 +181,7 @@ class EventDataValidator:
             cleaned['location'] = EventDataValidator.clean_location(cleaned['location'])
         
         # Add computed fields
-        cleaned['scraped_at'] = datetime.utcnow().isoformat()
+        cleaned['scraped_at'] = datetime.now(timezone.utc).isoformat()
         
         # 2D Tagging: Price Tier and Category
         cleaned['price_tier'] = EventDataValidator.determine_price_tier(cleaned)
@@ -282,38 +282,66 @@ class SupabaseSync:
             
             client: Client = create_client(self.api_url, self.api_key)
             
-            # Use upsert with onConflict to handle duplicates at database level (O(1) per event)
-            # This is much more efficient than fetching all existing hashes
+            # Check for existing events by hash and link
+            existing_hashes = set()
+            existing_links = set()
+            try:
+                response = client.table(self.events_table).select('event_hash,link').execute()
+                if response.data:
+                    existing_hashes = {row['event_hash'] for row in response.data}
+                    existing_links = {row['link'] for row in response.data}
+            except Exception as e:
+                print(f"[WARN] Could not check existing events: {e}")
+            
+            # Filter out events already in DB by hash or link, and deduplicate by link within batch
+            seen_links = set()
+            new_events = []
+            for e in valid_events:
+                link = e.get('link', '')
+                if e.get('event_hash') in existing_hashes:
+                    continue
+                if link in existing_links or link in seen_links:
+                    continue
+                seen_links.add(link)
+                new_events.append(e)
+            
+            skipped = len(valid_events) - len(new_events)
+            if skipped > 0:
+                print(f"[INFO] Skipping {skipped} events already in database")
+            
+            if not new_events:
+                return (True, 0, [])
+            
+            print(f"[INFO] Inserting {len(new_events)} new events...")
+            
             batch_size = 100
             total_inserted = 0
-            total_duplicates = 0
+            total_skipped = 0
             
-            for i in range(0, len(valid_events), batch_size):
-                batch = valid_events[i:i + batch_size]
+            for i in range(0, len(new_events), batch_size):
+                batch = new_events[i:i + batch_size]
+                batch_num = (i // batch_size) + 1
                 
                 try:
-                    # Use upsert with ignore to skip duplicates based on event_hash
-                    response = client.table(self.events_table).upsert(
-                        batch, 
-                        on_conflict='event_hash',
-                        ignore_duplicates=True
-                    ).execute()
-                    
-                    # Count results - response.data contains inserted records
-                    inserted_count = len(response.data) if response.data else 0
-                    total_inserted += inserted_count
-                    total_duplicates += len(batch) - inserted_count
-                    
+                    response = client.table(self.events_table).insert(batch).execute()
+                    inserted = len(response.data) if response.data else len(batch)
+                    total_inserted += inserted
+                    print(f"  Batch {batch_num}: inserted {inserted} events")
                 except Exception as e:
                     error_msg = str(e)
-                    # Check if it's a duplicate key error
-                    if 'duplicate key' in error_msg.lower() or 'unique constraint' in error_msg.lower():
-                        total_duplicates += len(batch)
-                        continue
-                    return (False, total_inserted, [f"Batch insert failed: {error_msg}"])
+                    if 'duplicate' in error_msg.lower() or 'unique constraint' in error_msg.lower():
+                        print(f"  Batch {batch_num}: conflict, inserting one-by-one...")
+                        for event in batch:
+                            try:
+                                resp = client.table(self.events_table).insert(event).execute()
+                                total_inserted += 1
+                            except Exception:
+                                total_skipped += 1
+                    else:
+                        return (False, total_inserted, [f"Batch insert failed: {error_msg}"])
             
-            if total_duplicates > 0:
-                print(f"[INFO] Skipped {total_duplicates} duplicate events (already in database)")
+            if total_skipped > 0:
+                print(f"[INFO] Skipped {total_skipped} conflicting events during insert")
             
             return (True, total_inserted, [])
             
@@ -462,11 +490,11 @@ class DeduplicationTracker:
             self.data['events'][event_hash] = {
                 'title': event.get('title'),
                 'date': event.get('date'),
-                'added_at': datetime.utcnow().isoformat(),
+                'added_at': datetime.now(timezone.utc).isoformat(),
                 'db_synced': db_synced
             }
         
-        self.data['last_updated'] = datetime.utcnow().isoformat()
+        self.data['last_updated'] = datetime.now(timezone.utc).isoformat()
         self._save_tracker()
 
     def is_tracked(self, event_hash: str) -> bool:
@@ -526,7 +554,7 @@ class DatabaseSyncManager:
         # 5+ = sync on every run
         return sync_mode >= 5
     
-    async def sync_events(self, events_file: str = "all_events.json") -> Dict:
+    async def sync_events(self, events_file: str = None) -> Dict:
         """
         Sync events from file to database
         
@@ -546,6 +574,20 @@ class DatabaseSyncManager:
             'new_duplicates_removed': 0,
             'past_events_removed': 0
         }
+        
+        # Resolve events file path - check current dir, then fronto/public
+        if events_file is None:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            candidates = [
+                os.path.join(script_dir, "all_events.json"),
+                os.path.join(script_dir, "..", "fronto", "src", "public", "all_events.json"),
+            ]
+            for candidate in candidates:
+                if os.path.exists(candidate):
+                    events_file = candidate
+                    break
+            if events_file is None:
+                events_file = candidates[0]
         
         # Check if file exists
         if not os.path.exists(events_file):
@@ -580,9 +622,9 @@ class DatabaseSyncManager:
             result['events_synced'] = inserted
             result['errors'].extend(errors)
             
-            # Track successfully synced events (only those that were actually inserted)
-            if success and inserted > 0:
-                self.tracker.add_events(events[:inserted])
+            # Track all events that are confirmed in the DB (inserted or already there as duplicates)
+            if success:
+                self.tracker.add_events(events, db_synced=True)
         else:
             print("⚠ Supabase not configured, skipping database sync")
             result['errors'].append("Supabase not configured: check SUPABASE_URL and SUPABASE_KEY")
@@ -611,10 +653,6 @@ async def main():
         print(f"Supabase Key: {'*' * 10}...{manager.sync.api_key[-4:]}")
     else:
         print("Supabase Key: NOT SET")
-    
-    # Check if should sync (for testing, assume run_count = 1)
-    should_sync = await manager.should_sync(run_count=1)
-    print(f"\nShould sync: {should_sync}")
     
     # Sync events
     result = await manager.sync_events()

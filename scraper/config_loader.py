@@ -27,6 +27,11 @@ class Config:
     def load(self, config_file: str = "config.json") -> None:
         """Load configuration from JSON file"""
         try:
+            if not os.path.isabs(config_file) and not os.path.exists(config_file):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                candidate = os.path.join(script_dir, config_file)
+                if os.path.exists(candidate):
+                    config_file = candidate
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     self._config = json.load(f)

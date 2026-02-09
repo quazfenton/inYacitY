@@ -344,32 +344,66 @@ class SupabaseSync:
             
             client: Client = create_client(self.api_url, self.api_key)
             
-            # Check for duplicates by event_hash
+            # Check for existing events by hash and link
             existing_hashes = set()
+            existing_links = set()
             try:
-                response = client.table(self.events_table).select('event_hash').execute()
-                existing_hashes = {row['event_hash'] for row in response.data if response.data}
+                response = client.table(self.events_table).select('event_hash,link').execute()
+                if response.data:
+                    existing_hashes = {row['event_hash'] for row in response.data}
+                    existing_links = {row['link'] for row in response.data}
             except Exception as e:
                 print(f"⚠ Could not check for existing events: {e}")
             
-            # Filter new events
-            new_events = [e for e in valid_events if e['event_hash'] not in existing_hashes]
+            # Filter out events already in DB by hash or link, and deduplicate by link within batch
+            seen_links = set()
+            new_events = []
+            for e in valid_events:
+                link = e.get('link', '')
+                if e.get('event_hash') in existing_hashes:
+                    continue
+                if link in existing_links or link in seen_links:
+                    continue
+                seen_links.add(link)
+                new_events.append(e)
+            
+            skipped = len(valid_events) - len(new_events)
+            if skipped > 0:
+                print(f"[INFO] Skipping {skipped} events already in database")
             
             if not new_events:
-                return (True, 0, ["All events already exist in database"])
+                return (True, 0, [])
             
-            # Insert in batches (Supabase batch limit)
+            print(f"[INFO] Inserting {len(new_events)} new events...")
+            
             batch_size = 100
             total_inserted = 0
+            total_skipped = 0
             
             for i in range(0, len(new_events), batch_size):
                 batch = new_events[i:i + batch_size]
+                batch_num = (i // batch_size) + 1
                 
                 try:
                     response = client.table(self.events_table).insert(batch).execute()
-                    total_inserted += len(batch)
+                    inserted = len(response.data) if response.data else len(batch)
+                    total_inserted += inserted
+                    print(f"  Batch {batch_num}: inserted {inserted} events")
                 except Exception as e:
-                    return (False, total_inserted, [f"Batch insert failed: {str(e)}"])
+                    error_msg = str(e)
+                    if 'duplicate' in error_msg.lower() or 'unique constraint' in error_msg.lower():
+                        print(f"  Batch {batch_num}: conflict, inserting one-by-one...")
+                        for event in batch:
+                            try:
+                                resp = client.table(self.events_table).insert(event).execute()
+                                total_inserted += 1
+                            except Exception:
+                                total_skipped += 1
+                    else:
+                        return (False, total_inserted, [f"Batch insert failed: {error_msg}"])
+            
+            if total_skipped > 0:
+                print(f"[INFO] Skipped {total_skipped} conflicting events during insert")
             
             return (True, total_inserted, [])
             
@@ -631,7 +665,7 @@ class DatabaseSyncManager:
         # 5+ = sync on every run
         return sync_mode >= 5
     
-    async def sync_events(self, events_file: str = "all_events.json") -> Dict:
+    async def sync_events(self, events_file: str = None) -> Dict:
         """
         Sync events from file to database
         
@@ -651,6 +685,20 @@ class DatabaseSyncManager:
             'new_duplicates_removed': 0,
             'past_events_removed': 0
         }
+
+        # Resolve events file path - check current dir, then fronto/public
+        if events_file is None:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            candidates = [
+                os.path.join(script_dir, "all_events.json"),
+                os.path.join(script_dir, "..", "fronto", "public", "all_events.json"),
+            ]
+            for candidate in candidates:
+                if os.path.exists(candidate):
+                    events_file = candidate
+                    break
+            if events_file is None:
+                events_file = candidates[0]
 
         # Check if file exists
         if not os.path.exists(events_file):
@@ -723,10 +771,6 @@ class DatabaseSyncManager:
 async def main():
     """Test database sync"""
     manager = DatabaseSyncManager()
-    
-    # Check if should sync (for testing, assume run_count = 1)
-    should_sync = await manager.should_sync(run_count=1)
-    print(f"Should sync: {should_sync}")
     
     # Sync events
     result = await manager.sync_events()

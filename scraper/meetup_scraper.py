@@ -23,6 +23,8 @@ def parse_iso_datetime(dt_str: str) -> tuple:
     """Parse ISO datetime to (date, time)."""
     if not dt_str:
         return ("", "")
+    if dt_str.endswith('Z'):
+        return ("", "")
     try:
         cleaned = normalize_iso(dt_str.replace('Z', '+00:00'))
         dt = datetime.fromisoformat(cleaned)
@@ -67,6 +69,7 @@ async def fetch_meetup_details(url: str) -> dict:
 
     time_elem = soup.find('time', class_=re.compile(r'block', re.I)) or soup.find('time')
     if time_elem:
+        time_text = time_elem.get_text(strip=True)
         dt_attr = time_elem.get('datetime')
         if dt_attr:
             date_val, time_val = parse_iso_datetime(dt_attr)
@@ -74,12 +77,12 @@ async def fetch_meetup_details(url: str) -> dict:
                 details['date'] = date_val
             if time_val:
                 details['time'] = time_val
-        else:
-            date_val, time_val = parse_date_time_text(time_elem.get_text(strip=True))
-            if date_val:
-                details['date'] = date_val
-            if time_val:
-                details['time'] = time_val
+        # Prefer visible text if present (avoids timezone shifts)
+        date_val, time_val = parse_date_time_text(time_text)
+        if date_val:
+            details['date'] = date_val
+        if time_val:
+            details['time'] = time_val
 
     loc_elem = soup.find('p', class_=re.compile(r'text-ds2-text-fill-tertiary-enabled', re.I))
     if loc_elem:
@@ -192,8 +195,12 @@ async def scrape_meetup(location: str = None) -> list:
                         dt_attr = time_elem.get('datetime')
                         if dt_attr:
                             date_val, time_val = parse_iso_datetime(dt_attr)
-                        else:
-                            date_val, time_val = parse_date_time_text(time_elem.get_text(strip=True))
+                        # Prefer visible text if present
+                        date_text_val, time_text_val = parse_date_time_text(time_elem.get_text(strip=True))
+                        if date_text_val:
+                            date_val = date_text_val
+                        if time_text_val:
+                            time_val = time_text_val
 
                 events.append({
                     'title': title,

@@ -560,7 +560,9 @@ class DatabaseSyncManager:
             
             # Clean up old events from tracker
             removed = self.tracker.remove_past_events(days=30)
-            result['past_events_removed'] = removed\n            # NOTE: keep events file for frontend cache\n        
+            result['past_events_removed'] = removed
+            # NOTE: keep events file for frontend cache
+        
         return result
 
 
@@ -589,5 +591,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
 
 

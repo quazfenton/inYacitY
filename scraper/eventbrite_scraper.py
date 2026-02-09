@@ -98,6 +98,16 @@ def clean_description(desc_text: str) -> str:
     return text
 
 
+def clean_location_text(text: str) -> str:
+    if not text:
+        return "Location TBA"
+    cleaned = re.sub(r'\s+', ' ', text).strip()
+    cleaned = re.sub(r'^(Almost full|Sales end soon|Going fast)\s*', '', cleaned, flags=re.I).strip()
+    if cleaned.lower() in {"almost full", "sales end soon", "going fast"}:
+        return "Location TBA"
+    return cleaned or "Location TBA"
+
+
 def parse_card_date_time_and_location(card) -> tuple:
     """Parse date/time/location from card text blocks."""
     date_text = ""
@@ -108,13 +118,15 @@ def parse_card_date_time_and_location(card) -> tuple:
         text = p.get_text(strip=True)
         if not text:
             continue
+        if re.search(r'Almost full|Sales end soon|Going fast', text, re.I):
+            continue
         if re.search(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|\d{1,2}:\d{2})', text, re.I):
             if not date_text:
                 date_text = text
                 continue
         if location == "Location TBA" and not re.search(r'^\d{1,2}:\d{2}', text):
             if len(text) > 3 and len(text) < 120:
-                location = text
+                location = clean_location_text(text)
 
     return date_text, location
 
@@ -183,13 +195,13 @@ def parse_events_from_html(html: str) -> list:
             location = "Location TBA"
             location_elem = card.find(attrs={'data-testid': re.compile(r'location|venue', re.I)})
             if location_elem:
-                location = location_elem.get_text(strip=True)
+                location = clean_location_text(location_elem.get_text(strip=True))
             else:
                 _, location = parse_card_date_time_and_location(card)
                 if location == "Location TBA":
                     loc_match = re.search(r'([A-Za-z\s]+,\s*[A-Z]{2})', card.get_text())
                     if loc_match:
-                        location = loc_match.group(1)
+                        location = clean_location_text(loc_match.group(1))
 
             events.append({
                 'title': title,

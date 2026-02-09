@@ -51,6 +51,16 @@ def parse_datetime_from_text(text: str) -> tuple:
     return (date_val, time_val)
 
 
+def clean_dice_description(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = re.sub(r'\s+', ' ', text).strip()
+    if ' About ' in cleaned:
+        cleaned = cleaned.split(' About ', 1)[1].strip()
+    cleaned = re.sub(r'^.*?No surprises later\.\s*', '', cleaned, flags=re.I).strip()
+    return cleaned
+
+
 async def fetch_dice_details(url: str) -> dict:
     """Fetch description/date/time/location from Dice event page."""
     html = await fetch_page(url, use_firecrawl_fallback=True)
@@ -70,7 +80,7 @@ async def fetch_dice_details(url: str) -> dict:
 
     desc_container = soup.find(class_=re.compile(r'EventDetailsLayout__Content', re.I))
     if desc_container:
-        details['description'] = desc_container.get_text(" ", strip=True)[:500]
+        details['description'] = clean_dice_description(desc_container.get_text(" ", strip=True))[:500]
 
     return details
 

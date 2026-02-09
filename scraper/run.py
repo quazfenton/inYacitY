@@ -17,7 +17,7 @@ from eventbrite_scraper import scrape_eventbrite
 from meetup_scraper import scrape_meetup
 from luma_scraper import scrape_luma
 from dice_scraper import scrape_dice
-from ra_scraper import scrape_ra
+from residad_scraper import scrape_ra
 from posh_vip import scrape_posh_vip
 
 BASE_DIR = os.path.dirname(__file__)

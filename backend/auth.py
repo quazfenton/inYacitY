@@ -10,7 +10,7 @@ import os
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models.users import UserAccount, UserStore, UserRole
-from database import get_db, SessionLocal
+from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 

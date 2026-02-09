@@ -1,5 +1,5 @@
 {
-  "LOCATION": "fl--miami",
+  "LOCATION": "ga--atlanta",
   "SUPPORTED_LOCATIONS": [
     "ca--los-angeles",
     "ny--new-york",
@@ -87,7 +87,7 @@
       }
     },
     "POSH_VIP": {
-      "enabled": false,
+      "enabled": true,
       "manual_trigger_only": true,
       "category_tag": "club",
       "city_map": {

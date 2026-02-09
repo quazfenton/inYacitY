@@ -20,6 +20,27 @@ from typing import List, Dict, Optional, Tuple
 import hashlib
 from config_loader import get_config
 
+# Load environment variables from .env file if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    # Load from .env file in the same directory as this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(script_dir, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path, override=False)
+        print(f"[OK] Loaded environment from {env_path}")
+    else:
+        # Try parent directory (project root)
+        parent_env = os.path.join(script_dir, '..', '.env')
+        if os.path.exists(parent_env):
+            load_dotenv(dotenv_path=parent_env, override=False)
+            print(f"[OK] Loaded environment from {parent_env}")
+        else:
+            print("[WARN] No .env file found, using global environment variables")
+except ImportError:
+    print("[WARN] python-dotenv not installed, using global environment variables only")
+    pass
+
 
 class EventDataValidator:
     """Validate and standardize event data"""
@@ -115,6 +136,12 @@ class EventDataValidator:
             else:
                 cleaned[field] = str(event[field]).strip()
         
+        # City field (important for filtering)
+        if 'city' in event and event['city']:
+            cleaned['city'] = str(event['city']).strip()
+        elif 'city_id' in event and event['city_id']:
+            cleaned['city'] = str(event['city_id']).strip()
+        
         # Optional fields with validation
         if 'time' in event:
             cleaned['time'] = str(event.get('time', 'TBA')).strip()
@@ -172,6 +199,7 @@ class EventDataValidator:
             event.get('title', '').lower().strip(),
             event.get('date', ''),
             event.get('location', '').lower().strip(),
+            event.get('city', '').lower().strip(),
             event.get('source', '')
         ]
         key_string = '|'.join(key_parts)
@@ -235,12 +263,18 @@ class SupabaseSync:
         valid_events, invalid_events, errors = EventDataValidator.validate_batch(events)
         
         if invalid_events:
-            print(f"⚠ Skipping {len(invalid_events)} invalid events")
+            print(f"[WARN] Skipping {len(invalid_events)} invalid events")
             for invalid in invalid_events[:5]:  # Show first 5 errors
                 print(f"  - {invalid['event'].get('title', 'Unknown')}: {invalid['errors']}")
         
         if not valid_events:
             return (False, 0, ["No valid events to insert"])
+        
+        # Debug: Check if description is present in first event
+        if valid_events:
+            first_event = valid_events[0]
+            print(f"✓ First event has description: {'description' in first_event}")
+            print(f"✓ Description length: {len(first_event.get('description', ''))} chars")
         
         try:
             # Import Supabase client (lazy load)
@@ -248,32 +282,38 @@ class SupabaseSync:
             
             client: Client = create_client(self.api_url, self.api_key)
             
-            # Check for duplicates by event_hash
-            existing_hashes = set()
-            try:
-                response = client.table(self.events_table).select('event_hash').execute()
-                existing_hashes = {row['event_hash'] for row in response.data if response.data}
-            except Exception as e:
-                print(f"⚠ Could not check for existing events: {e}")
-            
-            # Filter new events
-            new_events = [e for e in valid_events if e['event_hash'] not in existing_hashes]
-            
-            if not new_events:
-                return (True, 0, ["All events already exist in database"])
-            
-            # Insert in batches (Supabase batch limit)
+            # Use upsert with onConflict to handle duplicates at database level (O(1) per event)
+            # This is much more efficient than fetching all existing hashes
             batch_size = 100
             total_inserted = 0
+            total_duplicates = 0
             
-            for i in range(0, len(new_events), batch_size):
-                batch = new_events[i:i + batch_size]
+            for i in range(0, len(valid_events), batch_size):
+                batch = valid_events[i:i + batch_size]
                 
                 try:
-                    response = client.table(self.events_table).insert(batch).execute()
-                    total_inserted += len(batch)
+                    # Use upsert with ignore to skip duplicates based on event_hash
+                    response = client.table(self.events_table).upsert(
+                        batch, 
+                        on_conflict='event_hash',
+                        ignore_duplicates=True
+                    ).execute()
+                    
+                    # Count results - response.data contains inserted records
+                    inserted_count = len(response.data) if response.data else 0
+                    total_inserted += inserted_count
+                    total_duplicates += len(batch) - inserted_count
+                    
                 except Exception as e:
-                    return (False, total_inserted, [f"Batch insert failed: {str(e)}"])
+                    error_msg = str(e)
+                    # Check if it's a duplicate key error
+                    if 'duplicate key' in error_msg.lower() or 'unique constraint' in error_msg.lower():
+                        total_duplicates += len(batch)
+                        continue
+                    return (False, total_inserted, [f"Batch insert failed: {error_msg}"])
+            
+            if total_duplicates > 0:
+                print(f"[INFO] Skipped {total_duplicates} duplicate events (already in database)")
             
             return (True, total_inserted, [])
             
@@ -527,36 +567,22 @@ class DatabaseSyncManager:
             result['success'] = True
             return result
         
-        # Filter out tracked events (duplicates)
-        new_events = []
-        for event in events:
-            event_hash = event.get('event_hash', EventDataValidator.generate_event_hash(event))
-            if not self.tracker.is_tracked(event_hash):
-                new_events.append(event)
-            else:
-                result['new_duplicates_removed'] += 1
-        
-        if not new_events:
-            result['success'] = True
-            print("ℹ No new events to sync")
-            return result
-        
-        print(f"Syncing {len(new_events)} events to database...")
+        print(f"Found {len(events)} events to sync...")
         
         # Sync to database if configured
         if self.sync.is_configured():
-            success, inserted, errors = await self.sync.insert_events(new_events)
+            success, inserted, errors = await self.sync.insert_events(events)
             result['success'] = success
             result['events_synced'] = inserted
             result['errors'].extend(errors)
+            
+            # Track successfully synced events (only those that were actually inserted)
+            if success and inserted > 0:
+                self.tracker.add_events(events[:inserted])
         else:
             print("⚠ Supabase not configured, skipping database sync")
-            result['success'] = True
-            result['events_synced'] = len(new_events)
-        
-        # Add new events to tracker
-        if result['success']:
-            self.tracker.add_events(new_events)
+            result['errors'].append("Supabase not configured: check SUPABASE_URL and SUPABASE_KEY")
+            result['success'] = False
             
             # Clean up old events from tracker
             removed = self.tracker.remove_past_events(days=30)
@@ -570,9 +596,21 @@ async def main():
     """Test database sync"""
     manager = DatabaseSyncManager()
     
+    # Debug: Show Supabase configuration status
+    print("\n=== SUPABASE CONFIG ===")
+    print(f"Supabase configured: {manager.sync.is_configured()}")
+    if manager.sync.api_url:
+        print(f"Supabase URL: {manager.sync.api_url[:30]}...")
+    else:
+        print("Supabase URL: NOT SET")
+    if manager.sync.api_key:
+        print(f"Supabase Key: {'*' * 10}...{manager.sync.api_key[-4:]}")
+    else:
+        print("Supabase Key: NOT SET")
+    
     # Check if should sync (for testing, assume run_count = 1)
     should_sync = await manager.should_sync(run_count=1)
-    print(f"Should sync: {should_sync}")
+    print(f"\nShould sync: {should_sync}")
     
     # Sync events
     result = await manager.sync_events()

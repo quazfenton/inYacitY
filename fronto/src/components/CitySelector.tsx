@@ -55,8 +55,11 @@ export const CitySelector: React.FC<CityListProps> = ({
   const [nearestCity, setNearestCity] = useState<string | null>(null);
   const [nearbyLocations, setNearbyLocations] = useState<City[]>([]);
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
+  const [typedSearch, setTypedSearch] = useState('');
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const selectedCityRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load major cities on mount
   useEffect(() => {
@@ -76,6 +79,60 @@ export const CitySelector: React.FC<CityListProps> = ({
       scrollToCity();
     }
   }, [selectedCity]);
+
+  // Type-ahead search functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Handle letters only
+      if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) {
+        e.preventDefault();
+        
+        const newSearch = typedSearch + e.key.toLowerCase();
+        setTypedSearch(newSearch);
+        
+        // Filter cities based on search
+        const matching = cities.filter(city => 
+          city.name.toLowerCase().startsWith(newSearch) ||
+          city.state.toLowerCase().startsWith(newSearch)
+        );
+        
+        if (matching.length > 0) {
+          setFilteredCities(matching);
+          // Scroll to first match
+          const firstMatch = matching[0];
+          setSelectedCity(firstMatch.code);
+        }
+
+        // Clear search after 1.5 seconds of inactivity
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+          setTypedSearch('');
+          setFilteredCities([]);
+        }, 1500);
+      }
+
+      // Escape clears search
+      if (e.key === 'Escape') {
+        setTypedSearch('');
+        setFilteredCities([]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [cities, typedSearch]);
 
   /**
    * Fetch major cities from API
@@ -205,10 +262,42 @@ export const CitySelector: React.FC<CityListProps> = ({
     let scrollTop = elementTop - (containerHeight - elementHeight) / 2;
     scrollTop = Math.max(0, Math.min(scrollTop, container.scrollHeight - containerHeight));
 
-    container.scrollTo({
-      top: scrollTop,
-      behavior: 'smooth'
-    });
+    // Slower, smoother scroll with custom duration
+    const startTop = container.scrollTop;
+    const distance = scrollTop - startTop;
+    const duration = 800; // Slightly slower (800ms instead of default ~300ms)
+    const startTime = performance.now();
+
+    const animateScroll = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out cubic for smoother feel
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      container.scrollTop = startTop + (distance * easeOut);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+
+    requestAnimationFrame(animateScroll);
+  }
+
+  /**
+   * Highlight matching letters in city name
+   */
+  function highlightMatch(name: string, search: string): string {
+    if (!search) return name;
+    const lowerName = name.toLowerCase();
+    const lowerSearch = search.toLowerCase();
+    if (lowerName.startsWith(lowerSearch)) {
+      const matched = name.substring(0, search.length);
+      const rest = name.substring(search.length);
+      return `<span class="highlight">${matched}</span>${rest}`;
+    }
+    return name;
   }
 
   /**
@@ -263,15 +352,34 @@ export const CitySelector: React.FC<CityListProps> = ({
 
       {/* Major cities list */}
       <div className="city-list-section">
-        <h3>Major Cities</h3>
+        <div className="city-list-header">
+          <h3>Major Cities</h3>
+          {typedSearch ? (
+            <div className="search-indicator">
+              <span className="search-letters">{typedSearch}</span>
+              <span className="search-hint">({filteredCities.length} found)</span>
+            </div>
+          ) : (
+            <span className="type-hint">Type to search...</span>
+          )}
+        </div>
         <div className="city-list-container" ref={containerRef}>
-          {cities.map((city) => (
+          {(filteredCities.length > 0 ? filteredCities : cities).map((city) => {
+            // Highlight matching letters if searching
+            const cityName = city.name;
+            const displayName = typedSearch 
+              ? highlightMatch(cityName, typedSearch)
+              : cityName;
+            
+            return (
             <div
               key={city.code}
               ref={city.code === selectedCity ? selectedCityRef : undefined}
               className={`city-item ${
                 city.code === selectedCity ? 'selected' : ''
-              } ${city.code === nearestCity ? 'nearest' : ''}`}
+              } ${city.code === nearestCity ? 'nearest' : ''} ${
+                filteredCities.find(c => c.code === city.code) ? 'search-match' : ''
+              }`}
               onClick={() => handleCitySelect(city.code)}
               role="button"
               tabIndex={0}
@@ -279,7 +387,7 @@ export const CitySelector: React.FC<CityListProps> = ({
                 if (e.key === 'Enter') handleCitySelect(city.code);
               }}
             >
-              <div className="city-name">{city.name}</div>
+              <div className="city-name" dangerouslySetInnerHTML={{ __html: displayName }} />
               <div className="city-meta">
                 {city.population && (
                   <span className="population">
@@ -295,7 +403,8 @@ export const CitySelector: React.FC<CityListProps> = ({
                 <div className="badge-selected-indicator">✓ Selected</div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -351,10 +460,45 @@ export const CitySelector: React.FC<CityListProps> = ({
           margin-bottom: 30px;
         }
 
+        .city-list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        }
+
         .city-list-section h3 {
-          margin: 0 0 15px 0;
+          margin: 0;
           font-size: 18px;
           color: #333;
+        }
+
+        .search-indicator {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+
+        .search-letters {
+          background: #2196F3;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-weight: bold;
+          font-family: monospace;
+          letter-spacing: 2px;
+        }
+
+        .search-hint {
+          color: #666;
+          font-size: 12px;
+        }
+
+        .type-hint {
+          color: #999;
+          font-size: 12px;
+          font-style: italic;
         }
 
         .city-list-container {
@@ -363,6 +507,28 @@ export const CitySelector: React.FC<CityListProps> = ({
           max-height: 400px;
           overflow-y: auto;
           background: white;
+          scroll-behavior: smooth;
+          /* Slower, smoother scrolling for mouse wheel */
+          scroll-padding: 20px;
+        }
+
+        /* Webkit scrollbar styling for smoother appearance */
+        .city-list-container::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .city-list-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+
+        .city-list-container::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 4px;
+        }
+
+        .city-list-container::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
         }
 
         .city-item {
@@ -392,6 +558,21 @@ export const CitySelector: React.FC<CityListProps> = ({
 
         .city-item.nearest {
           border-left: 4px solid #ff9800;
+        }
+
+        .city-item.search-match {
+          background-color: #fff8e1;
+        }
+
+        .city-item.search-match:hover {
+          background-color: #ffecb3;
+        }
+
+        .city-name .highlight {
+          background-color: #2196F3;
+          color: white;
+          padding: 0 2px;
+          border-radius: 2px;
         }
 
         .city-name {

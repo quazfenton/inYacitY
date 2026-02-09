@@ -23,7 +23,7 @@ from db_sync_enhanced import DatabaseSyncManager, SupabaseSync
 
 # Import comment system
 sys.path.insert(0, os.path.dirname(__file__))
-from backend.models.comments import RateLimiter, CommentValidator
+from ..models.comments import RateLimiter, CommentValidator
 
 scraper_api = Blueprint('scraper_api', __name__, url_prefix='/api/scraper')
 

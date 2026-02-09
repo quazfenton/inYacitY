@@ -1,9 +1,13 @@
-# Flask and Web Framework
+# FastAPI and Web Framework
+fastapi==0.100.0
+pydantic[email]==2.1.1
 Flask==2.3.2
 Flask-CORS==4.0.0
 Werkzeug==2.3.6
 
 # Database and ORM
+sqlalchemy[asyncio]==2.0.19
+asyncpg==0.28.0
 supabase==2.0.3
 psycopg2-binary==2.9.6
 

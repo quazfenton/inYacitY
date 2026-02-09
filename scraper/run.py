@@ -8,6 +8,7 @@ Integrated with database sync based on sync mode configuration
 import asyncio
 import json
 import os
+import hashlib
 from datetime import datetime
 from typing import List, Dict
 from config_loader import get_config
@@ -22,6 +23,97 @@ from posh_vip import scrape_posh_vip
 
 BASE_DIR = os.path.dirname(__file__)
 ALL_EVENTS_PATH = os.path.join(BASE_DIR, 'all_events.json')
+SCRAPER_TRACKER_PATH = os.path.join(BASE_DIR, 'scraper_tracker.json')
+
+
+class ScraperDeduplicationTracker:
+    """Track scraped events locally to avoid re-scraping duplicates"""
+    
+    def __init__(self, tracker_file: str = SCRAPER_TRACKER_PATH):
+        self.tracker_file = tracker_file
+        self.data = {'events': {}, 'last_updated': None}
+        self._load_tracker()
+    
+    def _load_tracker(self):
+        """Load tracker from file"""
+        if os.path.exists(self.tracker_file):
+            try:
+                with open(self.tracker_file, 'r') as f:
+                    self.data = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                self.data = {'events': {}, 'last_updated': None}
+    
+    def _save_tracker(self):
+        """Save tracker to file"""
+        self.data['last_updated'] = datetime.now().isoformat()
+        with open(self.tracker_file, 'w') as f:
+            json.dump(self.data, f, indent=2)
+    
+    def _generate_hash(self, event: Dict) -> str:
+        """Generate unique hash for event"""
+        import hashlib
+        key_parts = [
+            event.get('title', '').lower().strip(),
+            event.get('date', ''),
+            event.get('location', '').lower().strip(),
+            event.get('city', '').lower().strip()
+        ]
+        key_string = '|'.join(key_parts)
+        return hashlib.md5(key_string.encode()).hexdigest()
+    
+    def is_tracked(self, event: Dict) -> bool:
+        """Check if event has been tracked (O(1) lookup)"""
+        event_hash = self._generate_hash(event)
+        return event_hash in self.data['events']
+    
+    def add_events(self, events: List[Dict]):
+        """Add events to tracker"""
+        for event in events:
+            event_hash = self._generate_hash(event)
+            self.data['events'][event_hash] = {
+                'title': event.get('title', ''),
+                'date': event.get('date', ''),
+                'city': event.get('city', ''),
+                'tracked_at': datetime.now().isoformat()
+            }
+        self._save_tracker()
+    
+    def remove_synced_events(self, events: List[Dict]):
+        """Remove successfully synced events from tracker (call after db sync)"""
+        removed = 0
+        for event in events:
+            event_hash = self._generate_hash(event)
+            if event_hash in self.data['events']:
+                del self.data['events'][event_hash]
+                removed += 1
+        if removed > 0:
+            self._save_tracker()
+        return removed
+    
+    def remove_past_events(self, days: int = 30):
+        """Remove events older than specified days"""
+        from datetime import timedelta
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        
+        hashes_to_remove = []
+        for event_hash, event_data in self.data['events'].items():
+            if event_data.get('date', '2099-12-31') < cutoff_date:
+                hashes_to_remove.append(event_hash)
+        
+        for event_hash in hashes_to_remove:
+            del self.data['events'][event_hash]
+        
+        if hashes_to_remove:
+            self._save_tracker()
+        
+        return len(hashes_to_remove)
+    
+    def get_stats(self) -> Dict:
+        """Get tracker statistics"""
+        return {
+            'total_tracked': len(self.data['events']),
+            'last_updated': self.data['last_updated']
+        }
 
 
 def load_city_events_from_file(path: str, city_id: str) -> list:
@@ -54,6 +146,10 @@ async def run_all_scrapers():
 
     all_events = []
     scraper_results = {}
+    
+    # Initialize deduplication tracker
+    tracker = ScraperDeduplicationTracker()
+    print(f"[Tracker] {tracker.get_stats()['total_tracked']} events tracked from previous runs")
 
     # ===== EVENTBRITE =====
     if config.is_scraper_enabled('EVENTBRITE'):
@@ -132,23 +228,44 @@ async def run_all_scrapers():
         ]:
             all_events.extend(load_city_events_from_file(os.path.join(BASE_DIR, file_name), location))
 
-    # ===== MERGE AND SAVE =====
-    print(f"\n[MERGE] Merging results...")
+    # ===== DEDUPLICATION WITH TRACKER =====
+    print(f"\n[DEDUP] Checking against local tracker...")
     print("-" * 70)
-
+    
     # Ensure city is present
     for event in all_events:
         if not event.get('city'):
             event['city'] = location
-
-    # Remove duplicates by link
-    seen_links = {}
+    
+    # Filter out already-tracked events (O(n) with hash set lookup)
+    new_events = []
+    skipped_count = 0
     for event in all_events:
+        if tracker.is_tracked(event):
+            skipped_count += 1
+        else:
+            new_events.append(event)
+    
+    if skipped_count > 0:
+        print(f"[Tracker] Skipped {skipped_count} previously scraped events")
+    
+    # Remove duplicates by link (within this run)
+    seen_links = {}
+    for event in new_events:
         link = event.get('link', '')
         if link:
             seen_links[link] = event
-
+    
     unique_events = list(seen_links.values())
+    
+    # Add new unique events to tracker
+    if unique_events:
+        tracker.add_events(unique_events)
+        print(f"[Tracker] Added {len(unique_events)} new events to tracker")
+
+    # ===== MERGE AND SAVE =====
+    print(f"\n[MERGE] Merging results...")
+    print("-" * 70)
 
     # Sort by date
     try:
@@ -208,13 +325,13 @@ async def run_all_scrapers():
 
     print("\n" + "=" * 70)
 
-    return unique_events
+    return unique_events, tracker
 
 
 async def main():
     """Main entry point"""
     try:
-        events = await run_all_scrapers()
+        events, tracker = await run_all_scrapers()
         print(f"\n✓ Scraping completed successfully")
 
         # ===== DATABASE SYNC INTEGRATION =====
@@ -259,6 +376,26 @@ async def main():
                 print("  - Errors encountered:")
                 for error in sync_result['errors']:
                     print(f"    • {error}")
+            
+            # Clean synced events from tracker if sync was successful
+            if sync_result['success'] and sync_result['events_synced'] > 0:
+                print("\n[Tracker] Cleaning synced events from local tracker...")
+                # Load events that were synced and remove them from tracker
+                if os.path.exists(ALL_EVENTS_PATH):
+                    try:
+                        with open(ALL_EVENTS_PATH, 'r') as f:
+                            synced_data = json.load(f)
+                            all_synced_events = []
+                            if isinstance(synced_data, dict) and synced_data.get('cities'):
+                                for city_data in synced_data['cities'].values():
+                                    all_synced_events.extend(city_data.get('events', []))
+                            else:
+                                all_synced_events = synced_data.get('events', [])
+                            
+                            removed = tracker.remove_synced_events(all_synced_events)
+                            print(f"[Tracker] Removed {removed} synced events from tracker")
+                    except Exception as e:
+                        print(f"[Tracker] Warning: Could not clean tracker: {e}")
         else:
             sync_interval = sync_mode if sync_mode > 0 else "never"
             print(f"\n[SYNC] Skipped (run {run_count}, interval: every {sync_interval} run{'s' if sync_mode != 1 else ''})")

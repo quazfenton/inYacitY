@@ -6,6 +6,7 @@ import VibeChart from './components/VibeChart';
 import ErrorBoundary from './components/ErrorBoundary';
 import AmbientMusic from './components/AmbientMusic';
 import ScrollHelper from './components/ScrollHelper';
+import EventFilterBar from './components/EventFilterBar';
 import { City, Event, ViewState, VibeData } from './types';
 import { ArrowLeft, Sparkles, X } from 'lucide-react';
 import {
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.LANDING);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [cities, setCities] = useState<City[]>([]);
@@ -69,6 +71,7 @@ const App: React.FC = () => {
       // Format events for frontend
       const formattedEvents = backendEvents.map(formatBackendEvent);
       setEvents(formattedEvents);
+      setFilteredEvents(formattedEvents);
       setInitialEventCount(formattedEvents.length);
       
       // Fetch vibe data for the selected city
@@ -87,6 +90,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Failed to load events:', error);
       setEvents([]);
+      setFilteredEvents([]);
       setInitialEventCount(0);
       // Set empty vibe data on error
       setVibeData([]);
@@ -141,6 +145,7 @@ const App: React.FC = () => {
       
       // Set final events
       setEvents(finalEvents);
+      setFilteredEvents(finalEvents);
       
       // Calculate new events
       const newCount = Math.max(0, finalEvents.length - initialEventCount);
@@ -268,7 +273,21 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Right Column: Events Feed */}
-                 <div className="lg:col-span-8">
+                 <div className="lg:col-span-8 space-y-6">
+                    {/* Event Filter Bar */}
+                    <EventFilterBar 
+                      events={events} 
+                      onFilterChange={setFilteredEvents}
+                    />
+
+                    {/* Events Count */}
+                    <div className="flex items-center justify-between text-xs font-mono text-zinc-500">
+                      <span>
+                        {filteredEvents.length} {filteredEvents.length === 1 ? 'EVENT' : 'EVENTS'}
+                        {filteredEvents.length !== events.length && ` (of ${events.length})`}
+                      </span>
+                    </div>
+
                     <div className="grid grid-cols-1 gap-6">
                        {loading && events.length === 0 ? (
                          <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono animate-pulse">
@@ -276,7 +295,7 @@ const App: React.FC = () => {
                          </div>
                        ) : loading && events.length > 0 ? (
                          <>
-                           {events.map((event, idx) => (
+                           {filteredEvents.map((event, idx) => (
                              <div 
                                key={event.id} 
                                className="animate-slide-in-up" 
@@ -292,28 +311,31 @@ const App: React.FC = () => {
                              LOADING MORE EVENTS...
                            </div>
                          </>
-                       ) : events.length === 0 ? (
+                       ) : filteredEvents.length === 0 ? (
                          <div className="py-20 text-center border border-zinc-800 border-dashed text-zinc-600 font-mono">
-                           NO EVENTS FOUND. TRY REFRESHING.
+                           {events.length === 0 
+                             ? 'NO EVENTS FOUND. TRY REFRESHING.'
+                             : 'NO EVENTS MATCH YOUR FILTERS.'
+                           }
                          </div>
                        ) : (
-                        events.map((event, idx) => (
-                          <div 
-                            key={event.id} 
-                            className="animate-slide-in-up" 
-                            style={{ 
-                              animationDelay: `${idx * 120}ms`,
-                              opacity: 0,
-                              animation: `slideInUp 0.6s ease-out forwards`,
-                              animationDelay: `${idx * 120}ms`
-                            }}
-                          >
-                            <EventCard event={event} />
-                          </div>
-                        ))
-                      )}
-                   </div>
-                </div>
+                         filteredEvents.map((event, idx) => (
+                           <div 
+                             key={event.id} 
+                             className="animate-slide-in-up" 
+                             style={{ 
+                               animationDelay: `${idx * 120}ms`,
+                               opacity: 0,
+                               animation: `slideInUp 0.6s ease-out forwards`,
+                               animationDelay: `${idx * 120}ms`
+                             }}
+                           >
+                             <EventCard event={event} />
+                           </div>
+                         ))
+                       )}
+                    </div>
+                 </div>
 
               </div>
             </div>

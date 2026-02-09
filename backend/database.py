@@ -140,7 +140,7 @@ def init_db():
 
     async def _create_tables():
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
     asyncio.run(_create_tables())
 
@@ -148,7 +148,7 @@ def init_db():
 async def init_db_async():
     """Create all tables in the database (async version)"""
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
 # Drop all tables (use with caution!)
 def drop_all_tables():
@@ -163,20 +163,28 @@ def drop_all_tables():
 
 # Helper functions for database operations
 async def save_events(events_data: list, city_id: str):
-    """Save or update events in the database"""
-    from sqlalchemy import select, update
+    """Save or update events in the database with optimized batch processing"""
+    from sqlalchemy import select, update, insert
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
     from datetime import datetime, date
     
+    if not events_data:
+        return {"saved": 0, "updated": 0}
+    
     async with AsyncSessionLocal() as session:
-        saved_count = 0
-        updated_count = 0
+        # Get all existing links in ONE query (O(1) instead of O(n))
+        links = [e.get('link', '') for e in events_data if e.get('link')]
+        existing_result = await session.execute(
+            select(Event.link).where(Event.link.in_(links))
+        )
+        existing_links = {row[0] for row in existing_result.fetchall()}
+        
+        # Separate into new and existing events
+        new_events = []
+        update_events = []
         
         for event_data in events_data:
-            # Check if event already exists
-            existing = await session.execute(
-                select(Event).where(Event.link == event_data.get('link'))
-            )
-            existing_event = existing.scalar_one_or_none()
+            link = event_data.get('link', '')
             
             # Parse date
             event_date = event_data.get('date')
@@ -188,31 +196,52 @@ async def save_events(events_data: list, city_id: str):
             elif not isinstance(event_date, date):
                 event_date = datetime.utcnow().date()
             
-            if existing_event:
-                # Update existing event
-                existing_event.title = event_data.get('title', existing_event.title)
-                existing_event.date = event_date
-                existing_event.time = event_data.get('time', existing_event.time)
-                existing_event.location = event_data.get('location', existing_event.location)
-                existing_event.description = event_data.get('description', existing_event.description)
-                existing_event.source = event_data.get('source', existing_event.source)
-                existing_event.city_id = city_id
-                existing_event.updated_at = datetime.utcnow()
-                updated_count += 1
+            event_dict = {
+                'title': event_data.get('title', 'Unknown'),
+                'link': link,
+                'date': event_date,
+                'time': event_data.get('time', 'TBA'),
+                'location': event_data.get('location', 'Location TBA'),
+                'description': event_data.get('description', ''),
+                'source': event_data.get('source', 'unknown'),
+                'city_id': city_id,
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            
+            if link in existing_links:
+                update_events.append(event_dict)
             else:
-                # Create new event
-                new_event = Event(
-                    title=event_data.get('title', 'Unknown'),
-                    link=event_data.get('link', ''),
-                    date=event_date,
-                    time=event_data.get('time', 'TBA'),
-                    location=event_data.get('location', 'Location TBA'),
-                    description=event_data.get('description', ''),
-                    source=event_data.get('source', 'unknown'),
-                    city_id=city_id
+                new_events.append(event_dict)
+        
+        # Bulk insert new events (ONE query instead of O(n))
+        saved_count = 0
+        if new_events:
+            await session.execute(
+                insert(Event),
+                new_events
+            )
+            saved_count = len(new_events)
+        
+        # Bulk update existing events (ONE query per batch)
+        updated_count = 0
+        if update_events:
+            for event_dict in update_events:
+                await session.execute(
+                    update(Event)
+                    .where(Event.link == event_dict['link'])
+                    .values(
+                        title=event_dict['title'],
+                        date=event_dict['date'],
+                        time=event_dict['time'],
+                        location=event_dict['location'],
+                        description=event_dict['description'],
+                        source=event_dict['source'],
+                        city_id=city_id,
+                        updated_at=datetime.utcnow()
+                    )
                 )
-                session.add(new_event)
-                saved_count += 1
+            updated_count = len(update_events)
         
         await session.commit()
         return {"saved": saved_count, "updated": updated_count}

@@ -381,7 +381,19 @@ async def scrape_city_events(city_id: str) -> Dict:
 
     with open(all_events_file, 'r') as f:
         data = json.load(f)
+        # Try to get events from the root level first
         events_data = data.get('events', [])
+        
+        # If no events at root, try to get from cities structure
+        if not events_data and 'cities' in data:
+            city_data = data['cities'].get(city_id, {})
+            events_data = city_data.get('events', [])
+            
+            # Also check for events in all cities if specific city not found
+            if not events_data:
+                for city_key, city_info in data['cities'].items():
+                    if isinstance(city_info, dict) and 'events' in city_info:
+                        events_data.extend(city_info['events'])
 
     # Add source to events if missing
     for event in events_data:

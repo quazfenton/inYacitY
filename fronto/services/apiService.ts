@@ -69,7 +69,59 @@ export async function getCities(): Promise<BackendCity[]> {
 }
 
 /**
- * Get events for a specific city with retry logic
+ * Load events from local cache file
+ */
+async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
+  try {
+    const response = await fetch('/cache/all_events.json');
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // Try to get events for specific city from nested structure
+    if (data.cities && data.cities[cityId]) {
+      const cityEvents = data.cities[cityId].events || [];
+      return cityEvents.map((event: any, index: number) => ({
+        id: index + 1,
+        title: event.title,
+        link: event.link,
+        date: event.date,
+        time: event.time || 'TBA',
+        location: event.location,
+        description: event.description || '',
+        source: event.source || 'unknown',
+        city_id: cityId,
+      }));
+    }
+    
+    // Fallback: try root level events and filter by city
+    if (data.events) {
+      return data.events
+        .filter((event: any) => event.city === cityId || event.city_id === cityId)
+        .map((event: any, index: number) => ({
+          id: index + 1,
+          title: event.title,
+          link: event.link,
+          date: event.date,
+          time: event.time || 'TBA',
+          location: event.location,
+          description: event.description || '',
+          source: event.source || 'unknown',
+          city_id: cityId,
+        }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.warn('Failed to load events from cache:', error);
+    return [];
+  }
+}
+
+/**
+ * Get events for a specific city with retry logic and cache fallback
  * @param cityId - The backend city ID (e.g., 'ca--los-angeles')
  * @param startDate - Optional start date filter
  * @param endDate - Optional end date filter
@@ -94,6 +146,12 @@ export async function getCityEvents(
 
       if (!response.ok) {
         if (response.status === 404) {
+          // Try cache as fallback
+          const cachedEvents = await loadEventsFromCache(cityId);
+          if (cachedEvents.length > 0) {
+            console.log(`[Cache Fallback] Loaded ${cachedEvents.length} events for ${cityId}`);
+            return cachedEvents;
+          }
           return []; // No events found for this city
         }
         if (response.status >= 500 && i < retries - 1) {
@@ -106,7 +164,15 @@ export async function getCityEvents(
 
       return response.json();
     } catch (error) {
-      if (i === retries - 1) throw error;
+      if (i === retries - 1) {
+        // Last attempt failed, try cache
+        const cachedEvents = await loadEventsFromCache(cityId);
+        if (cachedEvents.length > 0) {
+          console.log(`[Cache Fallback] Loaded ${cachedEvents.length} events for ${cityId} after API error`);
+          return cachedEvents;
+        }
+        throw error;
+      }
       // Retry after delay
       await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
     }

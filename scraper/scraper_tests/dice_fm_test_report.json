@@ -1,0 +1,142 @@
+{
+  "scraper": "dice_fm",
+  "timestamp": "2026-02-05T22:48:30.633192",
+  "metrics": {
+    "total_events": 24,
+    "errors": 0,
+    "duplicates": 0,
+    "completeness_rate": {
+      "title": 100.0,
+      "date": 100.0,
+      "time": 0.0,
+      "location": 100.0,
+      "link": 100.0,
+      "description": 0.0,
+      "price": 0.0,
+      "image": 0.0
+    },
+    "data_quality": {
+      "free_events": 0,
+      "paid_events": 0,
+      "valid_dates": 0,
+      "invalid_dates": 24,
+      "valid_times": 0,
+      "invalid_times": 0,
+      "avg_description_length": 0
+    },
+    "data_samples": {
+      "title_samples": [
+        "DJ Crenshaw",
+        "Book Launch: Molly Bendall & Elizabeth Robinson",
+        "Anastasia Coope, Syko Friend, Harmony Index, Delan"
+      ],
+      "location_samples": [
+        "Sid's Bar",
+        "2220 Arts + Archives",
+        "Zebulon",
+        "Los Globos",
+        "Gold-Diggers"
+      ],
+      "date_samples": [
+        "Thu, Feb 5",
+        "Thu, Feb 5",
+        "Thu, Feb 5"
+      ]
+    }
+  },
+  "events_sample": [
+    {
+      "title": "DJ Crenshaw",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "Sid's Bar",
+      "link": "https://dice.fm/event/537pok-dj-crenshaw-5th-feb-sids-bar-south-pasadena-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Book Launch: Molly Bendall & Elizabeth Robinson",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "2220 Arts + Archives",
+      "link": "https://dice.fm/event/av3wbx-book-launch-molly-bendall-elizabeth-robinson-5th-feb-2220-arts-archives-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Anastasia Coope, Syko Friend, Harmony Index, Delanova",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "Zebulon",
+      "link": "https://dice.fm/event/oeq72g-anastasia-coope-syko-friend-harmony-index-delanova-5th-feb-zebulon-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "FREE THURSDAYS",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "Los Globos",
+      "link": "https://dice.fm/event/l8bkvw-free-thursdays-5th-feb-los-globos-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "X\u2022ES Opening Party feat. sounds by DSD",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "Gold-Diggers",
+      "link": "https://dice.fm/event/oev275-xes-opening-party-feat-sounds-by-dsd-5th-feb-gold-diggers-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Nightshift Afterhours",
+      "date": "Thu, Feb 5",
+      "time": "",
+      "location": "Location TBA, Los Angeles",
+      "link": "https://dice.fm/event/2wk827-nightshift-afterhours-5th-feb-location-tba-los-angeles-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Sid The Cat Magazine Issue 3 Launch Party!",
+      "date": "Fri, Feb 6",
+      "time": "",
+      "location": "Sid's Bar",
+      "link": "https://dice.fm/event/ryne9q-sid-the-cat-magazine-issue-3-launch-party-6th-feb-sids-bar-south-pasadena-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "rocknite.la w/ Horse Rider, Shuggie Shooter, Folded Kite",
+      "date": "Fri, Feb 6",
+      "time": "",
+      "location": "Gold-Diggers",
+      "link": "https://dice.fm/event/dk3dk6-rocknitela-w-horse-rider-shuggie-shooter-folded-kite-6th-feb-gold-diggers-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Freak Scene With DJ Jenny LSQ",
+      "date": "Fri, Feb 6",
+      "time": "",
+      "location": "Sid's Bar",
+      "link": "https://dice.fm/event/yo6x2r-freak-scene-with-dj-jenny-lsq-6th-feb-sids-bar-south-pasadena-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    },
+    {
+      "title": "Anemone",
+      "date": "Fri, Feb 6",
+      "time": "",
+      "location": "The Airliner",
+      "link": "https://dice.fm/event/py9m5k-anemone-6th-feb-the-airliner-los-angeles-tickets",
+      "description": "",
+      "source": "Dice.fm"
+    }
+  ],
+  "total_events": 24,
+  "duplicates": 0,
+  "errors": []
+}

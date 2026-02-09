@@ -11,6 +11,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Optional
 import aiohttp
 import asyncio
+import html
 
 # Email configuration
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
@@ -31,19 +32,36 @@ def generate_email_template(city_name: str, events: list) -> str:
     events_html = ""
     
     for event in events:
+        title = html.escape(event.get('title', 'Unknown Event'))
+        date_val = html.escape(str(event.get('date', 'TBA')))
+        time_val = html.escape(event.get('time', 'TBA'))
+        location = html.escape(event.get('location', 'Location TBA'))
+        
+        desc = event.get('description', '')
+        if len(desc) > 200:
+            truncated = html.escape(desc[:200]) + "..."
+        else:
+            truncated = html.escape(desc)
+        
+        link = event.get('link')
+        link_html = ''
+        if link:
+            escaped_link = html.escape(link)
+            link_html = f'<a href="{escaped_link}" style="color: #ccff00; text-decoration: none; font-weight: bold;">VIEW EVENT →</a>'
+        
         events_html += f"""
         <div style="border-left: 3px solid #ccff00; padding-left: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 5px 0; color: #ffffff; font-size: 18px;">{event.get('title', 'Unknown Event')}</h3>
+            <h3 style="margin: 0 0 5px 0; color: #ffffff; font-size: 18px;">{title}</h3>
             <p style="margin: 5px 0; color: #a1a1aa; font-size: 14px;">
-                {event.get('date', 'TBA')} @ {event.get('time', 'TBA')}
+                {date_val} @ {time_val}
             </p>
             <p style="margin: 5px 0; color: #a1a1aa; font-size: 14px;">
-                {event.get('location', 'Location TBA')}
+                {location}
             </p>
             <p style="margin: 10px 0 0 0; color: #d4d4d8; font-size: 14px; line-height: 1.5;">
-                {event.get('description', '')[:200]}...
+                {truncated}
             </p>
-            {f'<a href="{event.get("link", "#")}" style="color: #ccff00; text-decoration: none; font-weight: bold;">VIEW EVENT →</a>' if event.get('link') else ''}
+            {link_html}
         </div>
         """
     

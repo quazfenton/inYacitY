@@ -18,10 +18,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Install Playwright browsers
+RUN pip install playwright
 RUN playwright install --with-deps chromium
 
 # Create logs directory
 RUN mkdir -p logs
+
+# Create a non-root user for running the application
+RUN useradd --create-home --shell /bin/bash --uid 1000 --user-group appuser
+
+# Change ownership of the application directory to the appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to the non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000

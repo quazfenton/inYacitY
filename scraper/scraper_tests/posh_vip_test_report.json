@@ -1,0 +1,39 @@
+{
+  "scraper": "posh_vip",
+  "timestamp": "2026-02-05T22:48:30.633383",
+  "metrics": {
+    "total_events": 0,
+    "errors": 1,
+    "duplicates": 0,
+    "completeness_rate": {
+      "title": 0,
+      "date": 0,
+      "time": 0,
+      "location": 0,
+      "link": 0,
+      "description": 0,
+      "price": 0,
+      "image": 0
+    },
+    "data_quality": {
+      "free_events": 0,
+      "paid_events": 0,
+      "valid_dates": 0,
+      "invalid_dates": 0,
+      "valid_times": 0,
+      "invalid_times": 0,
+      "avg_description_length": 0
+    },
+    "data_samples": {
+      "title_samples": [],
+      "location_samples": [],
+      "date_samples": []
+    }
+  },
+  "events_sample": [],
+  "total_events": 0,
+  "duplicates": 0,
+  "errors": [
+    "posh_vip_events.json not found - run scraper first"
+  ]
+}

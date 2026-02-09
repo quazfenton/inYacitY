@@ -10,7 +10,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool
-from datetime import datetime
+from datetime import datetime, date
 import os
 
 # Database URL from environment or default to PostgreSQL
@@ -28,7 +28,6 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_recycle=300,  # Recycle connections every 5 minutes
     pool_timeout=30,
-    max_lifetime=3600  # Max lifetime of connections
 )
 
 # Create async session factory
@@ -136,14 +135,20 @@ async def get_db():
 
 # Initialize database tables
 def init_db():
-    """Create all tables in the database"""
+    """Create all tables in the database (sync wrapper for compatibility)"""
     import asyncio
-    
+
     async def _create_tables():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-    
+
     asyncio.run(_create_tables())
+
+# Async version of init_db for use in async contexts
+async def init_db_async():
+    """Create all tables in the database (async version)"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 # Drop all tables (use with caution!)
 def drop_all_tables():
@@ -160,7 +165,7 @@ def drop_all_tables():
 async def save_events(events_data: list, city_id: str):
     """Save or update events in the database"""
     from sqlalchemy import select, update
-    from datetime import datetime
+    from datetime import datetime, date
     
     async with AsyncSessionLocal() as session:
         saved_count = 0
@@ -178,9 +183,9 @@ async def save_events(events_data: list, city_id: str):
             if isinstance(event_date, str):
                 try:
                     event_date = datetime.strptime(event_date, '%Y-%m-%d').date()
-                except:
+                except ValueError:
                     event_date = datetime.utcnow().date()
-            elif not isinstance(event_date, datetime.date):
+            elif not isinstance(event_date, date):
                 event_date = datetime.utcnow().date()
             
             if existing_event:

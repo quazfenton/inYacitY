@@ -43,7 +43,7 @@ echo $BROWSERBASE_API_KEY
 ```python
 import asyncio
 import os
-from accurate_scrape_dc_events_v2 import scrape_with_browserbase
+from scraper.scrapeevents import scrape_with_browserbase
 
 async def test():
     html = await scrape_with_browserbase("https://www.meetup.com/find/?location=us--ny--new-york")
@@ -100,7 +100,7 @@ echo $ANCHOR_BROWSER_API_KEY
 **4. Test the Integration**
 ```python
 import asyncio
-from accurate_scrape_dc_events_v2 import scrape_with_anchor_browser
+from scraper.scrapeevents import scrape_with_anchor_browser
 
 async def test():
     html = await scrape_with_anchor_browser("https://luma.com/houston")
@@ -141,6 +141,8 @@ The scraper will try:
 
 ```python
 # Automatic fallback chain
+from scraper.scrapeevents import scrape_with_api_fallback
+
 html = await scrape_with_api_fallback(
     url,
     fallback_order=["browserbase", "anchor_browser"]
@@ -212,40 +214,20 @@ These will be automatically available to scripts via `os.environ`.
 ```python
 import asyncio
 import os
-from accurate_scrape_dc_events_v2 import (
-    scrape_meetup_events,
-    scrape_luma_events,
-    scrape_with_api_fallback
-)
+from scraper.scrapeevents import scrape_with_api_fallback
 
 async def test_all():
     print("Testing Event Scraper Setup\n")
-    
+
     # Check API keys
     print("1. Checking API keys...")
     browserbase = bool(os.getenv("BROWSERBASE_API_KEY"))
     anchor = bool(os.getenv("ANCHOR_BROWSER_API_KEY"))
     print(f"   Browserbase configured: {browserbase}")
     print(f"   AnchorBrowser configured: {anchor}\n")
-    
-    # Test Meetup
-    print("2. Testing Meetup scraper...")
-    try:
-        meetup = await scrape_meetup_events("us--ny--new-york")
-        print(f"   ✓ Found {len(meetup)} events\n")
-    except Exception as e:
-        print(f"   ✗ Failed: {e}\n")
-    
-    # Test Luma
-    print("3. Testing Luma scraper...")
-    try:
-        luma = await scrape_luma_events("houston")
-        print(f"   ✓ Found {len(luma)} events\n")
-    except Exception as e:
-        print(f"   ✗ Failed: {e}\n")
-    
+
     # Test API fallback
-    print("4. Testing API fallback...")
+    print("2. Testing API fallback...")
     try:
         html = await scrape_with_api_fallback("https://example.com")
         if html:
@@ -254,7 +236,7 @@ async def test_all():
             print(f"   ✗ API fallback returned no content\n")
     except Exception as e:
         print(f"   ✗ API fallback failed: {e}\n")
-    
+
     print("Setup test complete!")
 
 asyncio.run(test_all())

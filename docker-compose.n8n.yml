@@ -1,0 +1,211 @@
+version: '3.8'
+
+# Complete n8n setup for Nocturne Daily Scraper
+# Usage: docker-compose -f docker-compose.n8n.yml up -d
+#
+# This file includes:
+# - n8n workflow engine
+# - PostgreSQL database (for n8n internal storage)
+# - Persistent volume for workflows
+
+services:
+  # PostgreSQL Database for n8n
+  # Stores workflow definitions, execution history, etc.
+  postgres:
+    image: postgres:15-alpine
+    container_name: nocturne_n8n_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD}
+      POSTGRES_DB: n8n
+      # Remove SSL requirement for local connections
+      POSTGRES_INITDB_ARGS: "-c ssl=off"
+    ports:
+      - "5433:5432"  # Expose on different port to avoid conflicts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nocturne_automation
+
+  # n8n Workflow Automation Engine
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: nocturne_n8n
+    restart: unless-stopped
+    depends_on:
+        postgres:
+          condition: service_healthy
+      ports:
+        - "5678:5678"
+      environment:
+        # Database Configuration
+        DB_TYPE: postgresdb
+        DB_POSTGRESDB_HOST: postgres
+        DB_POSTGRESDB_PORT: 5432
+        DB_POSTGRESDB_DATABASE: n8n
+        DB_POSTGRESDB_USER: n8n
+        DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-n8n_password_change_me}
+        DB_POSTGRESDB_SSL_ENABLED: "false"
+      
+        # n8n Server Configuration
+        N8N_HOST: 0.0.0.0
+        N8N_PORT: 5678
+        N8N_PROTOCOL: http
+      
+        # IMPORTANT: Generate with: head -c 32 /dev/urandom | base64
+        # This variable is REQUIRED for production. Encrypted credentials will not be protected without it.
+        N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      
+        # Timezone (for cron triggers)
+        TZ: UTC
+      
+        # Logging
+      LOG_LEVEL: info
+      
+      # Disable automatic workflow execution on startup
+      # (set to "true" if you want workflows to start automatically)
+      N8N_EXECUTE_EVERY_WEBHOOK: "false"
+      
+      # NOCTURNE CONFIGURATION (Set these!)
+      NOCTURNE_API_URL: ${NOCTURNE_API_URL:-http://nocturne-backend:8000}
+      
+      # SUPABASE CONFIGURATION (Set these!)
+      SUPABASE_URL: ${SUPABASE_URL:-https://your-project.supabase.co}
+      SUPABASE_KEY: ${SUPABASE_KEY:-your-anon-key}
+      SUPABASE_CREDENTIAL_TYPE: ${SUPABASE_CREDENTIAL_TYPE:-http}
+      
+      # SLACK CONFIGURATION (Optional)
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      
+      # NOTION CONFIGURATION (Optional)
+      NOTION_DATABASE_ID: ${NOTION_DATABASE_ID:-}
+      NOTION_API_KEY: ${NOTION_API_KEY:-}
+      
+      # Email Configuration (Optional - for notifications)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+          SMTP_FROM: ${SMTP_FROM:-noreply@nocturne.local}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nocturne_automation
+    labels:
+      - "com.example.description=Nocturne Daily Scraper Automation Engine"
+      # Optional: pgAdmin for database management
+      pgadmin:
+        image: dpage/pgadmin4:latest
+        container_name: nocturne_n8n_pgadmin
+        restart: unless-stopped
+        environment:
+          PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@nocturne.local}
+          PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD environment variable is required}
+        ports:
+          - "5050:80"
+        networks:
+          - nocturne_automation
+        profiles:
+      - tools  # Only start if explicitly requested: docker-compose --profile tools up
+
+volumes:
+  postgres_data:
+    driver: local
+  n8n_data:
+    driver: local
+
+networks:
+  nocturne_automation:
+    driver: bridge
+
+# USAGE INSTRUCTIONS:
+#
+# 1. Create .env file with required variables:
+#    cp docker-compose.n8n.yml .env.example
+#    Edit and fill in:
+#    - NOCTURNE_API_URL=http://your-backend-ip:8000
+#    - SUPABASE_URL=https://your-project.supabase.co
+#    - SUPABASE_KEY=your-key
+#    - N8N_ENCRYPTION_KEY (generate: head -c 32 /dev/urandom | base64)
+#
+# 2. Start services:
+#    docker-compose -f docker-compose.n8n.yml up -d
+#
+# 3. Wait for services to start (30 seconds):
+#    docker-compose -f docker-compose.n8n.yml logs -f n8n
+#
+# 4. Access n8n:
+#    http://localhost:5678
+#
+# 5. Import workflow:
+#    - Create new workflow
+#    - Import from file: nocturne-daily-scraper.json
+#
+# 6. Activate workflow:
+#    - Click "Activate" toggle
+#
+# 7. View execution history:
+#    - Workflow → Executions tab
+#
+# OPTIONAL: Start pgAdmin for database management:
+#    docker-compose -f docker-compose.n8n.yml --profile tools up -d pgadmin
+#    Access at: http://localhost:5050
+#    Login with: admin@nocturne.local / admin
+#
+# TROUBLESHOOTING:
+#
+# If n8n won't start:
+# - Check PostgreSQL is healthy: docker-compose ps
+# - Check logs: docker-compose logs n8n
+# - Verify N8N_ENCRYPTION_KEY is 32-char base64
+# - Check port 5678 isn't already in use
+#
+# If database won't connect:
+# - Check postgres is running: docker-compose ps postgres
+# - Check environment variables are set
+# - Verify DB_POSTGRESDB_PASSWORD matches POSTGRES_PASSWORD
+#
+# Reset everything (careful!):
+#    docker-compose down -v
+#    # This removes all data!
+#
+# SECURITY NOTES:
+#
+# 1. Generate a strong encryption key:
+#    head -c 32 /dev/urandom | base64
+#    Set as N8N_ENCRYPTION_KEY in .env
+#
+# 2. Change default passwords in .env:
+#    - N8N_DB_PASSWORD
+#    - PGADMIN_PASSWORD
+#
+# 3. Don't commit .env to git:
+#    echo ".env" >> .gitignore
+#
+# 4. For production, use:
+#    - Strong database password
+#    - HTTPS (reverse proxy with Let's Encrypt)
+#    - IP whitelisting
+#    - Firewall rules
+
+# PERFORMANCE TUNING:
+#
+# To increase max memory for Node processes:
+#    Add to environment: NODE_OPTIONS=--max-old-space-size=4096
+#
+# To enable n8n debug logging:
+#    Add to environment: DEBUG=n8n*
+#
+# To adjust log level:
+#    Change LOG_LEVEL to: debug, info, warn, error

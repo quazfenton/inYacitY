@@ -51,5 +51,5 @@ export const CITY_MAPPING: Record<string, City> = {
 export const CITIES: City[] = Object.values(CITY_MAPPING);
 
 // API configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 

@@ -1,0 +1,142 @@
+{
+  "LOCATION": "tx--austin",
+  "SUPPORTED_LOCATIONS": [
+    "ca--los-angeles",
+    "ny--new-york",
+    "dc--washington",
+    "fl--miami",
+    "tx--houston",
+    "il--chicago",
+    "az--phoenix",
+    "pa--philadelphia",
+    "ca--san-diego",
+    "tx--dallas",
+    "tx--austin",
+    "wa--seattle",
+    "co--denver",
+    "ma--boston",
+    "ga--atlanta",
+    "nv--las-vegas",
+    "ca--san-francisco"
+  ],
+  "BROWSER": {
+    "HEADLESS": true,
+    "TIMEOUT": 30000,
+    "WAIT_TIME": 2000,
+    "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "DATABASE": {
+    "SYNC_MODE": 5,
+    "COMMENTS": "0=disabled | 1-4=every Nth run | 5+=every run"
+  },
+  "SCRAPER_SETTINGS": {
+    "EVENTBRITE": {
+      "enabled": true,
+      "main_pages": 2,
+      "max_events_per_page": 50,
+      "base_url": "https://www.eventbrite.com/d/{location}/free--events/"
+    },
+    "MEETUP": {
+      "enabled": true,
+      "use_graphql": true,
+      "fetch_details": true
+    },
+    "LUMA": {
+      "enabled": true,
+      "fetch_details": true,
+      "location_map": {
+        "dc--washington": "dc",
+        "ny--new-york": "nyc",
+        "ca--los-angeles": "la",
+        "ca--san-francisco": "sf",
+        "tx--houston": "houston",
+        "il--chicago": "chicago",
+        "fl--miami": "miami"
+      }
+    },
+    "DICE_FM": {
+      "enabled": true,
+      "fetch_details": true,
+      "max_price": 0,
+      "city_map": {
+        "ca--los-angeles": "losangeles-5982e13c613de866017c3e3a",
+        "ny--new-york": "new_york-5bbf4db0f06331478e9b2c59",
+        "fl--miami": "miami-5e3bf1b0fe75488ec46cdf9f",
+        "il--chicago": "chicago-5b238ca66e4bcd93783835b0",
+        "tx--austin": "austin-5e3c24db136e51081e406ed3",
+        "ca--san-francisco": "sanfrancisco-60dee10ce5e339918757f0db",
+        "ca--san-diego": "san-diego-5e3c28af136e51081e406ed5",
+        "dc--washington": "washingtondc-5e3c290f136e51081e406ed6",
+        "ga--atlanta": "atlanta-5d8a48ddb2b23e9f85bd478d",
+        "wa--seattle": "seattle-5e3c245c136e51081e406ed1"
+      }
+    },
+    "RA_CO": {
+      "enabled": true,
+      "fetch_details": true,
+      "fetch_detail_pages": true,
+      "city_map": {
+        "ca--los-angeles": "us/losangeles",
+        "ny--new-york": "us/newyorkcity",
+        "ca--san-francisco": "us/sanfrancisco",
+        "dc--washington": "us/washingtondc",
+        "fl--miami": "us/miami",
+        "il--chicago": "us/chicago",
+        "tx--austin": "us/austin",
+        "co--denver": "us/denver",
+        "ma--boston": "us/boston",
+        "wa--seattle": "us/seattle",
+        "tx--houston": "us/houston",
+        "ga--atlanta": "us/atlanta"
+      }
+    },
+    "POSH_VIP": {
+      "enabled": false,
+      "fetch_details": false,
+      "manual_trigger_only": true,
+      "category_tag": "club",
+      "city_map": {
+        "ca--los-angeles": "los-angeles",
+        "ca--san-diego": "san-diego",
+        "ca--san-francisco": "san-francisco",
+        "dc--washington": "washington-dc",
+        "fl--miami": "miami",
+        "ga--atlanta": "atlanta",
+        "il--chicago": "chicago",
+        "ny--new-york": "new-york",
+        "pa--philadelphia": "philadelphia",
+        "tx--austin": "austin",
+        "tx--dallas": "dallas",
+        "tx--houston": "houston",
+        "wa--seattle": "seattle",
+        "co--denver": "denver",
+        "nv--las-vegas": "las-vegas",
+        "ma--boston": "boston"
+      }
+    }
+  },
+  "DATA": {
+    "PRICE_FILTER": {
+      "free_only": 0,
+      "under_20": 2000,
+      "under_50": 5000,
+      "no_filter": 1000000
+    },
+    "MIN_COMPLETENESS": 0.8,
+    "DEDUPLICATION": {
+      "url_based": true,
+      "content_based": true,
+      "hash_based": true
+    }
+  },
+  "OUTPUT": {
+    "MERGE_ALL": true,
+    "INDIVIDUAL_FILES": true,
+    "FORMAT": "json"
+  },
+  "LOGGING": {
+    "LEVEL": "INFO",
+    "TO_FILE": true,
+    "FILE": "scraper.log"
+  }
+}

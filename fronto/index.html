@@ -25,6 +25,8 @@
               'marquee': 'marquee 25s linear infinite',
               'glitch': 'glitch 1s linear infinite',
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'slide-in-up': 'slideInUp 0.6s ease-out forwards',
+              'fade-in-smooth': 'fadeIn 0.8s ease-out forwards',
             },
             keyframes: {
               marquee: {
@@ -35,6 +37,14 @@
                 '2%, 64%': { transform: 'translate(2px,0) skew(0deg)' },
                 '4%, 60%': { transform: 'translate(-2px,0) skew(0deg)' },
                 '62%': { transform: 'translate(0,0) skew(5deg)' },
+              },
+              slideInUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
               }
             }
           },
@@ -46,17 +56,38 @@
         background-color: #09090b;
         color: #f4f4f5;
         overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(204, 255, 0, 0.4) transparent;
       }
-      /* Custom Scrollbar */
+      /* Custom Scrollbar for Webkit browsers */
       ::-webkit-scrollbar {
-        width: 6px;
+        width: 12px;
       }
       ::-webkit-scrollbar-track {
-        background: #09090b;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #ccff00;
+        background: rgba(204, 255, 0, 0.3);
+        border-radius: 6px;
+        border: 3px solid transparent;
+        background-clip: padding-box;
       }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(204, 255, 0, 0.6);
+        background-clip: padding-box;
+      }
+      
+      /* Scrollbar edge glow effect */
+      html {
+        scrollbar-gutter: stable;
+      }
+      
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }

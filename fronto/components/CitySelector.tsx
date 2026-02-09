@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { City } from '../types';
 import { ArrowRight, Loader2 } from 'lucide-react';
 
@@ -10,6 +10,39 @@ interface CitySelectorProps {
 
 const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLoad = false }) => {
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+  const [focusedCityIndex, setFocusedCityIndex] = useState(0);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusedCityIndex(prev => (prev + 1) % cities.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusedCityIndex(prev => (prev - 1 + cities.length) % cities.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (buttonRefs.current[focusedCityIndex]) {
+          onSelect(cities[focusedCityIndex]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cities, focusedCityIndex, onSelect]);
+
+  // Auto-focus and scroll to focused city
+  useEffect(() => {
+    if (buttonRefs.current[focusedCityIndex]) {
+      buttonRefs.current[focusedCityIndex]?.focus();
+      setHoveredCity(cities[focusedCityIndex]?.id || null);
+      // Scroll into view
+      buttonRefs.current[focusedCityIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [focusedCityIndex, cities]);
 
   if (initialLoad) {
     return (
@@ -24,24 +57,28 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
   }
 
   return (
-    <div className="h-screen w-full flex flex-col justify-center px-4 md:px-12 lg:px-24 bg-void text-concrete overflow-hidden relative">
-      {/* Background Noise/Grid Effect could go here */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+    <div className="min-h-screen w-full flex flex-col px-4 md:px-12 lg:px-24 bg-void text-concrete py-20 relative">
+      {/* Background Noise/Grid Effect */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] z-0"></div>
 
       <div className="z-10 flex flex-col gap-0">
         <h1 className="text-sm font-mono tracking-widest text-zinc-500 mb-8 ml-1 uppercase">Select Sector</h1>
         
-        {cities.map((city) => (
+        {cities.map((city, index) => (
           <button
             key={city.id}
-            onMouseEnter={() => setHoveredCity(city.id)}
+            ref={(el) => { buttonRefs.current[index] = el; }}
+            onMouseEnter={() => {
+              setHoveredCity(city.id);
+              setFocusedCityIndex(index);
+            }}
             onMouseLeave={() => setHoveredCity(null)}
             onClick={() => onSelect(city)}
-            className="group relative flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-acid focus-visible:ring-offset-2 focus-visible:ring-offset-void py-2 border-b border-concrete hover:border-acid transition-colors duration-500"
+            className="group relative flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-acid focus-visible:ring-offset-2 focus-visible:ring-offset-void py-2 px-1 border-b border-concrete hover:border-acid transition-colors duration-500"
           >
             <span 
               className={`
-                text-5xl md:text-8xl lg:text-9xl font-black tracking-tighter transition-all duration-500 ease-out
+                text-5xl md:text-8xl lg:text-9xl font-black tracking-tighter transition-all duration-500 ease-out leading-none
                 ${hoveredCity === city.id ? 'text-acid translate-x-4 skew-x-12' : 'text-zinc-600 group-hover:text-zinc-400'}
               `}
             >
@@ -49,12 +86,12 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
             </span>
             
             <div className={`
-              opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-4
+              opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-4 flex-shrink-0
             `}>
-              <span className="font-mono text-xs text-acid hidden md:block">
+              <span className="font-mono text-xs text-acid hidden md:block whitespace-nowrap">
                 [{city.coordinates.lat.toFixed(2)}, {city.coordinates.lng.toFixed(2)}]
               </span>
-              <ArrowRight className="text-acid w-8 h-8 md:w-16 md:h-16 -rotate-45 group-hover:rotate-0 transition-transform duration-500" />
+              <ArrowRight className="text-acid w-8 h-8 md:w-16 md:h-16 -rotate-45 group-hover:rotate-0 transition-transform duration-500 flex-shrink-0" />
             </div>
 
             {/* Hover Image Reveal - Pseudo-mask effect */}
@@ -67,7 +104,7 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
         ))}
       </div>
       
-      <div className="absolute bottom-12 left-12 font-mono text-xs text-zinc-600">
+      <div className="fixed bottom-12 left-12 font-mono text-xs text-zinc-600 z-10">
         NOCTURNE SYSTEM v2.0
       </div>
     </div>

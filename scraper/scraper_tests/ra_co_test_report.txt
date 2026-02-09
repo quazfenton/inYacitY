@@ -1,0 +1,35 @@
+
+================================================================================
+SCRAPER TEST REPORT: RA_CO
+================================================================================
+
+Execution Time: 0:00:00.001830
+Total Events: 0
+Errors: 1
+Duplicates Found: 0
+
+--- DATA COMPLETENESS ---
+  ✗ date              0.0%
+  ✗ description       0.0%
+  ✗ image             0.0%
+  ✗ link              0.0%
+  ✗ location          0.0%
+  ✗ price             0.0%
+  ✗ time              0.0%
+  ✗ title             0.0%
+
+--- DATA QUALITY ---
+  Free Events: 0
+  Paid Events: 0
+  Valid Dates: 0
+  Invalid Dates: 0
+  Valid Times: 0
+  Invalid Times: 0
+  Avg Description Length: 0 chars
+
+--- DATA SAMPLES ---
+
+--- ERRORS ---
+  • ra_co_events.json not found - run scraper first
+
+================================================================================

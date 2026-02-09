@@ -9,8 +9,8 @@ services:
       POSTGRES_USER: ${DB_USER:-nocturne}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-nocturne}
       POSTGRES_DB: ${DB_NAME:-nocturne}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
@@ -25,8 +25,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: nocturne_redis
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -75,9 +75,9 @@ services:
       dockerfile: Dockerfile
     container_name: nocturne_frontend_prod
     environment:
-      - VITE_API_URL=${FRONTEND_API_URL:-http://localhost:8000}
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - VITE_API_URL=${FRONTEND_API_URL:-/api}
+    expose:
+      - "5173"
     restart: unless-stopped
     deploy:
       resources:

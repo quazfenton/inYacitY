@@ -24,8 +24,8 @@ if [ ! -f .env ]; then
 fi
 
 # Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Error: docker-compose is not installed"
+if ! command -v docker compose &> /dev/null; then
+    echo "❌ Error: dockercompose is not installed"
     echo "   Install Docker Compose: https://docs.docker.com/compose/install/"
     exit 1
 fi
@@ -42,14 +42,23 @@ docker-compose up -d --build
 # Wait for database to be ready
 echo ""
 echo "Waiting for database to be ready..."
+database_ready=false
 for i in {1..30}; do
     if docker exec nocturne_db psql -U nocturne -c "SELECT 1" &> /dev/null; then
         echo "✓ Database is ready!"
+        database_ready=true
         break
     fi
     echo "  Waiting... ($i/30)"
     sleep 1
 done
+
+# Check if database became ready
+if [ "$database_ready" = false ]; then
+    echo "❌ Error: Database did not become ready within the timeout period"
+    echo "   Please check the database logs: docker-compose logs postgres"
+    exit 1
+fi
 
 # Initialize database
 echo ""

@@ -535,8 +535,8 @@ class DeduplicationTracker:
         with open(self.tracker_file, 'w') as f:
             json.dump(self.data, f, indent=2, default=str)
     
-    def add_events(self, events: List[Dict]) -> None:
-        """Add events to tracker"""
+    def add_events(self, events: List[Dict], db_synced: bool = True) -> None:
+        """Add events to tracker. Only marks as db_synced if actually synced to database."""
         for event in events:
             event_hash = event.get('event_hash', EventDataValidator.generate_event_hash(event))
             
@@ -555,7 +555,8 @@ class DeduplicationTracker:
             self.data['events'][event_hash] = {
                 'title': event.get('title'),
                 'date': event.get('date'),
-                'added_at': added_at_value
+                'added_at': added_at_value,
+                'db_synced': db_synced
             }
         
         # Prepare timestamp with timezone-safe datetime
@@ -574,8 +575,11 @@ class DeduplicationTracker:
         self._save_tracker()
     
     def is_tracked(self, event_hash: str) -> bool:
-        """Check if event already tracked"""
-        return event_hash in self.data['events']
+        """Check if event already tracked AND synced to database"""
+        entry = self.data['events'].get(event_hash)
+        if not entry:
+            return False
+        return entry.get('db_synced', False)
     
     def remove_past_events(self, days: int = 30) -> int:
         """Remove events with dates older than X days"""
@@ -689,19 +693,21 @@ class DatabaseSyncManager:
         print(f"Syncing {len(new_events)} events to database...")
         
         # Sync to database if configured
+        db_actually_synced = False
         if self.sync.is_configured():
             success, inserted, errors = await self.sync.insert_events(new_events)
             result['success'] = success
             result['events_synced'] = inserted
             result['errors'].extend(errors)
+            db_actually_synced = success
         else:
             print("⚠ Supabase not configured, skipping database sync")
             result['success'] = True
             result['events_synced'] = len(new_events)
         
-        # Add new events to tracker
+        # Add new events to tracker — only mark db_synced if actually inserted into DB
         if result['success']:
-            self.tracker.add_events(new_events)
+            self.tracker.add_events(new_events, db_synced=db_actually_synced)
             
             # Clean up old events from tracker
             removed = self.tracker.remove_past_events(days=30)

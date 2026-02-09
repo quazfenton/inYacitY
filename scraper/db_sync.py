@@ -455,22 +455,26 @@ class DeduplicationTracker:
         with open(self.tracker_file, 'w') as f:
             json.dump(self.data, f, indent=2, default=str)
 
-    def add_events(self, events: List[Dict]) -> None:
-        """Add events to tracker"""
+    def add_events(self, events: List[Dict], db_synced: bool = True) -> None:
+        """Add events to tracker. Only marks as db_synced if actually synced to database."""
         for event in events:
             event_hash = event.get('event_hash', EventDataValidator.generate_event_hash(event))
             self.data['events'][event_hash] = {
                 'title': event.get('title'),
                 'date': event.get('date'),
-                'added_at': datetime.utcnow().isoformat()
+                'added_at': datetime.utcnow().isoformat(),
+                'db_synced': db_synced
             }
         
         self.data['last_updated'] = datetime.utcnow().isoformat()
         self._save_tracker()
 
     def is_tracked(self, event_hash: str) -> bool:
-        """Check if event already tracked"""
-        return event_hash in self.data['events']
+        """Check if event already tracked AND synced to database"""
+        entry = self.data['events'].get(event_hash)
+        if not entry:
+            return False
+        return entry.get('db_synced', False)
 
     def remove_past_events(self, days: int = 30) -> int:
         """Remove events with dates older than X days"""

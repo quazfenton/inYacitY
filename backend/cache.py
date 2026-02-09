@@ -47,10 +47,7 @@ class CacheManager:
         try:
             value = await self.client.get(key)
             if value:
-                try:
-                    return json.loads(value)
-                except json.JSONDecodeError:
-                    return pickle.loads(value)
+                return json.loads(value)
             return None
         except Exception as e:
             print(f"[CACHE ERROR] Failed to get {key}: {e}")

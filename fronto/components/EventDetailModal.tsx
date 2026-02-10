@@ -133,12 +133,27 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, onCl
           {/* Details Tab */}
           {activeTab === 'details' && (
             <div className="space-y-6">
-              <div className="aspect-video bg-zinc-900 overflow-hidden">
+              <div className="aspect-video bg-zinc-900 overflow-hidden relative group">
                 <img
                   src={event.imageUrl || `https://picsum.photos/800/400?random=${event.id}`}
                   alt={event.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover brightness-[0.4]"
                 />
+                {/* Dark gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
+                
+                {/* External link button */}
+                {event.link && (
+                  <a
+                    href={event.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-3 right-3 w-10 h-10 bg-black/60 hover:bg-acid border border-zinc-700 hover:border-acid flex items-center justify-center transition-all duration-300 group/link"
+                    title="View on original site"
+                  >
+                    <ExternalLink size={16} className="text-zinc-400 group-hover/link:text-void transition-colors" />
+                  </a>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -166,18 +181,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, onCl
                   </span>
                 ))}
               </div>
-
-              {event.link && (
-                <a
-                  href={event.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-acid hover:text-white text-sm font-mono transition-colors"
-                >
-                  <ExternalLink size={14} />
-                  VIEW EVENT SOURCE
-                </a>
-              )}
             </div>
           )}
 
@@ -188,7 +191,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, onCl
                 <div className="text-center py-8 space-y-4">
                   <div className="text-acid text-lg font-mono">RSVP CONFIRMED!</div>
                   <p className="text-zinc-400 text-sm">
-                    You\'re going to {event.title}
+                    You're going to {event.title}
                   </p>
                   {rsvpData.calendar_url && (
                     <a

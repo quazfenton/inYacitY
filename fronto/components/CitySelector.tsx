@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { City } from '../types';
 import { ArrowRight, Loader2 } from 'lucide-react';
 
@@ -12,10 +12,56 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
   const [focusedCityIndex, setFocusedCityIndex] = useState(0);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll activation state
+  const scrollZoneRef = useRef<'none' | 'top' | 'bottom'>('none');
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingRef = useRef(false);
+  
+  // Type-ahead search state
+  const [typedSearch, setTypedSearch] = useState('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle type-ahead search (letters only, not when modifier keys pressed)
+      if (e.key.length === 1 && e.key.match(/[a-zA-Z]/) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        
+        const newSearch = (typedSearch + e.key.toLowerCase()).slice(0, 3); // max 3 chars
+        setTypedSearch(newSearch);
+        
+        // Find first matching city
+        const matchingIndex = cities.findIndex(city => 
+          city.name.toLowerCase().startsWith(newSearch)
+        );
+        
+        if (matchingIndex >= 0) {
+          setFocusedCityIndex(matchingIndex);
+          setHoveredCity(cities[matchingIndex].id);
+        }
+        
+        // Clear search after 1 second of inactivity
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+        searchTimeoutRef.current = setTimeout(() => {
+          setTypedSearch('');
+        }, 1000);
+        
+        return;
+      }
+      
+      // Escape clears search
+      if (e.key === 'Escape') {
+        setTypedSearch('');
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+      }
+      
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setFocusedCityIndex(prev => (prev + 1) % cities.length);
@@ -31,8 +77,13 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cities, focusedCityIndex, onSelect]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [cities, focusedCityIndex, onSelect, typedSearch]);
 
   // Auto-focus and scroll to focused city
   useEffect(() => {
@@ -43,6 +94,82 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
       buttonRefs.current[focusedCityIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [focusedCityIndex, cities]);
+
+  // Mouse scroll zone detection with delay
+  useEffect(() => {
+    const SCROLL_ZONE_HEIGHT = 0.08; // 8% of viewport height
+    const ACTIVATION_DELAY = 400; // 400ms delay before scrolling
+    const SCROLL_AMOUNT = 200; // pixels to scroll
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const viewportHeight = window.innerHeight;
+      const mouseY = e.clientY;
+      const topZone = viewportHeight * SCROLL_ZONE_HEIGHT;
+      const bottomZone = viewportHeight * (1 - SCROLL_ZONE_HEIGHT);
+      
+      let newZone: 'none' | 'top' | 'bottom' = 'none';
+      
+      if (mouseY < topZone) {
+        newZone = 'top';
+      } else if (mouseY > bottomZone) {
+        newZone = 'bottom';
+      }
+      
+      // If zone changed, clear existing timeout
+      if (newZone !== scrollZoneRef.current) {
+        scrollZoneRef.current = newZone;
+        
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = null;
+        }
+        
+        isScrollingRef.current = false;
+        
+        // Set new timeout if in a scroll zone
+        if (newZone !== 'none') {
+          scrollTimeoutRef.current = setTimeout(() => {
+            isScrollingRef.current = true;
+            performScroll(newZone);
+          }, ACTIVATION_DELAY);
+        }
+      }
+    };
+    
+    const performScroll = (direction: 'top' | 'bottom') => {
+      if (!isScrollingRef.current) return;
+      
+      const scrollAmount = direction === 'top' ? -SCROLL_AMOUNT : SCROLL_AMOUNT;
+      window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+      
+      // Continue scrolling while mouse stays in zone
+      setTimeout(() => {
+        if (isScrollingRef.current && scrollZoneRef.current === direction) {
+          performScroll(direction);
+        }
+      }, 100);
+    };
+    
+    const handleMouseLeave = () => {
+      scrollZoneRef.current = 'none';
+      isScrollingRef.current = false;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (initialLoad) {
     return (
@@ -57,9 +184,26 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col px-4 md:px-12 lg:px-24 bg-void text-concrete py-20 relative">
+    <div ref={containerRef} className="min-h-screen w-full flex flex-col px-4 md:px-12 lg:px-24 bg-void text-concrete py-20 relative">
       {/* Background Noise/Grid Effect */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] z-0"></div>
+
+      {/* Scroll Zone Indicators */}
+      <div className="fixed top-0 left-0 w-full h-[8vh] pointer-events-none z-50 flex items-start justify-center pt-2 opacity-0 transition-opacity duration-300" 
+           style={{ opacity: scrollZoneRef.current === 'top' ? 0.3 : 0 }}>
+        <div className="w-16 h-1 bg-acid rounded-full animate-pulse"></div>
+      </div>
+      <div className="fixed bottom-0 left-0 w-full h-[8vh] pointer-events-none z-50 flex items-end justify-center pb-2 opacity-0 transition-opacity duration-300"
+           style={{ opacity: scrollZoneRef.current === 'bottom' ? 0.3 : 0 }}>
+        <div className="w-16 h-1 bg-acid rounded-full animate-pulse"></div>
+      </div>
+
+      {/* Type-ahead indicator */}
+      {typedSearch && (
+        <div className="fixed top-24 right-12 z-50 font-mono text-2xl font-bold text-acid bg-void/80 px-4 py-2 border border-acid/30">
+          {typedSearch.toUpperCase()}
+        </div>
+      )}
 
       <div className="z-10 flex flex-col gap-0">
         <h1 className="text-sm font-mono tracking-widest text-zinc-500 mb-8 ml-1 uppercase">Select Sector</h1>

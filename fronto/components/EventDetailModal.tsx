@@ -73,8 +73,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
     e.preventDefault();
     if (!commentAuthor.trim() || !commentText.trim()) return;
 
-    await postComment(event.id, commentAuthor, commentText);
-    if (!commentsError) {
+    const result = await postComment(event.id, commentAuthor, commentText);
+    if (result && !result.error) {
       setCommentText('');
     }
   };
@@ -173,7 +173,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {event.tags.map((tag) => (
+                {event.tags?.map((tag) => (
                   <span
                     key={tag}
                     className="text-[10px] uppercase tracking-wider text-zinc-500 font-mono border border-zinc-800 px-2 py-1"

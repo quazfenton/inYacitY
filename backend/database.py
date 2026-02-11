@@ -368,10 +368,10 @@ async def cleanup_past_events(days_to_keep: int = 30):
     """
     Remove events from the database that are past their date
     Keeps events within the specified retention period
-    
+
     Args:
         days_to_keep: Number of days to keep past events (default 30)
-    
+
     Returns:
         Number of events deleted
     """
@@ -418,14 +418,14 @@ async def get_cities_with_active_subscribers():
 async def get_subscribers_by_city(city_id: str):
     """
     Get all active subscribers for a specific city
-    
+
     Args:
         city_id: City ID
-    
+
     Returns:
         List of Subscription objects
     """
-    from sqlalchemy import select
+    from sqlalchemy import select, and_
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(

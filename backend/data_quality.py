@@ -215,11 +215,27 @@ class DuplicateDetector:
                     continue
                 checked_pairs.add(pair_key)
                 
-                # Check date proximity
+                # Check date proximity using the configured time window
                 date1 = event1.get('date')
                 date2 = event2.get('date')
-                
-                if date1 != date2:
+
+                if date1 and date2:
+                    # Convert to date objects if they're strings
+                    if isinstance(date1, str):
+                        try:
+                            date1 = datetime.strptime(date1, '%Y-%m-%d').date()
+                        except ValueError:
+                            continue
+                    if isinstance(date2, str):
+                        try:
+                            date2 = datetime.strptime(date2, '%Y-%m-%d').date()
+                        except ValueError:
+                            continue
+                    
+                    # Check if dates are within the configured time window
+                    if abs((date1 - date2).days) > self.time_window.days:
+                        continue
+                elif date1 != date2:  # Handle case where one is None and the other isn't
                     continue
                 
                 # Compare titles

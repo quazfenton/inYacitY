@@ -4,6 +4,7 @@ Redis caching utilities for API performance optimization
 Provides caching decorators and helper functions
 """
 
+import asyncio
 import json
 import pickle
 import hashlib
@@ -50,29 +51,29 @@ class CacheManager:
                 try:
                     return json.loads(value)
                 except json.JSONDecodeError:
-                    return pickle.loads(value)
+                    # With decode_responses=True, we can only handle JSON-serialized data
+                    # Return None if value is not valid JSON
+                    return None
             return None
         except Exception as e:
             print(f"[CACHE ERROR] Failed to get {key}: {e}")
             return None
     
     async def set(
-        self, 
-        key: str, 
-        value: Any, 
+        self,
+        key: str,
+        value: Any,
         ttl: Optional[int] = None,
         serialize: str = 'json'
     ) -> bool:
         """Set value in cache"""
         if not self.client:
             return False
-        
+
         try:
-            if serialize == 'json':
-                value_str = json.dumps(value, default=str)
-            else:
-                value_str = pickle.dumps(value)
-            
+            # Only support JSON serialization since Redis client uses decode_responses=True
+            value_str = json.dumps(value, default=str)
+
             ttl = ttl or self.default_ttl
             await self.client.setex(key, ttl, value_str)
             return True
@@ -96,12 +97,18 @@ class CacheManager:
         """Invalidate all keys matching pattern"""
         if not self.client:
             return 0
-        
+
         try:
-            keys = await self.client.keys(pattern)
-            if keys:
-                return await self.client.delete(*keys)
-            return 0
+            # Use SCAN instead of KEYS to avoid blocking the Redis server
+            deleted_count = 0
+            cursor = 0
+            while True:
+                cursor, keys = await self.client.scan(cursor=cursor, match=pattern, count=100)
+                if keys:
+                    deleted_count += await self.client.delete(*keys)
+                if cursor == 0:
+                    break
+            return deleted_count
         except Exception as e:
             print(f"[CACHE ERROR] Failed to invalidate pattern {pattern}: {e}")
             return 0
@@ -219,10 +226,6 @@ async def invalidate_event(event_id: int):
 async def invalidate_all_cities():
     """Invalidate cities list cache"""
     await cache_manager.delete(get_cities_key())
-
-
-# Import asyncio here to avoid issues
-import asyncio
 
 
 if __name__ == "__main__":

@@ -178,14 +178,25 @@ async def save_events(events_data: list, city_id: str):
             select(Event.link).where(Event.link.in_(links))
         )
         existing_links = {row[0] for row in existing_result.fetchall()}
+
+        # Track links added in the current batch to avoid duplicates within the batch
+        batch_links = set()
         
         # Separate into new and existing events
         new_events = []
         update_events = []
-        
+
         for event_data in events_data:
             link = event_data.get('link', '')
-            
+
+            # Skip if link is empty
+            if not link:
+                continue
+                
+            # Skip if link is already processed in this batch
+            if link in batch_links:
+                continue
+
             # Parse date
             event_date = event_data.get('date')
             if isinstance(event_date, str):
@@ -195,7 +206,7 @@ async def save_events(events_data: list, city_id: str):
                     event_date = datetime.utcnow().date()
             elif not isinstance(event_date, date):
                 event_date = datetime.utcnow().date()
-            
+
             event_dict = {
                 'title': event_data.get('title', 'Unknown'),
                 'link': link,
@@ -208,11 +219,14 @@ async def save_events(events_data: list, city_id: str):
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
-            
+
             if link in existing_links:
                 update_events.append(event_dict)
             else:
                 new_events.append(event_dict)
+                
+            # Add to batch links to track duplicates within the same batch
+            batch_links.add(link)
         
         # Bulk insert new events (ONE query instead of O(n))
         saved_count = 0
@@ -361,26 +375,25 @@ async def cleanup_past_events(days_to_keep: int = 30):
     Returns:
         Number of events deleted
     """
-    from sqlalchemy import delete, and_
+    from sqlalchemy import delete, select, and_, func
     
     cutoff_date = date.today() - __import__('datetime').timedelta(days=days_to_keep)
     
     async with AsyncSessionLocal() as session:
-        # Get count before deletion
-        result = await session.execute(
-            select(Event).where(Event.date < cutoff_date)
+        # Count events to delete
+        count_result = await session.execute(
+            select(func.count()).select_from(Event).where(Event.date < cutoff_date)
         )
-        events_to_delete = result.scalars().all()
-        deleted_count = len(events_to_delete)
-        
+        deleted_count = count_result.scalar_one()
+
         if deleted_count > 0:
             # Delete past events
-            await session.execute(
+            delete_result = await session.execute(
                 delete(Event).where(Event.date < cutoff_date)
             )
             await session.commit()
             print(f"[DB CLEANUP] Deleted {deleted_count} past events older than {days_to_keep} days")
-        
+
         return deleted_count
 
 
@@ -413,14 +426,12 @@ async def get_subscribers_by_city(city_id: str):
         List of Subscription objects
     """
     from sqlalchemy import select
-    
+
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Subscription).where(
-                and_(
-                    Subscription.city_id == city_id,
-                    Subscription.is_active == True
-                )
+                Subscription.city_id == city_id,
+                Subscription.is_active == True
             )
         )
         return result.scalars().all()

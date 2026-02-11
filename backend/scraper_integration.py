@@ -367,20 +367,23 @@ async def scrape_city_events(city_id: str) -> Dict:
         finally:
             os.chdir(original_dir)
 
-        # Read the results while holding the lock
+        # Read the results while still holding the lock to prevent race condition
         all_events_file = os.path.join(scraper_dir, 'all_events.json')
 
         if not os.path.exists(all_events_file):
             logger.warning(f"No events found for {city_id}")
             return {
-            "city_id": city_id,
-            "status": "error",
-            "message": "No events found",
-            "events_count": 0
-        }
+                "city_id": city_id,
+                "status": "error",
+                "message": "No events found",
+                "events_count": 0
+            }
 
-    with open(all_events_file, 'r') as f:
-        data = json.load(f)
+        # Read file contents while still in the lock to prevent race condition
+        with open(all_events_file, 'r') as f:
+            data = json.load(f)
+            
+    # Process data after releasing the lock
         # Try to get events from the root level first
         events_data = data.get('events', [])
         
@@ -388,12 +391,9 @@ async def scrape_city_events(city_id: str) -> Dict:
         if not events_data and 'cities' in data:
             city_data = data['cities'].get(city_id, {})
             events_data = city_data.get('events', [])
-            
-            # Also check for events in all cities if specific city not found
-            if not events_data:
-                for city_key, city_info in data['cities'].items():
-                    if isinstance(city_info, dict) and 'events' in city_info:
-                        events_data.extend(city_info['events'])
+
+            # Do NOT aggregate events from all cities - only use events for the specific city
+            # If no events found for the specific city, return an empty list
 
     # Add source to events if missing
     for event in events_data:

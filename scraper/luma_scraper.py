@@ -160,7 +160,7 @@ async def scrape_luma(city: str = None) -> list:
             location = "Location TBA"
             for elem in card.find_all(['div', 'span']):
                 text = elem.get_text(strip=True)
-                if len(text) > 3 and len(text) < 100 and not any(x in text.lower() for x in ['am', 'pm', 'min', 'hour']):
+                if len(text) > 3 and len(text) < 100 and not re.search(r'\b(?:am|pm|min|hour)\b', text, re.IGNORECASE):
                     if not elem.find('h3') and not elem.find('a'):
                         location = clean_luma_location(text)
                         break

@@ -41,7 +41,8 @@ fi
 echo "Using: $DC"
 
 # Derive the docker executable for non-compose commands (e.g. docker exec)
-DOCKER="${DC%% *}"
+# Use 'docker' directly instead of deriving from compose command to avoid 'docker-compose exec' issues
+DOCKER="docker"
 
 # Stop existing containers
 echo "Stopping any existing containers..."

@@ -214,7 +214,7 @@ async def save_location_preference(request: LocationPreferenceRequest):
     try:
         # Create preference object
         secondary_coords = None
-        if request.latitude and request.longitude:
+        if request.latitude is not None and request.longitude is not None:
             secondary_coords = Coordinates(request.latitude, request.longitude)
         
         preference = LocationPreference(

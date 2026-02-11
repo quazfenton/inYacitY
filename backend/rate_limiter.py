@@ -66,54 +66,57 @@ class RateLimiter:
         if self._redis:
             # Use Redis for distributed rate limiting
             pipe = self._redis.pipeline()
-            
+
             # Remove old entries (sliding window)
             pipe.zremrangebyscore(key, 0, now - 3600)  # Keep last hour
-            
+
             # Count requests in last minute
             pipe.zcount(key, now - 60, now)
-            
+
             # Count requests in last hour
             pipe.zcount(key, now - 3600, now)
-            
-            # Add current request
-            pipe.zadd(key, {str(now): now})
-            
-            # Set expiry on key
-            pipe.expire(key, 3600)
-            
+
             results = await pipe.execute()
-            minute_count = results[1]
-            hour_count = results[2]
+            minute_count = results[0]
+            hour_count = results[1]
         else:
             # Use in-memory storage (per-instance only)
             if key not in self._storage:
                 self._storage[key] = []
-            
+
             # Clean old entries
             self._storage[key] = [
                 ts for ts in self._storage[key]
                 if ts > now - 3600
             ]
-            
+
             # Count requests
             minute_count = sum(1 for ts in self._storage[key] if ts > now - 60)
             hour_count = len(self._storage[key])
-            
-            # Add current request
-            self._storage[key].append(now)
-        
-        # Check limits
+
+        # Check limits BEFORE adding the current request
         allowed = (
-            minute_count <= self.requests_per_minute and
-            hour_count <= self.requests_per_hour
+            minute_count < self.requests_per_minute and
+            hour_count < self.requests_per_hour
         )
+
+        if allowed:
+            # Only add the current request if it's allowed
+            if self._redis:
+                await self._redis.zadd(key, {str(now): now})
+                await self._redis.expire(key, 3600)
+            else:
+                self._storage[key].append(now)
         
+        # Calculate remaining limits (subtract 1 if the current request was allowed)
+        minute_remaining = max(0, self.requests_per_minute - minute_count - (1 if allowed else 0))
+        hour_remaining = max(0, self.requests_per_hour - hour_count - (1 if allowed else 0))
+
         metadata = {
             "limit_minute": self.requests_per_minute,
             "limit_hour": self.requests_per_hour,
-            "remaining_minute": max(0, self.requests_per_minute - minute_count),
-            "remaining_hour": max(0, self.requests_per_hour - hour_count),
+            "remaining_minute": minute_remaining,
+            "remaining_hour": hour_remaining,
             "reset_time": int(now + 60)
         }
         

@@ -42,7 +42,7 @@ def parse_ra_date(date_text: str) -> str:
     year = today.year
     try:
         event_date = datetime(year, month, day)
-        if event_date < today:
+        if event_date.date() < today.date():
             event_date = datetime(year + 1, month, day)
         return event_date.strftime("%Y-%m-%d")
     except ValueError:
@@ -53,6 +53,7 @@ async def fetch_ra_html(url: str) -> str:
     """Try multiple strategies to fetch RA HTML."""
     # First try with Playwright mobile profile
     browser = None
+    p = None
     try:
         p = await async_playwright().start()
         browser = await p.chromium.launch(headless=True)
@@ -70,9 +71,18 @@ async def fetch_ra_html(url: str) -> str:
         await browser.close()
         await p.stop()
         return html
-    except Exception:
+    except Exception as e:
+        print(f"Playwright error: {e}")
         if browser:
-            await browser.close()
+            try:
+                await browser.close()
+            except:
+                pass
+        if p:
+            try:
+                await p.stop()
+            except:
+                pass
 
     # Fallback: fetch_page (Firecrawl/Hyperbrowser fallback configured in browser.py)
     html = await fetch_page(url, use_firecrawl_fallback=True)
@@ -83,14 +93,19 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
     """Scrape RA.co events for a location"""
     output_file = os.path.join(os.path.dirname(__file__), "ra_events.json")
 
-    # Convert location code
-    parts = location.split('--')
-    if len(parts) >= 2:
-        city = parts[1].replace('-', '')
+    # Use the RA_CITIES mapping if available, otherwise fall back to manual parsing
+    if location in RA_CITIES:
+        country, city = RA_CITIES[location]
     else:
-        city = 'losangeles'
+        # Fallback to manual parsing
+        parts = location.split('--')
+        if len(parts) >= 2:
+            city = parts[1].replace('-', '')
+        else:
+            city = 'losangeles'
+        country = 'us'
 
-    url = f"https://ra.co/events/us/{city}"
+    url = f"https://ra.co/events/{country}/{city}"
     print(f"\nScraping RA.co: {url}")
 
     html = await fetch_ra_html(url)
@@ -147,17 +162,23 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
 
     # Enrich from individual event pages
     for event in events:
-        if not event.get('description') or not event.get('date') or event.get('location') in ("TBA", "Location TBA"):
+        needs_enrichment = (
+            (event.get('description') == '') or  # Empty string instead of None check
+            (event.get('date') == '') or  # Empty string instead of None check
+            (event.get('location') in ("TBA", "Location TBA"))
+        )
+        
+        if needs_enrichment:
             detail_html = await fetch_page(event['link'], use_firecrawl_fallback=True)
             if detail_html:
                 detail_soup = BeautifulSoup(detail_html, 'html.parser')
                 desc_elem = detail_soup.find(class_=re.compile(r'EventDescription', re.I))
-                if desc_elem and not event.get('description'):
+                if desc_elem and event.get('description') == '':
                     event['description'] = desc_elem.get_text(" ", strip=True)[:500]
                 venue_elem = detail_soup.find(attrs={'data-pw-test-id': 'event-venue-link'})
                 if venue_elem and event.get('location') in ("TBA", "Location TBA"):
                     event['location'] = venue_elem.get_text(strip=True)
-                if not event.get('date'):
+                if event.get('date') == '':
                     date_elem = detail_soup.find(attrs={'data-tracking-id': 'event-detail-bar'})
                     if date_elem:
                         event['date'] = date_elem.get_text(" ", strip=True)

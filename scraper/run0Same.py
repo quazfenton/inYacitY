@@ -123,14 +123,17 @@ async def run_all_scrapers():
     # If no events returned, load from per-scraper files as fallback
     if not all_events:
         print("No events returned from scrapers, loading from cached JSON outputs...")
-        for file_name in [
-            'eventbrite_events.json',
-            'meetup_events.json',
-            'luma_events.json',
-            'dice_events.json',
-            'ra_events.json'
-        ]:
-            all_events.extend(load_city_events_from_file(os.path.join(BASE_DIR, file_name), location))
+        fallback_files = [
+            ('eventbrite_events.json', 'Eventbrite'),
+            ('meetup_events.json', 'Meetup'),
+            ('luma_events.json', 'Luma'),
+            ('dice_events.json', 'Dice.fm'),
+            ('ra_events.json', 'RA.co')
+        ]
+        for file_name, scraper_name in fallback_files:
+            fallback_events = load_city_events_from_file(os.path.join(BASE_DIR, file_name), location)
+            all_events.extend(fallback_events)
+            scraper_results[scraper_name] = len(fallback_events)
 
     # ===== MERGE AND SAVE =====
     print(f"\n[MERGE] Merging results...")

@@ -23,10 +23,12 @@ def parse_iso_datetime(dt_str: str) -> tuple:
     """Parse ISO datetime to (date, time)."""
     if not dt_str:
         return ("", "")
-    if dt_str.endswith('Z'):
-        return ("", "")
     try:
-        cleaned = normalize_iso(dt_str.replace('Z', '+00:00'))
+        # Handle 'Z' suffix (UTC) by replacing with '+00:00'
+        if dt_str.endswith('Z'):
+            cleaned = dt_str[:-1] + '+00:00'
+        else:
+            cleaned = normalize_iso(dt_str)
         dt = datetime.fromisoformat(cleaned)
         return (dt.strftime("%Y-%m-%d"), dt.strftime("%I:%M %p").lstrip('0'))
     except ValueError:
@@ -47,7 +49,7 @@ def parse_date_time_text(text: str) -> tuple:
         year = datetime.now().year
         try:
             d = datetime(year, month, day)
-            if d < datetime.now():
+            if d.date() < datetime.now().date():
                 d = datetime(year + 1, month, day)
             date_val = d.strftime("%Y-%m-%d")
         except ValueError:

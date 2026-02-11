@@ -113,6 +113,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
       <EventDetailModal
         event={event}
         isOpen={isModalOpen}
+        initialTab={initialTab}
         onClose={() => setIsModalOpen(false)}
       />
     </>

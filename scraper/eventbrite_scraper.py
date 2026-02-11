@@ -48,7 +48,7 @@ def parse_event_date(date_str: str) -> str:
             year = int(year_str) if year_str else today.year
             try:
                 event_date = datetime(year, month, day)
-                if event_date < today and not year_str:
+                if event_date.date() < today.date() and not year_str:
                     event_date = datetime(year + 1, month, day)
                 return event_date.strftime("%Y-%m-%d")
             except ValueError:

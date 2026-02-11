@@ -90,22 +90,28 @@ export const CitySelector: React.FC<CityListProps> = ({
 
       // Handle letters only
       if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) {
-        e.preventDefault();
+        // Skip if modifier keys are active (Ctrl, Meta, Alt) to avoid blocking browser shortcuts
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
         
+        e.preventDefault();
+
         const newSearch = typedSearch + e.key.toLowerCase();
         setTypedSearch(newSearch);
-        
+
         // Filter cities based on search
-        const matching = cities.filter(city => 
+        const matching = cities.filter(city =>
           city.name.toLowerCase().startsWith(newSearch) ||
           city.state.toLowerCase().startsWith(newSearch)
         );
-        
+
         if (matching.length > 0) {
           setFilteredCities(matching);
           // Scroll to first match
           const firstMatch = matching[0];
           setSelectedCity(firstMatch.code);
+        } else {
+          // Clear the filtered list when no matches are found
+          setFilteredCities([]);
         }
 
         // Clear search after 1.5 seconds of inactivity
@@ -286,18 +292,37 @@ export const CitySelector: React.FC<CityListProps> = ({
   }
 
   /**
+   * Sanitize string to prevent XSS
+   */
+  function sanitizeString(str: string): string {
+    if (!str) return '';
+    // Replace HTML entities to prevent XSS
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
+  /**
    * Highlight matching letters in city name
    */
-  function highlightMatch(name: string, search: string): string {
-    if (!search) return name;
+  function HighlightMatch({ name, search }: { name: string; search: string }) {
+    if (!search) return <>{sanitizeString(name)}</>;
     const lowerName = name.toLowerCase();
     const lowerSearch = search.toLowerCase();
     if (lowerName.startsWith(lowerSearch)) {
       const matched = name.substring(0, search.length);
       const rest = name.substring(search.length);
-      return `<span class="highlight">${matched}</span>${rest}`;
+      return (
+        <>
+          <span className="highlight">{sanitizeString(matched)}</span>
+          {sanitizeString(rest)}
+        </>
+      );
     }
-    return name;
+    return <>{sanitizeString(name)}</>;
   }
 
   /**
@@ -367,10 +392,7 @@ export const CitySelector: React.FC<CityListProps> = ({
           {(filteredCities.length > 0 ? filteredCities : cities).map((city) => {
             // Highlight matching letters if searching
             const cityName = city.name;
-            const displayName = typedSearch 
-              ? highlightMatch(cityName, typedSearch)
-              : cityName;
-            
+
             return (
             <div
               key={city.code}
@@ -387,7 +409,9 @@ export const CitySelector: React.FC<CityListProps> = ({
                 if (e.key === 'Enter') handleCitySelect(city.code);
               }}
             >
-              <div className="city-name" dangerouslySetInnerHTML={{ __html: displayName }} />
+              <div className="city-name">
+                <HighlightMatch name={cityName} search={typedSearch} />
+              </div>
               <div className="city-meta">
                 {city.population && (
                   <span className="population">

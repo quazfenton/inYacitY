@@ -28,7 +28,9 @@ def parse_month_day(date_text: str) -> str:
     year = today.year
     try:
         event_date = datetime(year, month, day)
-        if event_date < today:
+        # Only bump to next year if the event date is actually in the past (before today's date)
+        # Comparing date() parts ensures we only compare the date, not the time
+        if event_date.date() < today.date():
             event_date = datetime(year + 1, month, day)
         return event_date.strftime("%Y-%m-%d")
     except ValueError:

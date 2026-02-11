@@ -7,11 +7,12 @@ import { useEventComments } from '../src/hooks/useEventComments';
 interface EventDetailModalProps {
   event: Event;
   isOpen: boolean;
+  initialTab?: 'details' | 'rsvp' | 'comments';
   onClose: () => void;
 }
 
-const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'rsvp' | 'comments'>('details');
+const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, initialTab = 'details', onClose }) => {
+  const [activeTab, setActiveTab] = useState<'details' | 'rsvp' | 'comments'>(initialTab);
   const [rsvpName, setRsvpName] = useState('');
   const [rsvpEmail, setRsvpEmail] = useState('');
   const [calendarType, setCalendarType] = useState<'google' | 'apple' | null>(null);

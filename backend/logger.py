@@ -4,10 +4,12 @@ Centralized logging configuration for Nocturne platform
 Provides structured logging with rotation and multiple handlers
 """
 
+import asyncio
 import logging
 import logging.handlers
 import os
 import sys
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -15,10 +17,25 @@ from typing import Optional
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 
+class JsonFormatter(logging.Formatter):
+    """Custom JSON formatter that properly escapes message content"""
+    
+    def format(self, record):
+        log_entry = {
+            'timestamp': self.formatTime(record),
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+            'file': record.filename,
+            'line': record.lineno
+        }
+        return json.dumps(log_entry)
+
+
 # Log formats
 DETAILED_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
 SIMPLE_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-JSON_FORMAT = '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "file": "%(filename)s", "line": %(lineno)d}'
+JSON_FORMATTER = JsonFormatter()
 
 
 def setup_logger(
@@ -31,7 +48,7 @@ def setup_logger(
 ) -> logging.Logger:
     """
     Setup a logger with file and console handlers
-    
+
     Args:
         name: Logger name
         level: Logging level
@@ -39,19 +56,18 @@ def setup_logger(
         max_bytes: Max bytes per log file before rotation
         backup_count: Number of backup files to keep
         use_json: Use JSON format for structured logging
-    
+
     Returns:
         Configured logger
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    
+
     # Clear existing handlers
     logger.handlers = []
-    
+
     # Format
-    log_format = JSON_FORMAT if use_json else DETAILED_FORMAT
-    formatter = logging.Formatter(log_format)
+    formatter = JSON_FORMATTER if use_json else logging.Formatter(DETAILED_FORMAT)
     
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)

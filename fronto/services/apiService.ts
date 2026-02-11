@@ -220,7 +220,25 @@ export async function getCityEvents(
   const cachedEvents = await loadEventsFromCache(cityId);
   if (cachedEvents.length > 0) {
     console.log(`[Cache] Loaded ${cachedEvents.length} events for ${cityId}`);
-    return cachedEvents;
+    
+    // Apply the same filters as the API call to cached data
+    let filteredEvents = cachedEvents;
+    
+    // Apply date filters
+    if (startDate) {
+      const start = new Date(startDate);
+      filteredEvents = filteredEvents.filter(event => new Date(event.date) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(endDate);
+      filteredEvents = filteredEvents.filter(event => new Date(event.date) <= end);
+    }
+    
+    // Apply limit
+    filteredEvents = filteredEvents.slice(0, limit);
+    
+    return filteredEvents;
   }
 
   return [];

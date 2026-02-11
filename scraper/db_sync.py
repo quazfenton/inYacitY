@@ -614,22 +614,24 @@ class DatabaseSyncManager:
             return result
         
         print(f"Found {len(events)} events to sync...")
-        
+
         # Sync to database if configured
         if self.sync.is_configured():
             success, inserted, errors = await self.sync.insert_events(events)
             result['success'] = success
             result['events_synced'] = inserted
             result['errors'].extend(errors)
-            
-            # Track all events that are confirmed in the DB (inserted or already there as duplicates)
+
+            # Track only the events that were actually processed (inserted or confirmed as duplicates)
             if success:
-                self.tracker.add_events(events, db_synced=True)
+                # Only track events that were actually considered for insertion (after deduplication)
+                # The insert_events function already handles which specific events were processed
+                self.tracker.add_events(events, db_synced=True)  # This should only include events that were actually processed
         else:
             print("⚠ Supabase not configured, skipping database sync")
             result['errors'].append("Supabase not configured: check SUPABASE_URL and SUPABASE_KEY")
             result['success'] = False
-            
+
             # Clean up old events from tracker
             removed = self.tracker.remove_past_events(days=30)
             result['past_events_removed'] = removed

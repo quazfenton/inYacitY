@@ -34,7 +34,6 @@ RA_CO_CITY_MAP = {
     "tx--houston": ("us", "houston"),
     "az--phoenix": ("us", "phoenix"),
     "tx--dallas": ("us", "dallas"),
-    "wa--seattle": ("us", "seattle"),
     "nv--las-vegas": ("us", "lasvegas"),
     "ut--salt-lake-city": ("us", "saltlakecity"),
     "on--toronto": ("ca", "toronto"),
@@ -295,15 +294,43 @@ async def scrape_ra_co(
         if browser:
             await close_undetected_browser(browser, browser_type)
     
-    # Save all events
+    # Load existing events to preserve them
+    existing_events = []
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, 'r') as f:
+                existing_data = json.load(f)
+                existing_events = existing_data.get("events", [])
+        except:
+            pass  # If there's an error reading the file, start fresh
+
+    # Combine existing events with new events, avoiding duplicates by link
+    all_links = set()
+    combined_events = []
+
+    # Add existing events first
+    for event in existing_events:
+        link = event.get('link', '')
+        if link and link not in all_links:
+            combined_events.append(event)
+            all_links.add(link)
+
+    # Add new events that aren't already in the existing set
+    for event in all_events:
+        link = event.get('link', '')
+        if link and link not in all_links:
+            combined_events.append(event)
+            all_links.add(link)
+
+    # Save combined events
     with open(output_file, 'w') as f:
         json.dump({
-            "events": all_events,
-            "count": len(all_events),
+            "events": combined_events,
+            "count": len(combined_events),
             "new": len(new_events)
         }, f, indent=2, default=str)
-    
-    print(f"Saved {len(all_events)} total events ({len(new_events)} new) to {output_file}")
+
+    print(f"Saved {len(combined_events)} total events ({len(new_events)} new) to {output_file}")
     
     return new_events
 

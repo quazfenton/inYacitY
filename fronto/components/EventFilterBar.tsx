@@ -76,7 +76,11 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({ events, onFilterChange 
     setSort({ by: 'date', ascending: true });
   };
 
-  const hasActiveFilters = Object.keys(filter).length > 0 || searchQuery;
+  const hasActiveFilters = 
+    (filter.price_tiers && filter.price_tiers.length > 0) ||
+    (filter.categories && filter.categories.length > 0) ||
+    (filter.sources && filter.sources.length > 0) ||
+    !!searchQuery;
 
   // Get unique sources from events
   const sources = [...new Set(events.map(e => e.source).filter(Boolean))];

@@ -19,7 +19,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 class JsonFormatter(logging.Formatter):
     """Custom JSON formatter that properly escapes message content"""
-    
+
     def format(self, record):
         log_entry = {
             'timestamp': self.formatTime(record),
@@ -29,6 +29,12 @@ class JsonFormatter(logging.Formatter):
             'file': record.filename,
             'line': record.lineno
         }
+        
+        if record.exc_info:
+            log_entry['exception'] = self.formatException(record.exc_info)
+        if record.stack_info:
+            log_entry['stack'] = self.formatStack(record.stack_info)
+            
         return json.dumps(log_entry)
 
 

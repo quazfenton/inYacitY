@@ -113,6 +113,10 @@ async function fetchEventsFromSupabase(cityId: string, limit: number = 100): Pro
     }
 
     const data = await response.json();
+    if (!Array.isArray(data)) {
+      console.warn('Supabase returned non-array response:', typeof data);
+      return [];
+    }
     return data.map((row: any) => ({
       id: row.id,
       title: row.title || '',
@@ -199,7 +203,7 @@ export async function getCityEvents(
     const response = await fetch(`${API_URL}/events/${cityId}?${params}`);
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
     }
@@ -217,8 +221,18 @@ export async function getCityEvents(
   // 3. Try local cache (already filtered for future events)
   const cachedEvents = await loadEventsFromCache(cityId);
   if (cachedEvents.length > 0) {
+    // Apply the same filters as the API call to cached data
+    let filteredEvents = cachedEvents;
+    if (startDate) {
+      const start = new Date(startDate);
+      filteredEvents = filteredEvents.filter(event => new Date(event.date) >= start);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      filteredEvents = filteredEvents.filter(event => new Date(event.date) <= end);
+    }
     console.log(`[Cache] Loaded ${cachedEvents.length} future events for ${cityId}`);
-    return cachedEvents;
+    return filteredEvents.slice(0, limit);
   }
 
   return [];

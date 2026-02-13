@@ -336,15 +336,22 @@ async def get_events_nearby(
         today = date.today()
         
         async with AsyncSessionLocal() as db:
-            # Get future events only (already sorted by date from database)
+            # Find all cities within radius
+            nearby = location_db.get_nearby_locations(user_coords, radius_miles)
+            nearby_city_codes = [loc.code for loc, _ in nearby]
+            
+            # Get future events only from nearby cities (already sorted by date from database)
             result = await db.execute(
                 select(Event)
-                .where(Event.date >= today)
+                .where(
+                    Event.date >= today,
+                    Event.city_id.in_(nearby_city_codes)
+                )
                 .order_by(Event.date, Event.time)
                 .limit(limit)
             )
             events = result.scalars().all()
-            
+
             # Calculate distance for each event and filter
             nearby_events = []
             for event in events:
@@ -396,25 +403,34 @@ async def get_events_by_city(
         if not city_location:
             raise HTTPException(status_code=404, detail=f"City {city_code} not found")
         
+        from datetime import date
+        today = date.today()
+
         async with AsyncSessionLocal() as db:
             if include_nearby:
                 # Get nearby cities
                 nearby = location_db.get_nearby_locations(
-                    city_location.coordinates, 
+                    city_location.coordinates,
                     radius_miles
                 )
                 city_codes = [city_code] + [loc.code for loc, _ in nearby]
-                
-                # Query events for all nearby cities
+
+                # Query events for all nearby cities, only future events
                 result = await db.execute(
-                    select(Event).where(Event.city_id.in_(city_codes))
+                    select(Event).where(
+                        Event.city_id.in_(city_codes),
+                        Event.date >= today
+                    ).order_by(Event.date, Event.time)
                 )
             else:
-                # Query events for specific city only
+                # Query events for specific city only, only future events
                 result = await db.execute(
-                    select(Event).where(Event.city_id == city_code)
+                    select(Event).where(
+                        Event.city_id == city_code,
+                        Event.date >= today
+                    ).order_by(Event.date, Event.time)
                 )
-            
+
             events = result.scalars().all()
             
             return {

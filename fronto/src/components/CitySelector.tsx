@@ -291,25 +291,12 @@ export const CitySelector: React.FC<CityListProps> = ({
     requestAnimationFrame(animateScroll);
   }
 
-  /**
-   * Sanitize string to prevent XSS
-   */
-  function sanitizeString(str: string): string {
-    if (!str) return '';
-    // Replace HTML entities to prevent XSS
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
-  }
 
   /**
    * Highlight matching letters in city name
    */
   function HighlightMatch({ name, search }: { name: string; search: string }) {
-    if (!search) return <>{sanitizeString(name)}</>;
+    if (!search) return <>{name}</>;
     const lowerName = name.toLowerCase();
     const lowerSearch = search.toLowerCase();
     if (lowerName.startsWith(lowerSearch)) {
@@ -317,12 +304,12 @@ export const CitySelector: React.FC<CityListProps> = ({
       const rest = name.substring(search.length);
       return (
         <>
-          <span className="highlight">{sanitizeString(matched)}</span>
-          {sanitizeString(rest)}
+          <span className="highlight">{matched}</span>
+          {rest}
         </>
       );
     }
-    return <>{sanitizeString(name)}</>;
+    return <>{name}</>;
   }
 
   /**

@@ -251,12 +251,15 @@ async def run_all_scrapers():
     
     # Remove duplicates by link (within this run)
     seen_links = {}
+    unique_events = []
     for event in new_events:
         link = event.get('link', '')
         if link:
-            seen_links[link] = event
-    
-    unique_events = list(seen_links.values())
+            if link not in seen_links:
+                seen_links[link] = True
+                unique_events.append(event)
+        else:
+            unique_events.append(event)
     
     # Add new unique events to tracker
     if unique_events:
@@ -284,8 +287,8 @@ async def run_all_scrapers():
                     existing = json.load(f)
                     if isinstance(existing, dict) and existing.get('cities'):
                         out_data['cities'] = existing['cities']
-            except:
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                print(f"Warning: Could not load existing events file: {e}")
 
         out_data['cities'][location] = {
             'events': unique_events,
@@ -312,8 +315,8 @@ async def run_all_scrapers():
                         existing_frontend = json.load(f)
                         if isinstance(existing_frontend, dict) and existing_frontend.get('cities'):
                             merged_data['cities'] = existing_frontend['cities'].copy()
-                except:
-                    pass
+                except (json.JSONDecodeError, OSError) as e:
+                    print(f"Warning: Could not load existing frontend cache: {e}")
             
             # Merge in the new location data
             if location not in merged_data['cities'] or unique_events:
@@ -338,7 +341,8 @@ async def run_all_scrapers():
     total_scraped = sum(scraper_results.values())
     print(f"Total events scraped: {total_scraped}")
     print(f"Unique events after dedup: {len(unique_events)}")
-    print(f"Duplicates removed: {total_scraped - len(unique_events)}")
+    duplicates_removed = max(0, total_scraped - len(unique_events))
+    print(f"Duplicates removed: {duplicates_removed}")
 
     print("\nBy source:")
     for source, count in scraper_results.items():

@@ -382,24 +382,22 @@ async def cleanup_past_events(days_to_keep: int = 30):
     Returns:
         Number of events deleted
     """
-    from sqlalchemy import delete, select, and_, func
+    from sqlalchemy import delete, select, func
     
     cutoff_date = date.today() - __import__('datetime').timedelta(days=days_to_keep)
     
     async with AsyncSessionLocal() as session:
-        # Count events to delete
-        count_result = await session.execute(
-            select(func.count()).select_from(Event).where(Event.date < cutoff_date)
+        result = await session.execute(
+            delete(Event).where(Event.date < cutoff_date)
         )
-        deleted_count = count_result.scalar_one()
+        deleted_count = result.rowcount
+        await session.commit()
 
         if deleted_count > 0:
-            # Delete past events
-            delete_result = await session.execute(
-                delete(Event).where(Event.date < cutoff_date)
+            import logging
+            logging.getLogger(__name__).info(
+                "Deleted %d past events older than %d days", deleted_count, days_to_keep
             )
-            await session.commit()
-            print(f"[DB CLEANUP] Deleted {deleted_count} past events older than {days_to_keep} days")
 
         return deleted_count
 
@@ -432,7 +430,7 @@ async def get_subscribers_by_city(city_id: str):
     Returns:
         List of Subscription objects
     """
-    from sqlalchemy import select, and_
+    from sqlalchemy import select
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(

@@ -63,8 +63,7 @@ class CacheManager:
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None,
-        serialize: str = 'json'
+        ttl: Optional[int] = None
     ) -> bool:
         """Set value in cache"""
         if not self.client:
@@ -175,20 +174,25 @@ def cached(
     return decorator
 
 
+_background_tasks = set()
+
 def invalidate_cache(pattern: str):
     """Invalidate cache by pattern"""
     async def _invalidate():
         return await cache_manager.invalidate_pattern(pattern)
-    
+
     # Run in event loop if available
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.create_task(_invalidate())
-        else:
-            loop.run_until_complete(_invalidate())
-    except:
-        pass
+        loop = asyncio.get_running_loop()
+        task = loop.create_task(_invalidate())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
+    except RuntimeError:
+        # No running event loop — run synchronously
+        try:
+            asyncio.run(_invalidate())
+        except Exception:
+            pass
 
 
 # Cache key generators for common operations

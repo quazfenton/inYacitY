@@ -150,11 +150,11 @@ class DuplicateDetector:
         self,
         title_similarity_threshold: float = 0.85,
         location_similarity_threshold: float = 0.70,
-        time_window_hours: int = 2
+        time_window_days: int = 1
     ):
         self.title_threshold = title_similarity_threshold
         self.location_threshold = location_similarity_threshold
-        self.time_window = timedelta(hours=time_window_hours)
+        self.time_window = timedelta(days=time_window_days)
     
     def _normalize_string(self, text: str) -> str:
         """Normalize string for comparison"""
@@ -169,13 +169,15 @@ class DuplicateDetector:
         Generate deterministic hash for event
         Used for exact duplicate detection
         """
-        # Create normalized key
-        title = self._normalize_string(event.get('title', ''))
-        location = self._normalize_string(event.get('location', ''))
-        event_date = str(event.get('date', ''))
-        
-        key = f"{title}|{location}|{event_date}"
-        return hashlib.md5(key.encode()).hexdigest()
+        key_parts = [
+            self._normalize_string(event.get('title', '')),
+            str(event.get('date', '')),
+            self._normalize_string(event.get('location', '')),
+            event.get('city', '').lower().strip(),
+            event.get('source', '')
+        ]
+        key_string = '|'.join(key_parts)
+        return hashlib.sha256(key_string.encode()).hexdigest()
     
     def find_exact_duplicates(self, events: List[Dict]) -> List[Tuple[int, int]]:
         """
@@ -233,7 +235,7 @@ class DuplicateDetector:
                             continue
                     
                     # Check if dates are within the configured time window
-                    if abs((date1 - date2).days) > self.time_window.days:
+                    if abs(date1 - date2) > self.time_window:
                         continue
                 elif date1 != date2:  # Handle case where one is None and the other isn't
                     continue

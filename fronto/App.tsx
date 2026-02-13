@@ -223,19 +223,12 @@ const App: React.FC = () => {
 
         {/* Event Detail Modal - Single instance at App level */}
         {selectedEvent && (
-          <>
-            {/* Backdrop overlay */}
-            <div 
-              className="fixed inset-0 bg-black/60 z-[150]"
-              onClick={handleCloseModal}
-            />
-            <EventDetailModal
-              event={selectedEvent}
-              isOpen={true}
-              initialTab={modalInitialTab}
-              onClose={handleCloseModal}
-            />
-          </>
+          <EventDetailModal
+            event={selectedEvent}
+            isOpen={true}
+            initialTab={modalInitialTab}
+            onClose={handleCloseModal}
+          />
         )}
 
         {/* Main Content Area */}

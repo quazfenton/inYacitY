@@ -32,9 +32,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
       >
         {/* Background Image with Hover Effect */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src={event.imageUrl} 
-            alt={event.title} 
+          <img
+            src={event.imageUrl || `https://picsum.photos/800/400?random=${event.id}`}
+            alt={event.title}
             className="w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-700 scale-100 group-hover:scale-110 grayscale group-hover:grayscale-0"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-void via-void/80 to-transparent"></div>

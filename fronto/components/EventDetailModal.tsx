@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Event } from '../types';
 import { X, Calendar, MessageCircle, Send, User, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { useEventRSVP } from '../src/hooks/useEventRSVP';
@@ -13,6 +13,18 @@ interface EventDetailModalProps {
 
 const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, initialTab = 'details', onClose }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'rsvp' | 'comments'>(initialTab);
+
+  const prevIsOpenRef = useRef(isOpen);
+
+  // Sync activeTab with initialTab when modal opens
+  useEffect(() => {
+    // Only update activeTab when modal is transitioning from closed to open
+    if (isOpen && !prevIsOpenRef.current) {
+      setActiveTab(initialTab);
+    }
+    // Update the ref to current isOpen value
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, initialTab]);
   const [rsvpName, setRsvpName] = useState('');
   const [rsvpEmail, setRsvpEmail] = useState('');
   const [calendarType, setCalendarType] = useState<'google' | 'apple' | null>(null);

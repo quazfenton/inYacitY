@@ -77,8 +77,8 @@ class RateLimiter:
             pipe.zcount(key, now - 3600, now)
 
             results = await pipe.execute()
-            minute_count = results[0]
-            hour_count = results[1]
+            minute_count = results[1]
+            hour_count = results[2]
         else:
             # Use in-memory storage (per-instance only)
             if key not in self._storage:

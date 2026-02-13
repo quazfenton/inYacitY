@@ -382,18 +382,18 @@ async def scrape_city_events(city_id: str) -> Dict:
         # Read file contents while still in the lock to prevent race condition
         with open(all_events_file, 'r') as f:
             data = json.load(f)
-            
-    # Process data after releasing the lock
-        # Try to get events from the root level first
-        events_data = data.get('events', [])
-        
-        # If no events at root, try to get from cities structure
-        if not events_data and 'cities' in data:
-            city_data = data['cities'].get(city_id, {})
-            events_data = city_data.get('events', [])
 
-            # Do NOT aggregate events from all cities - only use events for the specific city
-            # If no events found for the specific city, return an empty list
+    # Process data after releasing the lock
+    # Try to get events from the root level first
+    events_data = data.get('events', [])
+
+    # If no events at root, try to get from cities structure
+    if not events_data and 'cities' in data:
+        city_data = data['cities'].get(city_id, {})
+        events_data = city_data.get('events', [])
+
+        # Do NOT aggregate events from all cities - only use events for the specific city
+        # If no events found for the specific city, return an empty list
 
     # Add source to events if missing
     for event in events_data:

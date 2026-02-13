@@ -35,10 +35,10 @@ allow_origins=os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_
 **Issue**: Incomplete error handling in API endpoints
 ```python
 # In main.py
-@app.get("/events/{city_id}", response_model=List[EventResponse])
-async def get_city_events(city_id: str, ...):
+@app.get("/events/{city}", response_model=List[EventResponse])
+async def get_city_events(city: str, ...):
     # Missing validation of city existence in database
-    query = select(Event).where(Event.city_id == city_id)
+    query = select(Event).where(Event.city == city)
 ```
 
 **Improvement**: Add proper validation
@@ -46,8 +46,8 @@ async def get_city_events(city_id: str, ...):
 # Validate city exists before querying
 from config import CONFIG
 supported_locations = CONFIG.get('SUPPORTED_LOCATIONS', [])
-if city_id not in supported_locations:
-    raise HTTPException(status_code=404, detail=f"City {city_id} not supported")
+if city not in supported_locations:
+    raise HTTPException(status_code=404, detail=f"City {city} not supported")
 ```
 
 ### 3. Database Connection Management
@@ -153,7 +153,7 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
 # In main.py - only basic email validation
 class SubscriptionCreate(BaseModel):
     email: EmailStr
-    city_id: str
+    city: str
 ```
 
 **Improvement**: Add comprehensive validation
@@ -163,7 +163,7 @@ import re
 
 class SubscriptionCreate(BaseModel):
     email: EmailStr
-    city_id: str
+    city: str
 
     @validator('email')
     def validate_email_format(cls, v):
@@ -173,7 +173,7 @@ class SubscriptionCreate(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower().strip()  # Normalize email
 
-    @validator('city_id')
+    @validator('city')
     def validate_city(cls, v):
         from config import CONFIG
         supported = CONFIG.get('SUPPORTED_LOCATIONS', [])
@@ -206,7 +206,7 @@ backend:
 **Issue**: Basic print statements instead of proper logging
 ```python
 # In scraper_integration.py
-print(f"[{datetime.now()}] Starting scrape for city: {city_id}")
+print(f"[{datetime.now()}] Starting scrape for city: {city}")
 ```
 
 **Improvement**: Use proper logging
@@ -224,7 +224,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-logger.info(f"Starting scrape for city: {city_id}")
+logger.info(f"Starting scrape for city: {city}")
 ```
 
 ### 9. Frontend Error Boundaries
@@ -268,8 +268,8 @@ class ErrorBoundary extends React.Component {
 **Issue**: No caching mechanism implemented
 ```python
 # API endpoints always hit database
-@app.get("/events/{city_id}")
-async def get_city_events(city_id: str, ...):
+@app.get("/events/{city}")
+async def get_city_events(city: str, ...):
     # Direct database query without caching
 ```
 
@@ -280,9 +280,9 @@ from fastapi_cache.decorator import cache
 from fastapi_cache.backends.redis import RedisBackend
 
 # Cache city events for 10 minutes
-@app.get("/events/{city_id}")
+@app.get("/events/{city}")
 @cache(expire=600)  # 10 minutes
-async def get_city_events(city_id: str, ...):
+async def get_city_events(city: str, ...):
     # Implementation
 ```
 

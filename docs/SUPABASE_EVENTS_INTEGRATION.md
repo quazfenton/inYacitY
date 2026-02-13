@@ -15,7 +15,7 @@ New events found via live scrape are now automatically saved to a shared Supabas
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   Backend API (FastAPI)                     │
-│  POST /scrape/{city_id} → Triggers scraper                 │
+│  POST /scrape/{city} → Triggers scraper                 │
 └──────────────────────┬──────────────────────────────────────┘
                        │
          ┌─────────────┴─────────────┐
@@ -44,13 +44,13 @@ Core Supabase integration module:
 **Key Functions**:
 ```python
 # Sync events to Supabase after scraping
-await sync_events_to_supabase(events_data, city_id)
+await sync_events_to_supabase(events_data, city)
 
 # Get events added in last N minutes (for live polling)
-await get_recent_events_from_supabase(city_id, minutes=5)
+await get_recent_events_from_supabase(city, minutes=5)
 
 # Fetch all events for a city from Supabase
-await supabase_manager.get_city_events(city_id)
+await supabase_manager.get_city_events(city)
 ```
 
 ### 2. `SUPABASE_SETUP.md`
@@ -81,19 +81,19 @@ Added: `supabase==2.1.5`
 ```python
 # After save_events() call:
 try:
-    supabase_result = await sync_events_to_supabase(events_data, city_id)
+    supabase_result = await sync_events_to_supabase(events_data, city)
     logger.info(f"Supabase sync result: {supabase_result}")
 except Exception as e:
     logger.warning(f"Supabase sync failed (non-critical): {e}")
 ```
 
 ### `backend/main.py`
-- Updated `/scrape/{city_id}` endpoint response
+- Updated `/scrape/{city}` endpoint response
 - Now includes note about real-time sync:
 ```json
 {
   "message": "Scraping initiated for ca--los-angeles",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "note": "Events will be synced to shared database in real-time"
 }
 ```
@@ -103,7 +103,7 @@ except Exception as e:
 ### Event Flow During Refresh
 
 1. **User clicks "REFRESH EVENTS (1/1)"**
-   - Frontend calls `POST /scrape/{city_id}`
+   - Frontend calls `POST /scrape/{city}`
    - Button shows "REFRESHING EVENTS..."
 
 2. **Scraper Runs in Background**
@@ -152,7 +152,7 @@ time TEXT
 location TEXT
 description TEXT
 source TEXT (eventbrite, meetup, luma, etc)
-city_id TEXT
+city TEXT
 synced_at TIMESTAMP
 last_scraped TIMESTAMP
 created_at TIMESTAMP
@@ -162,11 +162,11 @@ created_at TIMESTAMP
 ```sql
 id (PRIMARY KEY)
 email TEXT
-city_id TEXT
+city TEXT
 is_active BOOLEAN
 created_at TIMESTAMP
 unsubscribed_at TIMESTAMP
-UNIQUE(email, city_id)
+UNIQUE(email, city)
 ```
 
 ## Features

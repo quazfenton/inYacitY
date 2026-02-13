@@ -117,9 +117,9 @@ async def scrape_dice(city: str = None, max_price: int = None) -> list:
     output_file = os.path.join(os.path.dirname(__file__), "dice_events.json")
 
     # Build URL
-    city_id = city_map.get(city)
+    city = city_map.get(city)
 
-    url = f"https://dice.fm/browse/{city_id}"
+    url = f"https://dice.fm/browse/{city}"
     if max_price == 0:
         url += "?priceTo=1"  # Free events
     elif max_price > 0:

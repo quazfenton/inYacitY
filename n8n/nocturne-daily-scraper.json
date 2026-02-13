@@ -106,7 +106,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "code": "// Transform events for Supabase/Notion\nconst events = $node.data.main[0];\nconst cityToScrape = $node[\"Set Variables\"].context.cityToScrape;\nconst today = new Date().toISOString().split('T')[0];\n\nreturn items.map(item => ({\n  title: item.json.title,\n  link: item.json.link,\n  date: item.json.date,\n  time: item.json.time,\n  location: item.json.location,\n  description: item.json.description,\n  source: item.json.source,\n  city_id: cityToScrape,\n  synced_at: new Date().toISOString(),\n  last_scraped: today\n}));"
+        "code": "// Transform events for Supabase/Notion\nconst events = $node.data.main[0];\nconst cityToScrape = $node[\"Set Variables\"].context.cityToScrape;\nconst today = new Date().toISOString().split('T')[0];\n\nreturn items.map(item => ({\n  title: item.json.title,\n  link: item.json.link,\n  date: item.json.date,\n  time: item.json.time,\n  location: item.json.location,\n  description: item.json.description,\n  source: item.json.source,\n  city: cityToScrape,\n  synced_at: new Date().toISOString(),\n  last_scraped: today\n}));"
       },
       "id": "transform_events",
       "name": "Transform Events for Database",

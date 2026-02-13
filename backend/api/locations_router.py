@@ -345,7 +345,7 @@ async def get_events_nearby(
                 select(Event)
                 .where(
                     Event.date >= today,
-                    Event.city_id.in_(nearby_city_codes)
+                    Event.city.in_(nearby_city_codes)
                 )
                 .order_by(Event.date, Event.time)
                 .limit(limit)
@@ -356,7 +356,7 @@ async def get_events_nearby(
             nearby_events = []
             for event in events:
                 # Get coordinates for event's city
-                city_location = location_db.get_location(event.city_id)
+                city_location = location_db.get_location(event.city)
                 if city_location:
                     distance = user_coords.distance_to(city_location.coordinates)
                     if distance <= radius_miles:
@@ -366,7 +366,7 @@ async def get_events_nearby(
                             "date": event.date.isoformat() if event.date else None,
                             "time": event.time,
                             "location": event.location,
-                            "city_id": event.city_id,
+                            "city": event.city,
                             "distance_miles": round(distance, 2)
                         })
             
@@ -418,7 +418,7 @@ async def get_events_by_city(
                 # Query events for all nearby cities, only future events
                 result = await db.execute(
                     select(Event).where(
-                        Event.city_id.in_(city_codes),
+                        Event.city.in_(city_codes),
                         Event.date >= today
                     ).order_by(Event.date, Event.time)
                 )
@@ -426,7 +426,7 @@ async def get_events_by_city(
                 # Query events for specific city only, only future events
                 result = await db.execute(
                     select(Event).where(
-                        Event.city_id == city_code,
+                        Event.city == city_code,
                         Event.date >= today
                     ).order_by(Event.date, Event.time)
                 )
@@ -446,7 +446,7 @@ async def get_events_by_city(
                         "date": event.date.isoformat() if event.date else None,
                         "time": event.time,
                         "location": event.location,
-                        "city_id": event.city_id
+                        "city": event.city
                     }
                     for event in events
                 ]

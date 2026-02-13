@@ -236,7 +236,7 @@ class Event:
     registered_users: int = 0  # Current registrations
 
     # City association (added for city-based filtering)
-    city_id: Optional[str] = None  # City ID that the event was scraped for
+    city: Optional[str] = None  # City ID that the event was scraped for
     
     # Tracking
     scraped_at: Optional[str] = None
@@ -270,7 +270,7 @@ class Event:
             'user_id': self.user_id,
             'ticket_limit': self.ticket_limit,
             'registered_users': self.registered_users,
-            'city_id': self.city_id,
+            'city': self.city,
             'scraped_at': self.scraped_at,
             'last_updated': self.last_updated,
             'metadata': self.metadata
@@ -320,7 +320,7 @@ class Event:
             user_id=data.get('user_id'),
             ticket_limit=data.get('ticket_limit'),
             registered_users=data.get('registered_users', 0),
-            city_id=data.get('city_id'),
+            city=data.get('city'),
             scraped_at=data.get('scraped_at'),
             last_updated=data.get('last_updated', datetime.utcnow().isoformat()),
             metadata=data.get('metadata', {})

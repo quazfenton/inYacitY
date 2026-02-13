@@ -321,7 +321,7 @@ To enable Slack notifications:
 **"404 Not Found" from scraper**
 - Check NOCTURNE_API_URL is correct
 - Verify backend is running
-- Check city_id is valid
+- Check city is valid
 
 **"Events syncing fails"**
 - Check Supabase credentials
@@ -504,8 +504,8 @@ To optimize:
 ### Reduce API Calls
 
 Currently makes:
-1. POST /scrape/{city_id}
-2. GET /events/{city_id}
+1. POST /scrape/{city}
+2. GET /events/{city}
 3. POST to Supabase
 4. POST to Notion (optional)
 5. POST to Slack (optional)

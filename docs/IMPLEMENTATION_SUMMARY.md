@@ -54,7 +54,7 @@ Users can now click "REFRESH EVENTS" to scrape new events live and see them appe
    - Logging for monitoring
 
 2. **backend/main.py**
-   - Updated `/scrape/{city_id}` response
+   - Updated `/scrape/{city}` response
    - Added note about real-time sync to users
 
 3. **.env.example**

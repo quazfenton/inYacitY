@@ -66,7 +66,7 @@ class EventDataPatcher:
                 # Extract events from nested structure
                 self.events = self.data.get('events', [])
                 if not self.events and isinstance(self.data, dict) and self.data.get('cities'):
-                    for city_id, city_data in self.data['cities'].items():
+                    for city, city_data in self.data['cities'].items():
                         if isinstance(city_data, dict) and 'events' in city_data:
                             self.events.extend(city_data['events'])
                             

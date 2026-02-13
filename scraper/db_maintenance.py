@@ -53,10 +53,10 @@ class DatabaseMaintenanceTool:
                 # Extract events from nested structure
                 self.local_events = data.get('events', [])
                 if not self.local_events and isinstance(data, dict) and data.get('cities'):
-                    for city_id, city_data in data['cities'].items():
+                    for city, city_data in data['cities'].items():
                         if isinstance(city_data, dict) and 'events' in city_data:
                             for event in city_data['events']:
-                                event['city'] = city_id
+                                event['city'] = city
                             self.local_events.extend(city_data['events'])
                 
                 print(f"[OK] Loaded {len(self.local_events)} local events")

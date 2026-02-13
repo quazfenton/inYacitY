@@ -146,16 +146,16 @@ events.map((event, idx) => (
 
 #### 1. Scraper Integration (scraper_integration.py)
 ```python
-async def scrape_city_events(city_id: str):
+async def scrape_city_events(city: str):
     # Run scraper
     events_data = run_scrapers()
     
     # Save to local database
-    result = await save_events(events_data, city_id)
+    result = await save_events(events_data, city)
     
     # NEW: Sync to Supabase automatically
     try:
-        supabase_result = await sync_events_to_supabase(events_data, city_id)
+        supabase_result = await sync_events_to_supabase(events_data, city)
         logger.info(f"Synced {supabase_result['synced']} to Supabase")
     except Exception as e:
         logger.warning(f"Supabase sync failed: {e}")
@@ -164,7 +164,7 @@ async def scrape_city_events(city_id: str):
 #### 2. Supabase Integration (supabase_integration.py)
 ```python
 class SupabaseManager:
-    async def sync_events(self, events_data, city_id):
+    async def sync_events(self, events_data, city):
         """Sync scraped events to Supabase PostgreSQL"""
         for event in events_data:
             # Check if exists
@@ -184,9 +184,9 @@ class SupabaseManager:
 
 #### 3. API Response Updates (main.py)
 ```python
-@app.post("/scrape/{city_id}")
-async def scrape_events(city_id: str):
-    background_tasks.add_task(scrape_city_events, city_id)
+@app.post("/scrape/{city}")
+async def scrape_events(city: str):
+    background_tasks.add_task(scrape_city_events, city)
     
     return {
         "message": f"Scraping initiated",
@@ -199,7 +199,7 @@ async def scrape_events(city_id: str):
 #### Local PostgreSQL (Always)
 ```sql
 -- Unchanged, but now receives scraped events live
-INSERT INTO events (title, link, date, time, location, description, source, city_id)
+INSERT INTO events (title, link, date, time, location, description, source, city)
 VALUES (...)
 ```
 
@@ -215,13 +215,13 @@ CREATE TABLE events (
     location TEXT,
     description TEXT,
     source TEXT,
-    city_id TEXT,
+    city TEXT,
     synced_at TIMESTAMP,  -- When synced
     last_scraped TIMESTAMP,  -- When found in scrape
     created_at TIMESTAMP
 );
 
-CREATE INDEX idx_events_city ON events(city_id);
+CREATE INDEX idx_events_city ON events(city);
 ```
 
 ## Data Flow
@@ -232,7 +232,7 @@ CREATE INDEX idx_events_city ON events(city_id);
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
-│ 2. Frontend sends POST /scrape/{city_id}                    │
+│ 2. Frontend sends POST /scrape/{city}                    │
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
@@ -240,7 +240,7 @@ CREATE INDEX idx_events_city ON events(city_id);
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
-│ 4. Frontend starts polling GET /events/{city_id} every 1s   │
+│ 4. Frontend starts polling GET /events/{city} every 1s   │
 └────────────────────┬────────────────────────────────────────┘
                      │
          ┌───────────┴───────────┐
@@ -377,7 +377,7 @@ Potential improvements:
 ### Button says "REFRESH USED" but didn't scrape
 1. Check backend was reachable
 2. Check for network errors in browser console
-3. Verify city_id is valid
+3. Verify city is valid
 4. Try different city
 
 ---

@@ -36,7 +36,7 @@ class EventResponse(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     source: str
-    city_id: str
+    city: str
 
     class Config:
         from_attributes = True
@@ -45,7 +45,7 @@ import re
 
 class SubscriptionCreate(BaseModel):
     email: EmailStr
-    city_id: str
+    city: str
 
     @validator('email')
     def validate_email_format(cls, v):
@@ -55,7 +55,7 @@ class SubscriptionCreate(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower().strip()  # Normalize email
 
-    @validator('city_id')
+    @validator('city')
     def validate_city(cls, v):
         from config import CONFIG
         supported = CONFIG.get('SUPPORTED_LOCATIONS', [])
@@ -66,7 +66,7 @@ class SubscriptionCreate(BaseModel):
 class SubscriptionResponse(BaseModel):
     id: int
     email: str
-    city_id: str
+    city: str
     created_at: datetime
     is_active: bool
     
@@ -133,21 +133,21 @@ async def get_cities():
     cities = []
     supported = CONFIG.get('SUPPORTED_LOCATIONS', [])
     
-    for city_id in supported:
-        city_info = CITY_MAPPING.get(city_id, {
-            'id': city_id,
-            'name': city_id.replace('--', ' ').title(),
-            'slug': city_id.replace('--', '-').lower()
+    for city in supported:
+        city_info = CITY_MAPPING.get(city, {
+            'id': city,
+            'name': city.replace('--', ' ').title(),
+            'slug': city.replace('--', '-').lower()
         })
-        city_info['id'] = city_id
+        city_info['id'] = city
         cities.append(city_info)
     
     return {"cities": cities}
 
 # Get events for a specific city
-@app.get("/events/{city_id}", response_model=List[EventResponse])
+@app.get("/events/{city}", response_model=List[EventResponse])
 async def get_city_events(
-    city_id: str,
+    city: str,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     limit: int = 100,
@@ -159,11 +159,11 @@ async def get_city_events(
     # Validate city
     from config import CONFIG
     supported_locations = CONFIG.get('SUPPORTED_LOCATIONS', [])
-    if city_id not in supported_locations:
-        raise HTTPException(status_code=404, detail=f"City {city_id} not supported")
+    if city not in supported_locations:
+        raise HTTPException(status_code=404, detail=f"City {city} not supported")
 
     # Use the database function that filters for future events
-    events = await get_future_events_for_city(city_id, start_date, end_date, limit)
+    events = await get_future_events_for_city(city, start_date, end_date, limit)
     return events
 
 # Refresh all cities
@@ -174,19 +174,19 @@ async def scrape_all(background_tasks: BackgroundTasks):
     return {"message": "Scraping initiated for all cities"}
 
 # Scrape events for a city
-@app.post("/scrape/{city_id}")
-async def scrape_events(city_id: str, background_tasks: BackgroundTasks):
+@app.post("/scrape/{city}")
+async def scrape_events(city: str, background_tasks: BackgroundTasks):
     """Trigger scraping for a specific city"""
     from config import CONFIG
-    if city_id not in CONFIG.get('SUPPORTED_LOCATIONS', []):
-        raise HTTPException(status_code=404, detail=f"City {city_id} not supported")
+    if city not in CONFIG.get('SUPPORTED_LOCATIONS', []):
+        raise HTTPException(status_code=404, detail=f"City {city} not supported")
 
     # Run scraping in background
-    background_tasks.add_task(scrape_city_events, city_id)
+    background_tasks.add_task(scrape_city_events, city)
 
     return {
-        "message": f"Scraping initiated for {city_id}",
-        "city_id": city_id,
+        "message": f"Scraping initiated for {city}",
+        "city": city,
         "note": "Events will be synced to shared database in real-time"
     }
 
@@ -202,7 +202,7 @@ async def subscribe(subscription: SubscriptionCreate, db=Depends(get_db)):
         existing = await db.execute(
             select(Subscription).where(
                 (Subscription.email == subscription.email) &
-                (Subscription.city_id == subscription.city_id)
+                (Subscription.city == subscription.city)
             )
         )
         if existing.scalar_one_or_none():
@@ -211,7 +211,7 @@ async def subscribe(subscription: SubscriptionCreate, db=Depends(get_db)):
         # Create subscription
         new_subscription = Subscription(
             email=subscription.email,
-            city_id=subscription.city_id,
+            city=subscription.city,
             is_active=True
         )
         
@@ -274,7 +274,7 @@ async def admin_login(admin_credentials: dict, db=Depends(get_db)):
 # Get all subscriptions (admin endpoint)
 @app.get("/subscriptions", response_model=List[SubscriptionResponse])
 async def get_subscriptions(
-    city_id: Optional[str] = None,
+    city: Optional[str] = None,
     active_only: bool = True,
     current_user = Depends(get_current_admin),
     db=Depends(get_db)
@@ -285,8 +285,8 @@ async def get_subscriptions(
 
     query = select(Subscription)
 
-    if city_id:
-        query = query.where(Subscription.city_id == city_id)
+    if city:
+        query = query.where(Subscription.city == city)
 
     if active_only:
         query = query.where(Subscription.is_active == True)

@@ -128,7 +128,7 @@ Nocturne is a full-stack underground event discovery platform that scrapes event
 |--------|-----------|-------------|------|
 | GET | `/health` | Health check & stats | No |
 | GET | `/cities` | List all cities | No |
-| GET | `/events/{city_id}` | Get events for city | No |
+| GET | `/events/{city}` | Get events for city | No |
 | GET | `/api/docs` | Swagger documentation | No |
 
 ### Action Endpoints
@@ -136,7 +136,7 @@ Nocturne is a full-stack underground event discovery platform that scrapes event
 | Method | Endpoint | Description | Auth |
 |--------|-----------|-------------|------|
 | POST | `/subscribe` | Subscribe to city | No |
-| POST | `/scrape/{city_id}` | Trigger scraping | No |
+| POST | `/scrape/{city}` | Trigger scraping | No |
 | POST | `/scrape/all` | Scrape all cities | No |
 
 ### Admin Endpoints
@@ -317,7 +317,7 @@ See `DEPLOYMENT_GUIDE.md` for detailed instructions.
 ```
 User clicks "SCAN FOR UNDERGROUND"
         ↓
-Frontend calls POST /scrape/{city_id}
+Frontend calls POST /scrape/{city}
         ↓
 Backend adds background task
         ↓
@@ -377,9 +377,9 @@ Complete
 ### Database Optimization
 
 1. **Indexes**:
-   - Composite index on `city_id` + `date` for fast queries
+   - Composite index on `city` + `date` for fast queries
    - Unique index on `link` to prevent duplicates
-   - Index on `email` + `city_id` for subscription lookup
+   - Index on `email` + `city` for subscription lookup
 
 2. **Connection Pooling**:
    - Pool size: 10 connections
@@ -396,7 +396,7 @@ Complete
 1. **Response Times** (expected):
    - `/health`: < 50ms
    - `/cities`: < 100ms
-   - `/events/{city_id}`: < 200ms (depends on result count)
+   - `/events/{city}`: < 200ms (depends on result count)
 
 2. **Rate Limiting** (recommended for production):
    - API endpoints: 10 requests/second per IP
@@ -533,7 +533,7 @@ def test_get_cities():
 def test_subscribe():
     response = client.post(
         "/subscribe",
-        json={"email": "test@example.com", "city_id": "ca--los-angeles"}
+        json={"email": "test@example.com", "city": "ca--los-angeles"}
     )
     assert response.status_code == 200
     assert response.json()["email"] == "test@example.com"

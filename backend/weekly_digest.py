@@ -41,7 +41,7 @@ from email_service import send_email, generate_email_template
 @dataclass
 class DigestResult:
     """Result of digest send operation"""
-    city_id: str
+    city: str
     emails_sent: int
     emails_failed: int
     events_count: int
@@ -64,23 +64,23 @@ class WeeklyDigestSender:
         self.max_events_per_email = max_events_per_email
         self.results: List[DigestResult] = []
     
-    async def gather_events_for_city(self, city_id: str) -> List[Dict]:
+    async def gather_events_for_city(self, city: str) -> List[Dict]:
         """
         Gather upcoming events for a city (this week only, no past events)
         Events are already sorted by date (ascending) from the database
         
         Args:
-            city_id: City ID to gather events for
+            city: City ID to gather events for
         
         Returns:
             List of event dictionaries (pre-sorted by date from database)
         """
-        print(f"[GATHER] Fetching events for {city_id} (next {self.days_ahead} days)...")
+        print(f"[GATHER] Fetching events for {city} (next {self.days_ahead} days)...")
         
         # get_future_events_for_city returns events already sorted by date from database
         # No additional sorting needed here
         events = await get_future_events_for_city(
-            city_id=city_id,
+            city=city,
             start_date=date.today(),
             end_date=date.today() + timedelta(days=self.days_ahead),
             limit=self.max_events_per_email
@@ -89,15 +89,15 @@ class WeeklyDigestSender:
         # Convert to dictionaries (maintains database sort order)
         event_dicts = [event.to_dict() for event in events]
         
-        print(f"[GATHER] Found {len(event_dicts)} upcoming events for {city_id} (sorted by date)")
+        print(f"[GATHER] Found {len(event_dicts)} upcoming events for {city} (sorted by date)")
         return event_dicts
     
-    async def get_city_name(self, city_id: str) -> str:
+    async def get_city_name(self, city: str) -> str:
         """
         Get display name for a city
         
         Args:
-            city_id: City ID
+            city: City ID
         
         Returns:
             City display name
@@ -124,7 +124,7 @@ class WeeklyDigestSender:
             'on--toronto': 'Toronto'
         }
         
-        return city_names.get(city_id, city_id.replace('--', ' ').title())
+        return city_names.get(city, city.replace('--', ' ').title())
     
     async def send_digest_to_subscriber(
         self,
@@ -169,7 +169,7 @@ class WeeklyDigestSender:
             await log_email_sent(
                 subscription_id=subscriber.id,
                 email=subscriber.email,
-                city_id=subscriber.city_id,
+                city=subscriber.city,
                 events_count=len(events),
                 success=success,
                 error_message=None if success else "Failed to send email"
@@ -189,7 +189,7 @@ class WeeklyDigestSender:
             await log_email_sent(
                 subscription_id=subscriber.id,
                 email=subscriber.email,
-                city_id=subscriber.city_id,
+                city=subscriber.city,
                 events_count=len(events),
                 success=False,
                 error_message=str(e)
@@ -199,33 +199,33 @@ class WeeklyDigestSender:
     
     async def send_digest_for_city(
         self,
-        city_id: str,
+        city: str,
         dry_run: bool = False
     ) -> DigestResult:
         """
         Send weekly digest to all subscribers for a city
         
         Args:
-            city_id: City ID
+            city: City ID
             dry_run: If True, preview without sending
         
         Returns:
             DigestResult with statistics
         """
-        print(f"\n[PROCESSING] City: {city_id}")
+        print(f"\n[PROCESSING] City: {city}")
         print("=" * 60)
         
         # Get city name
-        city_name = await self.get_city_name(city_id)
+        city_name = await self.get_city_name(city)
         print(f"City Name: {city_name}")
         
         # Gather events
-        events = await self.gather_events_for_city(city_id)
+        events = await self.gather_events_for_city(city)
         
         if not events:
-            print(f"[SKIP] No upcoming events for {city_id}")
+            print(f"[SKIP] No upcoming events for {city}")
             return DigestResult(
-                city_id=city_id,
+                city=city,
                 emails_sent=0,
                 emails_failed=0,
                 events_count=0,
@@ -233,12 +233,12 @@ class WeeklyDigestSender:
             )
         
         # Get subscribers
-        subscribers = await get_subscribers_by_city(city_id)
+        subscribers = await get_subscribers_by_city(city)
         
         if not subscribers:
-            print(f"[SKIP] No active subscribers for {city_id}")
+            print(f"[SKIP] No active subscribers for {city}")
             return DigestResult(
-                city_id=city_id,
+                city=city,
                 emails_sent=0,
                 emails_failed=0,
                 events_count=len(events),
@@ -279,14 +279,14 @@ class WeeklyDigestSender:
                 await asyncio.sleep(self.delay_between_batches)
         
         result = DigestResult(
-            city_id=city_id,
+            city=city,
             emails_sent=sent_count,
             emails_failed=failed_count,
             events_count=len(events),
             errors=errors
         )
         
-        print(f"\n[RESULT] {city_id}:")
+        print(f"\n[RESULT] {city}:")
         print(f"  Emails sent: {sent_count}")
         print(f"  Emails failed: {failed_count}")
         print(f"  Events included: {len(events)}")
@@ -325,8 +325,8 @@ class WeeklyDigestSender:
             print(f"\n[INFO] Found {len(cities)} cities with active subscribers")
         
         # Process each city
-        for city_id in cities:
-            result = await self.send_digest_for_city(city_id, dry_run)
+        for city in cities:
+            result = await self.send_digest_for_city(city, dry_run)
             self.results.append(result)
         
         # Summary
@@ -347,37 +347,37 @@ class WeeklyDigestSender:
         print(f"Duration: {duration:.1f} seconds")
         print("=" * 60)
     
-    async def test_send(self, test_email: str, city_id: Optional[str] = None):
+    async def test_send(self, test_email: str, city: Optional[str] = None):
         """
         Send a test digest to a single email address
         
         Args:
             test_email: Email address to send test to
-            city_id: Optional specific city, or uses first available
+            city: Optional specific city, or uses first available
         """
         print(f"\n[TEST MODE] Sending test digest to {test_email}")
         
         # Determine city
-        if not city_id:
+        if not city:
             cities = await get_cities_with_active_subscribers()
             if not cities:
                 print("[ERROR] No cities with subscribers found")
                 return
-            city_id = cities[0]
+            city = cities[0]
         
         # Get city name and events
-        city_name = await self.get_city_name(city_id)
-        events = await self.gather_events_for_city(city_id)
+        city_name = await self.get_city_name(city)
+        events = await self.gather_events_for_city(city)
         
         if not events:
-            print(f"[ERROR] No events found for {city_id}")
+            print(f"[ERROR] No events found for {city}")
             return
         
         # Create mock subscriber
         mock_subscriber = Subscription(
             id=0,
             email=test_email,
-            city_id=city_id,
+            city=city,
             is_active=True
         )
         

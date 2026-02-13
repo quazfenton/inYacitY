@@ -266,14 +266,14 @@ async def send_email(
         return False
 
 
-async def send_subscription_confirmation(email: str, city_name: str, city_id: str) -> bool:
+async def send_subscription_confirmation(email: str, city_name: str, city: str) -> bool:
     """
     Send confirmation email when user subscribes
     
     Args:
         email: User's email address
         city_name: Name of the city
-        city_id: City ID for unsubscribe link
+        city: City ID for unsubscribe link
     
     Returns:
         True if email sent successfully

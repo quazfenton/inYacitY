@@ -268,15 +268,15 @@ python run.py
 
 ### Backend Scraper Endpoint
 
-When backend calls `/scrape/{city_id}`:
+When backend calls `/scrape/{city}`:
 
 ```python
 # backend/scraper_integration.py
-await scrape_city_events(city_id)
+await scrape_city_events(city)
 ```
 
 This should now:
-1. Call `run.py` with location set to `city_id`
+1. Call `run.py` with location set to `city`
 2. Scraper runs all 3 sources
 3. Saves to `all_events.json`
 4. Backend reads and stores in database

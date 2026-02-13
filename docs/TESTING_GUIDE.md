@@ -86,7 +86,7 @@ curl http://localhost:8000/cities
 
 ### 1.3 Get Events (Empty Database)
 
-**Endpoint:** `GET /events/{city_id}`
+**Endpoint:** `GET /events/{city}`
 
 ```bash
 curl http://localhost:8000/events/ca--los-angeles
@@ -103,7 +103,7 @@ curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }'
 ```
 
@@ -112,7 +112,7 @@ curl -X POST http://localhost:8000/subscribe \
 {
   "id": 1,
   "email": "test@example.com",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "created_at": "2026-01-31T19:00:00.123456",
   "is_active": true
 }
@@ -122,7 +122,7 @@ curl -X POST http://localhost:8000/subscribe \
 - ✅ Valid email accepted
 - ✅ Duplicate subscription returns error (400)
 - ✅ Invalid email format returns error (422)
-- ✅ Invalid city_id returns error (404)
+- ✅ Invalid city returns error (404)
 
 **Test duplicate subscription:**
 ```bash
@@ -130,7 +130,7 @@ curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }'
 ```
 
@@ -147,7 +147,7 @@ curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
   -d '{
     "email": "not-an-email",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }'
 ```
 
@@ -167,7 +167,7 @@ curl http://localhost:8000/subscriptions
   {
     "id": 1,
     "email": "test@example.com",
-    "city_id": "ca--los-angeles",
+    "city": "ca--los-angeles",
     "created_at": "2026-01-31T19:00:00.123456",
     "is_active": true
   }
@@ -176,7 +176,7 @@ curl http://localhost:8000/subscriptions
 
 **Tests:**
 - ✅ Returns all active subscriptions
-- ✅ Filter by city: `curl "http://localhost:8000/subscriptions?city_id=ca--los-angeles"`
+- ✅ Filter by city: `curl "http://localhost:8000/subscriptions?city=ca--los-angeles"`
 - ✅ Include inactive: `curl "http://localhost:8000/subscriptions?active_only=false"`
 
 ### 1.6 Unsubscribe
@@ -203,7 +203,7 @@ The subscription should still appear but `is_active` should be `false`.
 
 ### 1.7 Trigger Scraping
 
-**Endpoint:** `POST /scrape/{city_id}`
+**Endpoint:** `POST /scrape/{city}`
 
 ```bash
 curl -X POST http://localhost:8000/scrape/ca--los-angeles
@@ -213,7 +213,7 @@ curl -X POST http://localhost:8000/scrape/ca--los-angeles
 ```json
 {
   "message": "Scraping initiated for ca--los-angeles",
-  "city_id": "ca--los-angeles"
+  "city": "ca--los-angeles"
 }
 ```
 
@@ -252,7 +252,7 @@ curl http://localhost:8000/events/ca--los-angeles
     "location": "Central Park",
     "description": "A free outdoor concert...",
     "source": "eventbrite",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }
   // ... more events
 ]
@@ -455,7 +455,7 @@ Open browser DevTools (F12) and test different screen sizes:
 
 2. Verify subscriptions:
    ```bash
-   curl http://localhost:8000/subscriptions | jq '.[] | {email, city_id}'
+   curl http://localhost:8000/subscriptions | jq '.[] | {email, city}'
    ```
 
 3. Scrape multiple cities
@@ -659,10 +659,10 @@ docker exec -it nocturne_db psql -U nocturne -d nocturne -c "\di"
 
 ```bash
 docker exec -it nocturne_db psql -U nocturne -d nocturne -c "
-INSERT INTO events (title, link, date, time, location, description, source, city_id)
+INSERT INTO events (title, link, date, time, location, description, source, city)
 VALUES ('Test Event', 'https://test.com', '2026-02-01', '7:00 PM', 'Test Location', 'Test Desc', 'test', 'ca--los-angeles');
 
-INSERT INTO events (title, link, date, time, location, description, source, city_id)
+INSERT INTO events (title, link, date, time, location, description, source, city)
 VALUES ('Test Event 2', 'https://test.com', '2026-02-01', '8:00 PM', 'Test Location 2', 'Test Desc 2', 'test', 'ca--los-angeles');
 "
 ```
@@ -752,7 +752,7 @@ curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
   -d '{
     "email": "<script>alert(1)</script>@example.com",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }'
 ```
 

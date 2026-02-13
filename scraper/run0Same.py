@@ -24,14 +24,14 @@ BASE_DIR = os.path.dirname(__file__)
 ALL_EVENTS_PATH = os.path.join(BASE_DIR, 'all_events.json')
 
 
-def load_city_events_from_file(path: str, city_id: str) -> list:
+def load_city_events_from_file(path: str, city: str) -> list:
     if not os.path.exists(path):
         return []
     try:
         with open(path, 'r') as f:
             data = json.load(f)
         if isinstance(data, dict) and data.get('cities'):
-            return data['cities'].get(city_id, {}).get('events', [])
+            return data['cities'].get(city, {}).get('events', [])
         return data.get('events', [])
     except Exception:
         return []

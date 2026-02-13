@@ -137,8 +137,8 @@ def cached(
     
     Example:
         @cached(ttl=600, key_prefix="events")
-        async def get_city_events(city_id: str):
-            return await fetch_events(city_id)
+        async def get_city_events(city: str):
+            return await fetch_events(city)
     """
     def decorator(func: Callable) -> Callable:
         prefix = key_prefix or func.__name__
@@ -196,9 +196,9 @@ def invalidate_cache(pattern: str):
 
 
 # Cache key generators for common operations
-def get_city_events_key(city_id: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
+def get_city_events_key(city: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> str:
     """Generate cache key for city events"""
-    return f"events:{city_id}:{date_from}:{date_to}"
+    return f"events:{city}:{date_from}:{date_to}"
 
 
 def get_event_detail_key(event_id: int) -> str:
@@ -211,15 +211,15 @@ def get_cities_key() -> str:
     return "cities:all"
 
 
-def get_subscribers_key(city_id: str) -> str:
+def get_subscribers_key(city: str) -> str:
     """Generate cache key for subscribers"""
-    return f"subscribers:{city_id}"
+    return f"subscribers:{city}"
 
 
 # Smart cache invalidation helpers
-async def invalidate_city_events(city_id: str):
+async def invalidate_city_events(city: str):
     """Invalidate all cached events for a city"""
-    await cache_manager.invalidate_pattern(f"events:{city_id}:*")
+    await cache_manager.invalidate_pattern(f"events:{city}:*")
 
 
 async def invalidate_event(event_id: int):

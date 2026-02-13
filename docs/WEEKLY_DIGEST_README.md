@@ -176,7 +176,7 @@ Subscribers linked to cities:
 ```sql
 -- Get active subscribers for a city
 SELECT email FROM subscriptions 
-WHERE city_id = 'ca--los-angeles' 
+WHERE city = 'ca--los-angeles' 
 AND is_active = true;
 ```
 
@@ -203,7 +203,7 @@ ORDER BY sent_at DESC;
 ```python
 # Get events from today onwards (no past events)
 events = await get_future_events_for_city(
-    city_id='ca--los-angeles',
+    city='ca--los-angeles',
     start_date=date.today(),  # Only future events
     end_date=date.today() + timedelta(days=7),
     limit=20
@@ -309,7 +309,7 @@ To keep the database clean, past events are automatically filtered out:
 ```python
 # Only events from today onwards
 events = await get_upcoming_events(
-    city_id='ca--los-angeles',
+    city='ca--los-angeles',
     days_ahead=7  # This week only
 )
 ```
@@ -342,10 +342,10 @@ WHERE sent_at >= CURRENT_DATE - INTERVAL '7 days'
 GROUP BY success;
 
 -- Emails by city
-SELECT city_id, COUNT(*) 
+SELECT city, COUNT(*) 
 FROM email_logs 
 WHERE sent_at >= CURRENT_DATE - INTERVAL '7 days'
-GROUP BY city_id 
+GROUP BY city 
 ORDER BY COUNT(*) DESC;
 ```
 
@@ -393,10 +393,10 @@ print(f'Found {len(events)} events')
 
 Check subscriptions:
 ```sql
-SELECT city_id, COUNT(*) 
+SELECT city, COUNT(*) 
 FROM subscriptions 
 WHERE is_active = true 
-GROUP BY city_id;
+GROUP BY city;
 ```
 
 ### Rate Limiting Issues

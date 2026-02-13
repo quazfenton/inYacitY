@@ -28,8 +28,8 @@ This document summarizes the implementation of the Nocturne full-stack event dis
 **API Endpoints:**
 - `GET /health` - System health and statistics
 - `GET /cities` - List all supported cities (40+ cities)
-- `GET /events/{city_id}` - Fetch events for a city with optional date filtering
-- `POST /scrape/{city_id}` - Trigger scraping for a specific city
+- `GET /events/{city}` - Fetch events for a city with optional date filtering
+- `POST /scrape/{city}` - Trigger scraping for a specific city
 - `POST /scrape/all` - Trigger scraping for all cities
 - `POST /subscribe` - Subscribe to email updates
 - `GET /subscriptions` - Get all subscriptions (admin)
@@ -75,7 +75,7 @@ This document summarizes the implementation of the Nocturne full-stack event dis
 - `email_logs` - Tracks sent emails
 
 **Features:**
-- ✅ Proper indexes for performance (city_id + date composite index)
+- ✅ Proper indexes for performance (city + date composite index)
 - ✅ Unique constraints on event links and email+city combinations
 - ✅ Timestamp tracking for all records
 - ✅ Async session management
@@ -130,7 +130,7 @@ This document summarizes the implementation of the Nocturne full-stack event dis
 ```
 User clicks city → Frontend: fetchEvents(cityId)
                     ↓
-              GET /events/{city_id}
+              GET /events/{city}
                     ↓
           Backend: query database
                     ↓
@@ -152,7 +152,7 @@ User subscribes → Frontend: subscribe(email, cityId)
 ```
 User clicks refresh → Frontend: scrapeCity(cityId)
                         ↓
-                POST /scrape/{city_id}
+                POST /scrape/{city}
                         ↓
         Backend: trigger background task
                         ↓
@@ -357,7 +357,7 @@ curl http://localhost:8000/events/ca--los-angeles
 # Subscribe (replace with your email)
 curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "city_id": "ca--los-angeles"}'
+  -d '{"email": "test@example.com", "city": "ca--los-angeles"}'
 ```
 
 ### 2. Test Frontend

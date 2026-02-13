@@ -332,7 +332,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def scrape_city_events(city_id: str) -> Dict:
+async def scrape_city_events(city: str) -> Dict:
     """
     Scrape events for a specific city and save to database.
     Returns statistics about the scraping operation.
@@ -340,16 +340,16 @@ async def scrape_city_events(city_id: str) -> Dict:
     from scraper.run import run_all_scrapers
     import shutil
 
-    logger.info(f"Starting scrape for city: {city_id}")
+    logger.info(f"Starting scrape for city: {city}")
 
     # Load current config
     config = load_config()
 
     # Update config for this city
-    config['LOCATION'] = city_id
+    config['LOCATION'] = city
 
     # Run the scrapers - use lock to prevent concurrent access to shared resources
-    logger.info(f"Running scrapers for {city_id}...")
+    logger.info(f"Running scrapers for {city}...")
 
     # Change to scraper directory and run - protected by lock to prevent race conditions
     scraper_dir = os.path.join(os.path.dirname(__file__), '../scraper')
@@ -371,9 +371,9 @@ async def scrape_city_events(city_id: str) -> Dict:
         all_events_file = os.path.join(scraper_dir, 'all_events.json')
 
         if not os.path.exists(all_events_file):
-            logger.warning(f"No events found for {city_id}")
+            logger.warning(f"No events found for {city}")
             return {
-                "city_id": city_id,
+                "city": city,
                 "status": "error",
                 "message": "No events found",
                 "events_count": 0
@@ -389,7 +389,7 @@ async def scrape_city_events(city_id: str) -> Dict:
 
     # If no events at root, try to get from cities structure
     if not events_data and 'cities' in data:
-        city_data = data['cities'].get(city_id, {})
+        city_data = data['cities'].get(city, {})
         events_data = city_data.get('events', [])
 
         # Do NOT aggregate events from all cities - only use events for the specific city
@@ -411,20 +411,20 @@ async def scrape_city_events(city_id: str) -> Dict:
 
     # Save to database
     logger.info(f"Saving {len(events_data)} events to database...")
-    result = await save_events(events_data, city_id)
+    result = await save_events(events_data, city)
 
     logger.info(f"Saved {result['saved']} new events, updated {result['updated']} existing events")
 
     # Sync to Supabase if configured
     try:
         from supabase_integration import sync_events_to_supabase
-        supabase_result = await sync_events_to_supabase(events_data, city_id)
+        supabase_result = await sync_events_to_supabase(events_data, city)
         logger.info(f"Supabase sync result: {supabase_result}")
     except Exception as e:
         logger.warning(f"Supabase sync failed (non-critical): {e}")
 
     return {
-        "city_id": city_id,
+        "city": city,
         "status": "success",
         "events_scraped": len(events_data),
         "events_saved": result['saved'],
@@ -451,9 +451,9 @@ async def refresh_all_cities() -> Dict:
 
     logger.info(f"Starting refresh of {len(supported_cities)} cities...")
 
-    for city_id in supported_cities:
+    for city in supported_cities:
         try:
-            result = await scrape_city_events(city_id)
+            result = await scrape_city_events(city)
 
             if result['status'] == 'success':
                 results['successful'] += 1
@@ -467,10 +467,10 @@ async def refresh_all_cities() -> Dict:
             await asyncio.sleep(2)
 
         except Exception as e:
-            logger.error(f"Error scraping {city_id}: {e}")
+            logger.error(f"Error scraping {city}: {e}")
             results['failed'] += 1
             results['city_results'].append({
-                "city_id": city_id,
+                "city": city,
                 "status": "error",
                 "error": str(e)
             })
@@ -491,15 +491,15 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
 
     supported_cities = CONFIG.get('SUPPORTED_LOCATIONS', [])
 
-    for city_id in supported_cities:
+    for city in supported_cities:
         # Get active subscribers for this city
-        subscribers = await get_active_subscribers(city_id)
+        subscribers = await get_active_subscribers(city)
 
         if not subscribers:
-            print(f"[{datetime.now()}] No active subscribers for {city_id}")
+            print(f"[{datetime.now()}] No active subscribers for {city}")
             continue
 
-        print(f"[{datetime.now()}] Sending digest to {len(subscribers)} subscribers for {city_id}")
+        print(f"[{datetime.now()}] Sending digest to {len(subscribers)} subscribers for {city}")
 
         # Get events from database for the next 7 days
         from database import AsyncSessionLocal, Event
@@ -511,7 +511,7 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
         async with AsyncSessionLocal() as session:
             result = await session.execute(
                 select(Event).where(
-                    Event.city_id == city_id,
+                    Event.city == city,
                     Event.date >= datetime.utcnow().date(),
                     Event.date <= end_date
                 ).order_by(Event.date)
@@ -519,11 +519,11 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
             events = result.scalars().all()
 
         if not events:
-            print(f"[{datetime.now()}] No events found for {city_id} in next 7 days")
+            print(f"[{datetime.now()}] No events found for {city} in next 7 days")
             continue
 
         # Prepare email content
-        city_name = CITY_MAPPING.get(city_id, {}).get('name', city_id)
+        city_name = CITY_MAPPING.get(city, {}).get('name', city)
 
         email_content = f"""
         <h2>Weekly Events in {city_name}</h2>
@@ -560,7 +560,7 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
                     await log_email_sent(
                         subscription_id=subscriber.id,
                         email=subscriber.email,
-                        city_id=city_id,
+                        city=city,
                         events_count=len(events),
                         success=success
                     )
@@ -574,7 +574,7 @@ async def send_weekly_digest(batch_size: int = 10, delay_between_batches: float 
                     await log_email_sent(
                         subscription_id=subscriber.id,
                         email=subscriber.email,
-                        city_id=city_id,
+                        city=city,
                         events_count=len(events),
                         success=False,
                         error_message=str(e)

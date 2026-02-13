@@ -139,8 +139,8 @@ class EventDataValidator:
         # City field (important for filtering)
         if 'city' in event and event['city']:
             cleaned['city'] = str(event['city']).strip()
-        elif 'city_id' in event and event['city_id']:
-            cleaned['city'] = str(event['city_id']).strip()
+        elif 'city' in event and event['city']:
+            cleaned['city'] = str(event['city']).strip()
         
         # Optional fields with validation
         if 'time' in event:

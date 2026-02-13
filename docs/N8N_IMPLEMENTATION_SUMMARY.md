@@ -107,8 +107,8 @@ Day 10: Seattle         Day 20: Boston
 - Supports recovery/backup
 
 ### 3. Nocturne Backend
-- Provides `/scrape/{city_id}` endpoint
-- Provides `/events/{city_id}` endpoint
+- Provides `/scrape/{city}` endpoint
+- Provides `/events/{city}` endpoint
 - Executes scrapers (Eventbrite, Meetup, Luma)
 - Returns JSON event data
 

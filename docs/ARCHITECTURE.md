@@ -60,12 +60,12 @@
 ```
 1. FRONTEND
    User clicks button
-   POST /scrape/{city_id}
+   POST /scrape/{city}
    Start polling every 1 second
              │
              ▼
 2. BACKEND (FastAPI)
-   Receive POST /scrape/{city_id}
+   Receive POST /scrape/{city}
    Add to background tasks
    Return immediately
              │
@@ -95,7 +95,7 @@
              ▼
 6. FRONTEND POLLING
    Every 1 second:
-   GET /events/{city_id}
+   GET /events/{city}
    Fetch from local DB
    
    Compare with current list:
@@ -133,7 +133,7 @@ events
 ├── location ─────────────── Venue name and address
 ├── description ─────────── Event description/details
 ├── source ──────────────── 'eventbrite', 'meetup', 'luma'
-├── city_id ─────────────── City identifier (e.g., 'ca--los-angeles')
+├── city ─────────────── City identifier (e.g., 'ca--los-angeles')
 ├── synced_at ───────────── When synced to Supabase
 ├── last_scraped ───────── When event was last found in scrape
 └── created_at ──────────── When record was created
@@ -150,7 +150,7 @@ Indexes:
 subscriptions
 ├── id (PK) ─────────────── Unique identifier
 ├── email (UNIQUE+city) ── User email (part of composite key)
-├── city_id ─────────────── City they subscribed to
+├── city ─────────────── City they subscribed to
 ├── is_active ───────────── Currently subscribed?
 ├── created_at ──────────── Subscription date
 └── unsubscribed_at ───── When they unsubscribed
@@ -181,7 +181,7 @@ Response:
 
 ### Events
 ```
-GET /events/{city_id}?limit=100&start_date=2026-02-05&end_date=2026-02-12
+GET /events/{city}?limit=100&start_date=2026-02-05&end_date=2026-02-12
 Response:
 [
   {
@@ -193,7 +193,7 @@ Response:
     "location": "Downtown LA",
     "description": "Underground electronic music...",
     "source": "eventbrite",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   },
   ...
 ]
@@ -205,13 +205,13 @@ POST /subscribe
 Request:
 {
   "email": "user@example.com",
-  "city_id": "ca--los-angeles"
+  "city": "ca--los-angeles"
 }
 Response:
 {
   "id": 1,
   "email": "user@example.com",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "is_active": true,
   "created_at": "2026-02-05T12:00:00"
 }
@@ -219,11 +219,11 @@ Response:
 
 ### Scrape (Trigger)
 ```
-POST /scrape/{city_id}
+POST /scrape/{city}
 Response:
 {
   "message": "Scraping initiated for ca--los-angeles",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "note": "Events will be synced to shared database in real-time"
 }
 ```

@@ -242,7 +242,7 @@ Get events within radius of coordinates.
       "title": "Underground Rave",
       "date": "2026-02-15",
       "location": "Downtown LA",
-      "city_id": "ca--los-angeles",
+      "city": "ca--los-angeles",
       "distance_miles": 3.2
     }
   ]

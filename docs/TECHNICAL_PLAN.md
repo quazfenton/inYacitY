@@ -27,7 +27,7 @@ CREATE TABLE events (
     price VARCHAR(50),
     image_url TEXT,
     is_ai_generated BOOLEAN DEFAULT FALSE,
-    city_id INTEGER REFERENCES cities(id) ON DELETE CASCADE,
+    city INTEGER REFERENCES cities(id) ON DELETE CASCADE,
     source VARCHAR(50), -- 'eventbrite', 'meetup', 'luma'
     link TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -38,17 +38,17 @@ CREATE TABLE events (
 CREATE TABLE subscriptions (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
-    city_id INTEGER REFERENCES cities(id) ON DELETE CASCADE,
+    city INTEGER REFERENCES cities(id) ON DELETE CASCADE,
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     unsubscribed_at TIMESTAMP NULL
 );
 
 -- Indexes for performance
-CREATE INDEX idx_events_city_date ON events(city_id, date);
+CREATE INDEX idx_events_city_date ON events(city, date);
 CREATE INDEX idx_events_source ON events(source);
 CREATE INDEX idx_subscriptions_email ON subscriptions(email);
-CREATE INDEX idx_subscriptions_city_active ON subscriptions(city_id, active);
+CREATE INDEX idx_subscriptions_city_active ON subscriptions(city, active);
 ```
 
 ## 2. Backend API Structure
@@ -167,7 +167,7 @@ class Event(Base):
     price = Column(String(50))
     image_url = Column(Text)
     is_ai_generated = Column(Boolean, default=False)
-    city_id = Column(Integer, ForeignKey("cities.id"), nullable=False)
+    city = Column(Integer, ForeignKey("cities.id"), nullable=False)
     source = Column(String(50))  # 'eventbrite', 'meetup', 'luma'
     link = Column(Text)
 
@@ -205,7 +205,7 @@ async def get_city_events(
 
     events = crud.event.get_by_city(
         db=db,
-        city_id=city.id,
+        city=city.id,
         date_from=date_from,
         date_to=date_to,
         limit=limit,
@@ -232,7 +232,7 @@ async def search_events(
     if city_slug:
         city = crud.city.get_by_slug(db=db, slug=city_slug)
         if city:
-            filters["city_id"] = city.id
+            filters["city"] = city.id
 
     if tag:
         filters["tag"] = tag
@@ -355,7 +355,7 @@ from app.models.event import Event
 from app.models.city import City
 from datetime import datetime
 
-def save_events_to_db(db: Session, events: list, city_id: int, source: str):
+def save_events_to_db(db: Session, events: list, city: int, source: str):
     """
     Save scraped events to database
     """
@@ -363,7 +363,7 @@ def save_events_to_db(db: Session, events: list, city_id: int, source: str):
         # Check if event already exists
         existing_event = db.query(Event).filter(
             Event.link == event_data['link'],
-            Event.city_id == city_id
+            Event.city == city
         ).first()
 
         if not existing_event:
@@ -381,7 +381,7 @@ def save_events_to_db(db: Session, events: list, city_id: int, source: str):
                 tags=event_data.get('tags', []),
                 price=event_data.get('price', ''),
                 image_url=event_data.get('image_url'),
-                city_id=city_id,
+                city=city,
                 source=source,
                 link=event_data.get('link', '')
             )

@@ -119,7 +119,7 @@ Check outputs:
 ```
 00:00 UTC → Workflow starts
   → Picks rotating city (LA on day 1, NYC on day 2, etc)
-  → Calls /scrape/{city_id}
+  → Calls /scrape/{city}
   → Waits 45 seconds
   → Fetches events
   → Syncs to Supabase

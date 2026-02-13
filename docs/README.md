@@ -157,16 +157,16 @@ python3 scraper_integration.py
 - `GET /cities` - List all supported cities
 
 ### Events
-- `GET /events/{city_id}` - Get events for a city
+- `GET /events/{city}` - Get events for a city
   - Query params: `start_date`, `end_date`, `limit`
 
 ### Scraping
-- `POST /scrape/{city_id}` - Trigger scraping for a city
+- `POST /scrape/{city}` - Trigger scraping for a city
 - `POST /scrape/all` - Scrape all cities
 
 ### Subscriptions
 - `POST /subscribe` - Subscribe to email updates
-  - Body: `{ "email": "...", "city_id": "..." }`
+  - Body: `{ "email": "...", "city": "..." }`
 - `GET /subscriptions` - Get all subscriptions
 - `DELETE /subscribe/{id}` - Unsubscribe
 
@@ -236,13 +236,13 @@ CREATE TABLE events (
   location VARCHAR(500),
   description TEXT,
   source VARCHAR(50),
-  city_id VARCHAR(100) NOT NULL,
+  city VARCHAR(100) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Indexes for performance
-CREATE INDEX idx_events_city_date ON events(city_id, date);
+CREATE INDEX idx_events_city_date ON events(city, date);
 CREATE INDEX idx_events_link ON events(link);
 ```
 
@@ -251,11 +251,11 @@ CREATE INDEX idx_events_link ON events(link);
 CREATE TABLE subscriptions (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) NOT NULL,
-  city_id VARCHAR(100) NOT NULL,
+  city VARCHAR(100) NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
   unsubscribed_at TIMESTAMP,
-  UNIQUE(email, city_id)
+  UNIQUE(email, city)
 );
 ```
 
@@ -338,7 +338,7 @@ python3 -c "from database import drop_all_tables, init_db; drop_all_tables(); in
 
 ## Performance Optimization
 
-1. **Database Indexes**: Already created for city_id, date, link
+1. **Database Indexes**: Already created for city, date, link
 2. **Async Operations**: All database queries use async SQLAlchemy
 3. **Connection Pooling**: SQLAlchemy pool size = 10, max overflow = 20
 4. **Caching**: Add Redis for API response caching (production)

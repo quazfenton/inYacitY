@@ -45,7 +45,7 @@ All features from the Technical Plan have been fully implemented with production
 - `GET /api/locations/major-cities` - List cities with filtering
 - `GET /api/locations/location/{code}` - City details
 - `POST /api/locations/nearest-cities` - Find nearest cities
-- `GET /api/events/{city_id}` - Events with date filtering
+- `GET /api/events/{city}` - Events with date filtering
 - `POST /subscribe` - Email subscriptions with validation
 - `GET /health` - System health check
 - Plus 10+ more endpoints
@@ -69,15 +69,15 @@ All features from the Technical Plan have been fully implemented with production
 from cache import cached
 
 @cached(ttl=600, key_prefix="events")
-async def get_city_events(city_id: str):
-    return await fetch_events(city_id)
+async def get_city_events(city: str):
+    return await fetch_events(city)
 ```
 
 **Cache Keys**:
-- `events:{city_id}:{date_from}:{date_to}` - City events
+- `events:{city}:{date_from}:{date_to}` - City events
 - `event:{event_id}` - Event details
 - `cities:all` - Cities list
-- `subscribers:{city_id}` - Subscribers
+- `subscribers:{city}` - Subscribers
 
 ### 4. Rate Limiting (Security)
 

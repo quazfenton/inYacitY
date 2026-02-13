@@ -54,13 +54,13 @@ class Event(Base):
     location = Column(String(500))
     description = Column(Text)
     source = Column(String(50))  # 'eventbrite', 'meetup', 'luma'
-    city_id = Column(String(100), nullable=False, index=True)
+    city = Column(String(100), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Composite index for city + date queries
     __table_args__ = (
-        Index('idx_events_city_date', 'city_id', 'date'),
+        Index('idx_events_city_date', 'city', 'date'),
     )
     
     def to_dict(self):
@@ -73,7 +73,7 @@ class Event(Base):
             "location": self.location,
             "description": self.description,
             "source": self.source,
-            "city_id": self.city_id,
+            "city": self.city,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -83,23 +83,23 @@ class Subscription(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), nullable=False, index=True)
-    city_id = Column(String(100), nullable=False, index=True)
+    city = Column(String(100), nullable=False, index=True)
     is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     unsubscribed_at = Column(DateTime)
     
-    # Unique constraint on email + city_id
+    # Unique constraint on email + city
     __table_args__ = (
-        UniqueConstraint('email', 'city_id', name='uq_email_city'),
-        Index('idx_subscriptions_email_city', 'email', 'city_id'),
-        Index('idx_subscriptions_active', 'city_id', 'is_active'),
+        UniqueConstraint('email', 'city', name='uq_email_city'),
+        Index('idx_subscriptions_email_city', 'email', 'city'),
+        Index('idx_subscriptions_active', 'city', 'is_active'),
     )
     
     def to_dict(self):
         return {
             "id": self.id,
             "email": self.email,
-            "city_id": self.city_id,
+            "city": self.city,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "unsubscribed_at": self.unsubscribed_at.isoformat() if self.unsubscribed_at else None,
@@ -112,7 +112,7 @@ class EmailLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     subscription_id = Column(Integer, nullable=False)
     email = Column(String(255), nullable=False)
-    city_id = Column(String(100), nullable=False)
+    city = Column(String(100), nullable=False)
     subject = Column(String(500))
     sent_at = Column(DateTime, default=datetime.utcnow)
     events_count = Column(Integer)
@@ -120,7 +120,7 @@ class EmailLog(Base):
     error_message = Column(Text)
     
     __table_args__ = (
-        Index('idx_email_logs_city_sent', 'city_id', 'sent_at'),
+        Index('idx_email_logs_city_sent', 'city', 'sent_at'),
         Index('idx_email_logs_subscription', 'subscription_id'),
     )
 
@@ -162,7 +162,7 @@ def drop_all_tables():
     asyncio.run(_drop_tables())
 
 # Helper functions for database operations
-async def save_events(events_data: list, city_id: str):
+async def save_events(events_data: list, city: str):
     """Save or update events in the database with optimized batch processing"""
     from sqlalchemy import select, update, insert
     from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -215,7 +215,7 @@ async def save_events(events_data: list, city_id: str):
                 'location': event_data.get('location', 'Location TBA'),
                 'description': event_data.get('description', ''),
                 'source': event_data.get('source', 'unknown'),
-                'city_id': city_id,
+                'city': city,
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
@@ -251,7 +251,7 @@ async def save_events(events_data: list, city_id: str):
                         location=event_dict['location'],
                         description=event_dict['description'],
                         source=event_dict['source'],
-                        city_id=city_id,
+                        city=city,
                         updated_at=datetime.utcnow()
                     )
                 )
@@ -260,26 +260,26 @@ async def save_events(events_data: list, city_id: str):
         await session.commit()
         return {"saved": saved_count, "updated": updated_count}
 
-async def get_active_subscribers(city_id: str):
+async def get_active_subscribers(city: str):
     """Get all active subscribers for a city"""
     from sqlalchemy import select
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Subscription).where(
-                Subscription.city_id == city_id,
+                Subscription.city == city,
                 Subscription.is_active == True
             )
         )
         return result.scalars().all()
 
-async def log_email_sent(subscription_id: int, email: str, city_id: str, events_count: int, success: bool = True, error_message: str = None):
+async def log_email_sent(subscription_id: int, email: str, city: str, events_count: int, success: bool = True, error_message: str = None):
     """Log an email sent event"""
     async with AsyncSessionLocal() as session:
         log_entry = EmailLog(
             subscription_id=subscription_id,
             email=email,
-            city_id=city_id,
+            city=city,
             sent_at=datetime.utcnow(),
             events_count=events_count,
             success=success,
@@ -289,12 +289,12 @@ async def log_email_sent(subscription_id: int, email: str, city_id: str, events_
         await session.commit()
 
 
-async def get_upcoming_events(city_id: str = None, days_ahead: int = 7, limit: int = None):
+async def get_upcoming_events(city: str = None, days_ahead: int = 7, limit: int = None):
     """
     Get upcoming events (not in the past) for a city or all cities
     
     Args:
-        city_id: Optional city filter
+        city: Optional city filter
         days_ahead: Number of days ahead to include (default 7 for weekly digest)
         limit: Optional limit on results
     
@@ -314,8 +314,8 @@ async def get_upcoming_events(city_id: str = None, days_ahead: int = 7, limit: i
             )
         )
         
-        if city_id:
-            query = query.where(Event.city_id == city_id)
+        if city:
+            query = query.where(Event.city == city)
         
         query = query.order_by(Event.date, Event.time)
         
@@ -326,13 +326,13 @@ async def get_upcoming_events(city_id: str = None, days_ahead: int = 7, limit: i
         return result.scalars().all()
 
 
-async def get_future_events_for_city(city_id: str, start_date: date = None, end_date: date = None, limit: int = 100):
+async def get_future_events_for_city(city: str, start_date: date = None, end_date: date = None, limit: int = 100):
     """
     Get future events for a specific city, filtering out past events
     Results are ordered by date and time (ascending) - already sorted from database
     
     Args:
-        city_id: City ID to filter by
+        city: City ID to filter by
         start_date: Optional start date (defaults to today)
         end_date: Optional end date
         limit: Maximum results
@@ -349,7 +349,7 @@ async def get_future_events_for_city(city_id: str, start_date: date = None, end_
         # Build query - ordered by date and time, filtering out past events
         query = select(Event).where(
             and_(
-                Event.city_id == city_id,
+                Event.city == city,
                 Event.date >= start_date  # Only future events
             )
         )
@@ -407,25 +407,25 @@ async def get_cities_with_active_subscribers():
     Get all cities that have active subscribers
     
     Returns:
-        List of unique city_ids
+        List of unique citys
     """
     from sqlalchemy import select, func, distinct
     
     async with AsyncSessionLocal() as session:
         result = await session.execute(
-            select(distinct(Subscription.city_id)).where(
+            select(distinct(Subscription.city)).where(
                 Subscription.is_active == True
             )
         )
         return [row[0] for row in result.fetchall()]
 
 
-async def get_subscribers_by_city(city_id: str):
+async def get_subscribers_by_city(city: str):
     """
     Get all active subscribers for a specific city
 
     Args:
-        city_id: City ID
+        city: City ID
 
     Returns:
         List of Subscription objects
@@ -435,7 +435,7 @@ async def get_subscribers_by_city(city_id: str):
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Subscription).where(
-                Subscription.city_id == city_id,
+                Subscription.city == city,
                 Subscription.is_active == True
             )
         )

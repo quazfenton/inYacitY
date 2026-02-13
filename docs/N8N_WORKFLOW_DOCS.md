@@ -11,7 +11,7 @@
 ## What It Does
 
 1. **Determines City**: Calculates which city to scrape based on day of year
-2. **Triggers Scraper**: Calls backend `/scrape/{city_id}` endpoint
+2. **Triggers Scraper**: Calls backend `/scrape/{city}` endpoint
 3. **Waits for Completion**: Allows 45 seconds for scraping
 4. **Fetches Events**: Retrieves newly scraped events (up to 500)
 5. **Transforms Data**: Normalizes event format for databases
@@ -81,7 +81,7 @@ Day 21 % 20 = 0 → City 0 (Los Angeles again)
 
 **Endpoint**:
 ```
-POST {NOCTURNE_API_URL}/scrape/{city_id}
+POST {NOCTURNE_API_URL}/scrape/{city}
 ```
 
 **Example**:
@@ -98,7 +98,7 @@ Content-Type: application/json
 ```json
 {
   "message": "Scraping initiated for ca--los-angeles",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "note": "Events will be synced to shared database in real-time"
 }
 ```
@@ -135,7 +135,7 @@ Content-Type: application/json
 
 **Endpoint**:
 ```
-GET {NOCTURNE_API_URL}/events/{city_id}?limit=500
+GET {NOCTURNE_API_URL}/events/{city}?limit=500
 ```
 
 **Query Parameters**:
@@ -155,7 +155,7 @@ GET {NOCTURNE_API_URL}/events/{city_id}?limit=500
     "location": "Downtown LA",
     "description": "Electronic music event",
     "source": "eventbrite",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   },
   ...
 ]
@@ -184,7 +184,7 @@ GET {NOCTURNE_API_URL}/events/{city_id}?limit=500
   location: event.location,
   description: event.description,
   source: event.source,
-  city_id: city_id,
+  city: city,
   synced_at: ISO timestamp,
   last_scraped: today's date
 }
@@ -255,7 +255,7 @@ Authorization: Bearer {SUPABASE_KEY}
 - `location` → Location (text)
 - `description` → Description (text)
 - `source` → Source (select)
-- `city_id` → City (text)
+- `city` → City (text)
 
 **Optional**: Can be disabled if Notion not used
 

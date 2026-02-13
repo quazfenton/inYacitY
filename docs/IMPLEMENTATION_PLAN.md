@@ -36,15 +36,15 @@ This document outlines the plan to integrate the existing `fronto/` frontend wit
 #### 1.1 Database Schema Design
 - Create PostgreSQL database with tables:
   - `cities` table: city information (id, name, slug, coordinates)
-  - `events` table: scraped events (title, location, date, time, description, tags, price, image_url, city_id, source, created_at)
-  - `subscriptions` table: email subscriptions (email, city_id, created_at, active)
+  - `events` table: scraped events (title, location, date, time, description, tags, price, image_url, city, source, created_at)
+  - `subscriptions` table: email subscriptions (email, city, created_at, active)
 
 #### 1.2 API Layer Development
 - Create FastAPI backend with endpoints:
   - `GET /cities` - List all available cities
-  - `GET /events/{city_id}` - Get events for specific city
+  - `GET /events/{city}` - Get events for specific city
   - `POST /subscribe` - Add email subscription
-  - `POST /scrape/{city_id}` - Trigger scraping for specific city
+  - `POST /scrape/{city}` - Trigger scraping for specific city
   - `POST /scrape/all` - Trigger scraping for all cities
   - `GET /health` - Health check
   - `DELETE /subscribe/{subscription_id}` - Unsubscribe

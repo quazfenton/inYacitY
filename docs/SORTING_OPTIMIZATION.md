@@ -198,11 +198,11 @@ If you have existing code that sorts events, check if it's redundant:
 
 ```python
 # Old code (redundant)
-events = await get_events(city_id)
+events = await get_events(city)
 events.sort(key=lambda x: x.date)  # ← REDUNDANT
 
 # New code (efficient)
-events = await get_events(city_id)  # Already sorted
+events = await get_events(city)  # Already sorted
 ```
 
 ```typescript

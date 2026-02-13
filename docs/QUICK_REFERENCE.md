@@ -45,7 +45,7 @@ docker-compose exec postgres psql -U nocturne -d nocturne -c "SELECT COUNT(*) FR
 docker-compose exec postgres psql -U nocturne -d nocturne -c "SELECT title, date, source FROM events ORDER BY date DESC LIMIT 10;"
 
 # View subscriptions
-docker-compose exec postgres psql -U nocturne -d nocturne -c "SELECT email, city_id, is_active FROM subscriptions;"
+docker-compose exec postgres psql -U nocturne -d nocturne -c "SELECT email, city, is_active FROM subscriptions;"
 
 # Clear all data (use with caution!)
 docker-compose exec postgres psql -U nocturne -d nocturne -c "TRUNCATE events, subscriptions, email_logs CASCADE;"
@@ -69,7 +69,7 @@ curl "http://localhost:8000/events/ca--los-angeles?start_date=2026-02-01&end_dat
 # Subscribe
 curl -X POST http://localhost:8000/subscribe \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "city_id": "ca--los-angeles"}'
+  -d '{"email": "test@example.com", "city": "ca--los-angeles"}'
 
 # View all subscriptions
 curl http://localhost:8000/subscriptions | jq
@@ -260,7 +260,7 @@ Full list in `scraper/config.json` or `fronto/constants.ts`.
 | location | String(500) | Venue/location |
 | description | Text | Event description |
 | source | String(50) | Source (eventbrite/meetup/luma) |
-| city_id | String(100) | City identifier |
+| city | String(100) | City identifier |
 | created_at | DateTime | Creation timestamp |
 | updated_at | DateTime | Last update |
 
@@ -270,12 +270,12 @@ Full list in `scraper/config.json` or `fronto/constants.ts`.
 |--------|------|-------------|
 | id | Integer | Primary key |
 | email | String(255) | Subscriber email |
-| city_id | String(100) | City ID |
+| city | String(100) | City ID |
 | is_active | Boolean | Active status |
 | created_at | DateTime | Subscription date |
 | unsubscribed_at | DateTime | Unsubscribe date |
 
-**Unique constraint:** email + city_id
+**Unique constraint:** email + city
 
 ## API Response Examples
 
@@ -318,7 +318,7 @@ Full list in `scraper/config.json` or `fronto/constants.ts`.
     "location": "Central Park",
     "description": "A free outdoor concert...",
     "source": "eventbrite",
-    "city_id": "ca--los-angeles"
+    "city": "ca--los-angeles"
   }
 ]
 ```
@@ -328,7 +328,7 @@ Full list in `scraper/config.json` or `fronto/constants.ts`.
 {
   "id": 1,
   "email": "test@example.com",
-  "city_id": "ca--los-angeles",
+  "city": "ca--los-angeles",
   "created_at": "2026-01-31T19:00:00.123456",
   "is_active": true
 }

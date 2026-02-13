@@ -67,11 +67,11 @@ Every Day at 00:00 UTC
     ↓
 Pick rotating city (LA → NYC → SF → ... → repeat)
     ↓
-Call: POST /scrape/{city_id}
+Call: POST /scrape/{city}
     ↓
 Wait 45 seconds (scraper fetches events)
     ↓
-Call: GET /events/{city_id}
+Call: GET /events/{city}
     ↓
 Sync events to Supabase
     ↓

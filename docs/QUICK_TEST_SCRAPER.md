@@ -94,7 +94,7 @@ python -m uvicorn main:app --reload
 curl -X POST http://localhost:8000/scrape/ca--los-angeles
 
 # Should return:
-# {"message":"Scraping initiated for ca--los-angeles","city_id":"ca--los-angeles","note":"Events will be synced to shared database in real-time"}
+# {"message":"Scraping initiated for ca--los-angeles","city":"ca--los-angeles","note":"Events will be synced to shared database in real-time"}
 
 # Wait 60 seconds, then check events:
 curl http://localhost:8000/events/ca--los-angeles | head -20

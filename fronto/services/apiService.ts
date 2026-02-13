@@ -23,7 +23,7 @@ export interface BackendEvent {
   location: string;
   description: string;
   source: string;
-  city_id: string;
+  city: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -48,7 +48,7 @@ export interface HealthStatus {
 export interface SubscriptionResponse {
   id: number;
   email: string;
-  city_id: string;
+  city: string;
   created_at: string;
   is_active: boolean;
 }
@@ -98,7 +98,7 @@ async function fetchEventsFromSupabase(cityId: string, limit: number = 100): Pro
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    const url = `${SUPABASE_URL}/rest/v1/events?city_id=eq.${encodeURIComponent(cityId)}&date=gte.${today}&order=date.asc&limit=${limit}`;
+    const url = `${SUPABASE_URL}/rest/v1/events?city=eq.${encodeURIComponent(cityId)}&date=gte.${today}&order=date.asc&limit=${limit}`;
 
     const response = await fetch(url, {
       headers: {
@@ -126,7 +126,7 @@ async function fetchEventsFromSupabase(cityId: string, limit: number = 100): Pro
       location: row.location || '',
       description: row.description || '',
       source: row.source || 'unknown',
-      city_id: row.city_id || cityId,
+      city: row.city || cityId,
     }));
   } catch (error) {
     console.warn('Supabase fetch failed:', error);
@@ -158,7 +158,7 @@ async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
       cityEvents = data.cities[cityId].events || [];
     } else if (data.events) {
       // Fallback: try root level events and filter by city
-      cityEvents = data.events.filter((event: any) => event.city === cityId || event.city_id === cityId);
+      cityEvents = data.events.filter((event: any) => event.city === cityId || event.city === cityId);
     }
     
     // Filter out past events (keep today and future)
@@ -176,7 +176,7 @@ async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
       location: event.location,
       description: event.description || '',
       source: event.source || 'unknown',
-      city_id: cityId,
+      city: cityId,
     }));
   } catch (error) {
     console.warn('Failed to load events from cache:', error);
@@ -241,7 +241,7 @@ export async function getCityEvents(
 /**
  * Trigger scraping for a specific city
  */
-export async function scrapeCity(cityId: string): Promise<{ message: string; city_id: string }> {
+export async function scrapeCity(cityId: string): Promise<{ message: string; city: string }> {
   const response = await fetch(`${API_URL}/scrape/${cityId}`, {
     method: 'POST',
   });
@@ -280,7 +280,7 @@ export async function subscribeToCity(
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, city_id: cityId }),
+    body: JSON.stringify({ email, city: cityId }),
   });
   
   if (!response.ok) {

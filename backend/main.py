@@ -153,9 +153,8 @@ async def get_city_events(
     limit: int = 100,
     db=Depends(get_db)
 ):
-    """Get events for a specific city with optional date filtering"""
-    from sqlalchemy import select
-    from database import Event
+    """Get events for a specific city with optional date filtering - Returns future events only by default"""
+    from database import get_future_events_for_city
 
     # Validate city
     from config import CONFIG
@@ -163,21 +162,8 @@ async def get_city_events(
     if city_id not in supported_locations:
         raise HTTPException(status_code=404, detail=f"City {city_id} not supported")
 
-    # Build query
-    query = select(Event).where(Event.city_id == city_id)
-
-    # Apply date filters if provided
-    if start_date:
-        query = query.where(Event.date >= start_date)
-    if end_date:
-        query = query.where(Event.date <= end_date)
-
-    # Order by date and limit
-    query = query.order_by(Event.date).limit(limit)
-
-    result = await db.execute(query)
-    events = result.scalars().all()
-
+    # Use the database function that filters for future events
+    events = await get_future_events_for_city(city_id, start_date, end_date, limit)
     return events
 
 # Refresh all cities

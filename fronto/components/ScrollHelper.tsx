@@ -8,49 +8,44 @@ const ScrollHelper: React.FC = () => {
   useEffect(() => {
     let animationFrameId: number;
     let scrollVelocity = 0;
-    let scrollDelayTimeout: NodeJS.Timeout | null = null;
-    let isInScrollZone = false;
-    const SCROLL_ZONE_PERCENT = 0.10; // 10% of screen height
-    const ACTIVATION_DELAY = 300; // 300ms delay before scrolling
-    const MAX_VELOCITY = 3; // slower scroll speed
+    let currentZone: 'none' | 'top' | 'bottom' = 'none';
+    let activationTimeout: number | undefined;
+
+    const ZONE_RATIO = 0.1; // top/bottom 10%
+    const MAX_VELOCITY = 2; // slower scroll speed
+    const ACTIVATION_DELAY = 250; // wait 250ms before scrolling
 
     const handleMouseMove = (e: MouseEvent) => {
       const screenHeight = window.innerHeight;
-      const topZone = screenHeight * SCROLL_ZONE_PERCENT;
-      const bottomZone = screenHeight * (1 - SCROLL_ZONE_PERCENT);
+      const topThreshold = screenHeight * ZONE_RATIO;
+      const bottomThreshold = screenHeight * (1 - ZONE_RATIO);
 
-      // Clear any pending delay timeout
-      if (scrollDelayTimeout) {
-        clearTimeout(scrollDelayTimeout);
-        scrollDelayTimeout = null;
+      let newZone: 'none' | 'top' | 'bottom' = 'none';
+      if (e.clientY < topThreshold) {
+        newZone = 'top';
+      } else if (e.clientY > bottomThreshold) {
+        newZone = 'bottom';
       }
 
-      // Detect if mouse is in top or bottom zone
-      if (e.clientY < topZone) {
-        // Near top: scroll up (only after delay)
-        if (!isInScrollZone) {
-          isInScrollZone = true;
-          scrollDelayTimeout = setTimeout(() => {
-            scrollVelocity = -MAX_VELOCITY;
-          }, ACTIVATION_DELAY);
-        }
-      } else if (e.clientY > bottomZone) {
-        // Near bottom: scroll down (only after delay)
-        if (!isInScrollZone) {
-          isInScrollZone = true;
-          scrollDelayTimeout = setTimeout(() => {
-            scrollVelocity = MAX_VELOCITY;
-          }, ACTIVATION_DELAY);
-        }
-      } else {
-        // Not near edge: no scroll
-        isInScrollZone = false;
+      if (newZone !== currentZone) {
+        currentZone = newZone;
         scrollVelocity = 0;
+
+        if (activationTimeout) {
+          window.clearTimeout(activationTimeout);
+          activationTimeout = undefined;
+        }
+
+        if (currentZone !== 'none') {
+          activationTimeout = window.setTimeout(() => {
+            scrollVelocity = currentZone === 'top' ? -MAX_VELOCITY : MAX_VELOCITY;
+          }, ACTIVATION_DELAY);
+        }
       }
     };
 
     const scroll = () => {
-      if (scrollVelocity !== 0 && isInScrollZone) {
+      if (scrollVelocity !== 0) {
         window.scrollBy(0, scrollVelocity);
       }
       animationFrameId = requestAnimationFrame(scroll);
@@ -61,8 +56,8 @@ const ScrollHelper: React.FC = () => {
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      if (scrollDelayTimeout) {
-        clearTimeout(scrollDelayTimeout);
+      if (activationTimeout) {
+        window.clearTimeout(activationTimeout);
       }
       cancelAnimationFrame(animationFrameId);
     };

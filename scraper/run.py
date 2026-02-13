@@ -299,12 +299,33 @@ async def run_all_scrapers():
 
         print(f"✓ Saved {len(unique_events)} merged events to {ALL_EVENTS_PATH}")
 
-    # Copy to frontend public folder (correct path for frontend to access)
+    # Copy to frontend public folder (merge cities properly)
     frontend_cache_target = os.path.join(BASE_DIR, '..', 'fronto', 'public', 'all_events.json')
     if os.path.exists(os.path.dirname(frontend_cache_target)):
         try:
-            with open(ALL_EVENTS_PATH, 'r') as src, open(frontend_cache_target, 'w') as dst:
-                dst.write(src.read())
+            # Load existing frontend cache if it exists
+            merged_data = {'cities': {}, 'last_updated': datetime.now().isoformat()}
+            
+            if os.path.exists(frontend_cache_target):
+                try:
+                    with open(frontend_cache_target, 'r') as f:
+                        existing_frontend = json.load(f)
+                        if isinstance(existing_frontend, dict) and existing_frontend.get('cities'):
+                            merged_data['cities'] = existing_frontend['cities'].copy()
+                except:
+                    pass
+            
+            # Merge in the new location data
+            if location not in merged_data['cities'] or unique_events:
+                merged_data['cities'][location] = {
+                    'events': unique_events,
+                    'total': len(unique_events),
+                    'last_updated': datetime.now().isoformat(),
+                    'sources': scraper_results
+                }
+            
+            with open(frontend_cache_target, 'w') as f:
+                json.dump(merged_data, f, indent=2, default=str)
             print("✓ Updated frontend cache at fronto/public/all_events.json")
         except Exception as e:
             print(f"Warning: Could not update frontend cache: {e}")

@@ -88,6 +88,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
     const result = await postComment(event.id, commentAuthor, commentText);
     if (result && !result.error) {
       setCommentText('');
+      // Refresh comments after posting
+      await fetchComments(event.id, { limit: 50 });
     }
   };
 
@@ -176,7 +178,14 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
                 </div>
                 <div className="flex items-center gap-2 text-zinc-400 font-mono text-sm">
                   <MapPin size={16} className="text-acid" />
-                  <span>{event.location}</span>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-zinc-400 hover:underline"
+                  >
+                    {event.location}
+                  </a>
                 </div>
               </div>
 

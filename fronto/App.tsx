@@ -7,6 +7,7 @@ import VibeChart from './components/VibeChart';
 import ErrorBoundary from './components/ErrorBoundary';
 import AmbientMusic from './components/AmbientMusic';
 import EventFilterBar from './components/EventFilterBar';
+import ScrollHelper from './components/ScrollHelper';
 import { City, Event, ViewState, VibeData } from './types';
 import { ArrowLeft, Sparkles, X } from 'lucide-react';
 import {
@@ -190,6 +191,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <AmbientMusic />
+      <ScrollHelper />
       <div className="min-h-screen bg-void text-zinc-100 selection:bg-acid selection:text-void font-sans">
 
         {/* Persistent Nav/Header */}

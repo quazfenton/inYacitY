@@ -35,15 +35,15 @@ class Config:
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     self._config = json.load(f)
-                print(f"✓ Config loaded from {config_file}")
+                print(f"[OK] Config loaded from {config_file}")
             else:
-                print(f"⚠ Config file not found: {config_file}, using defaults")
+                print(f"[WARN] Config file not found: {config_file}, using defaults")
                 self._config = self._get_defaults()
         except json.JSONDecodeError as e:
-            print(f"✗ Error parsing config.json: {e}")
+            print(f"[ERROR] Error parsing config.json: {e}")
             self._config = self._get_defaults()
         except Exception as e:
-            print(f"✗ Error loading config: {e}")
+            print(f"[ERROR] Error loading config: {e}")
             self._config = self._get_defaults()
     
     @staticmethod

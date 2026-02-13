@@ -35,6 +35,115 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config_loader import get_config
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(script_dir, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+    else:
+        parent_env = os.path.join(script_dir, '..', '.env')
+        if os.path.exists(parent_env):
+            load_dotenv(dotenv_path=parent_env)
+except ImportError:
+    pass
+
+
+class DatabasePatcher:
+    """Class for patching and maintaining database entries in Supabase"""
+    
+    def __init__(self, dry_run: bool = False):
+        self.dry_run = dry_run
+        self.api_url = os.environ.get('SUPABASE_URL')
+        self.api_key = os.environ.get('SUPABASE_KEY')
+        self.events_table = 'events'
+        self._client = None
+    
+    @property
+    def client(self):
+        if self._client is None:
+            if not self.api_url or not self.api_key:
+                raise ValueError("Supabase URL or Key not found in environment")
+            from supabase import create_client
+            self._client = create_client(self.api_url, self.api_key)
+        return self._client
+
+    async def replace_field_value(self, column: str, old_val: str, new_val: str, city: str = None) -> PatchResult:
+        """Replace specific values in a column, optionally filtered by city"""
+        print(f"\n[DB PATCH: REPLACE {column}] '{old_val}' -> '{new_val}'")
+        if city:
+            print(f"Filter: city = {city}")
+            
+        try:
+            query = self.client.table(self.events_table).select('id, ' + column)
+            if city:
+                query = query.eq('city', city)
+            
+            query = query.eq(column, old_val)
+            
+            response = query.execute()
+            to_patch = response.data or []
+            
+            print(f"Found {len(to_patch)} matching records")
+            
+            if not to_patch:
+                return PatchResult(success=True, patched_count=0, errors=[], details=[])
+                
+            if self.dry_run:
+                print(f"[DRY-RUN] Would update {len(to_patch)} records")
+                return PatchResult(success=True, patched_count=len(to_patch), errors=[], details=to_patch)
+            
+            patched_count = 0
+            for item in to_patch:
+                item_id = item['id']
+                try:
+                    self.client.table(self.events_table).update({column: new_val}).eq('id', item_id).execute()
+                    patched_count += 1
+                except Exception as e:
+                    print(f"Error updating record {item_id}: {e}")
+            
+            print(f"Successfully updated {patched_count} records")
+            return PatchResult(success=True, patched_count=patched_count, errors=[], details=[])
+            
+        except Exception as e:
+            print(f"[ERROR] DB Patch failed: {e}")
+            return PatchResult(success=False, patched_count=0, errors=[str(e)], details=[])
+
+    async def fix_corrupted_locations(self, city: str = None) -> PatchResult:
+        """Specifically target common corruption patterns in locations"""
+        print(f"\n[DB PATCH: FIX LOCATIONS]")
+        
+        try:
+            query = self.client.table(self.events_table).select('id, location')
+            if city:
+                query = query.eq('city', city)
+            
+            response = query.execute()
+            events = response.data or []
+            
+            patched_count = 0
+            for event in events:
+                loc = event.get('location', '')
+                if not loc: continue
+                
+                new_loc = loc
+                new_loc = new_loc.replace('\u200b', '').replace('\u200c', '').replace('\u200d', '')
+                new_loc = ' '.join(new_loc.split())
+                new_loc = re.sub(r'^(Almost full|Sales end soon|Going fast)\s*', '', new_loc, flags=re.I).strip()
+                
+                if new_loc != loc:
+                    if not self.dry_run:
+                        self.client.table(self.events_table).update({'location': new_loc}).eq('id', event['id']).execute()
+                    patched_count += 1
+            
+            print(f"Patched {patched_count} locations")
+            return PatchResult(success=True, patched_count=patched_count, errors=[], details=[])
+            
+        except Exception as e:
+            print(f"[ERROR] DB Patch failed: {e}")
+            return PatchResult(success=False, patched_count=0, errors=[str(e)], details=[])
+
 
 @dataclass
 class PatchResult:
@@ -464,7 +573,7 @@ class EventDataPatcher:
         return report
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         description='Event Data Patching & Maintenance Tool',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -490,6 +599,12 @@ Examples:
     
     # Deduplicate events
     python patch_events.py --deduplicate
+    
+    # DB Patch: Fix locations
+    python patch_events.py --db-patch --fix-locations
+    
+    # DB Patch: Replace value in column
+    python patch_events.py --db-patch --column location --replace-old "A" --replace-new "B" --city ny--new-york
     
     # Dry run (don't save changes)
     python patch_events.py --dry-run --sanitize
@@ -523,6 +638,20 @@ Examples:
                        help='Run comprehensive validation')
     parser.add_argument('--deduplicate', action='store_true',
                        help='Remove duplicate events')
+    
+    # Database Operations
+    parser.add_argument('--db-patch', action='store_true',
+                       help='Run database patching operations')
+    parser.add_argument('--fix-locations', action='store_true',
+                       help='Fix corrupted locations in database')
+    parser.add_argument('--replace-old',
+                       help='Old value to replace in DB (use with --column and --replace-new)')
+    parser.add_argument('--replace-new',
+                       help='New value to replace in DB')
+    parser.add_argument('--column',
+                       help='Column to replace value in')
+    parser.add_argument('--city',
+                       help='Filter DB patch by city')
     
     # Output
     parser.add_argument('--report',
@@ -577,10 +706,27 @@ Examples:
     if args.deduplicate:
         result = patcher.deduplicate_events()
         results.append(result)
+
+    # Database operations
+    if args.db_patch:
+        db_patcher = DatabasePatcher(dry_run=args.dry_run)
+        
+        if args.fix_locations:
+            result = await db_patcher.fix_corrupted_locations(city=args.city)
+            results.append(result)
+            
+        if args.replace_old and args.replace_new and args.column:
+            result = await db_patcher.replace_field_value(
+                column=args.column,
+                old_val=args.replace_old,
+                new_val=args.replace_new,
+                city=args.city
+            )
+            results.append(result)
     
     # If no operation specified, show help
     if not any([args.check_missing, args.sanitize, args.backfill_field,
-                args.revisit_links, args.validate_all, args.deduplicate]):
+                args.revisit_links, args.validate_all, args.deduplicate, args.db_patch]):
         parser.print_help()
         return
     
@@ -603,4 +749,4 @@ Examples:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

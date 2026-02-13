@@ -294,7 +294,7 @@ async def scrape_meetup(location: str = None) -> list:
     with open(output_file, 'w') as f:
         json.dump(out_data, f, indent=2)
 
-    print(f"✓ Saved {len(events)} events to {output_file}")
+    print(f"[OK] Saved {len(events)} events to {output_file}")
     return events
 
 

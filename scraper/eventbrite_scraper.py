@@ -267,6 +267,13 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         events = parse_events_from_html(html)
         print(f"Extracted {len(events)} events from page {page}")
 
+        if not events:
+            empty_pages += 1
+            if empty_pages >= 2:
+                print("No events found on consecutive pages, stopping early.")
+                break
+            continue
+
         # Filter duplicates
         new_events = [e for e in events if e['link'] not in existing_links]
         for e in new_events:
@@ -275,15 +282,10 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         existing_links.update(e['link'] for e in new_events)
 
         print(f"Added {len(new_events)} new events")
-
-        if not new_events:
-            empty_pages += 1
-        else:
-            empty_pages = 0
-
-        if empty_pages >= 2:
-            print("No new events on consecutive pages, stopping early.")
-            break
+        
+        # Don't stop early just because we saw duplicates; keep going to find new future events
+        # unless the page itself is empty
+        empty_pages = 0
 
         await asyncio.sleep(1)  # Be nice
 
@@ -336,7 +338,7 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
     with open(output_file, 'w') as f:
         json.dump(out_data, f, indent=2)
 
-    print(f"\n✓ Saved {len(all_events)} total events to {output_file}")
+    print(f"\n[OK] Saved {len(all_events)} total events to {output_file}")
     return all_events
 
 

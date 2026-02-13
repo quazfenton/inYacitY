@@ -59,57 +59,83 @@ def build_ra_co_url(city_code: str) -> str:
 
 async def fetch_ra_co_events_from_page(page, url: str) -> List[Dict]:
     """
-    Scrape events from RA.co listing page
+    Scrape events from RA.co listing page with retries and robust waiting
     """
     events = []
+    max_retries = 3
     
-    try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        await page.wait_for_timeout(2000)
-        
-        content = await page.content()
-        soup = BeautifulSoup(content, 'html.parser')
-        
-        # Find event titles and links
-        event_titles = soup.find_all('h3', attrs={"data-pw-test-id": "event-title"})
-        
-        print(f"Found {len(event_titles)} event titles on page")
-        
-        for title_elem in event_titles:
-            try:
-                # Extract title and link from the link inside h3
-                link_elem = title_elem.find('a', attrs={"data-pw-test-id": "event-title-link"})
-                
-                if not link_elem:
+    for attempt in range(max_retries):
+        try:
+            print(f"  Attempt {attempt + 1}: Navigating to {url}")
+            # Use networkidle for more stability if domcontentloaded is flaky
+            await page.goto(url, wait_until="networkidle", timeout=30000)
+            await page.wait_for_timeout(3000)
+            
+            # Check for blocking
+            content = await page.content()
+            if "blocked" in content.lower() or "security check" in content.lower() or "verify you are human" in content.lower():
+                print(f"  ⚠️ Blocked on attempt {attempt + 1}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(5)
                     continue
-                
-                event_link = link_elem.get('href', '')
-                title = link_elem.get_text(strip=True)
-                
-                if not event_link.startswith('http'):
-                    event_link = f"https://ra.co{event_link}"
-                
-                if title and event_link:
-                    event_info = {
-                        'title': title,
-                        'link': event_link,
-                        'date': 'TBA',
-                        'time': 'TBA',
-                        'location': 'TBA',
-                        'price': 'TBA',
-                        'source': 'RA.co'
-                    }
-                    events.append(event_info)
+                else:
+                    return []
+
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Find event titles and links
+            event_titles = soup.find_all('h3', attrs={"data-pw-test-id": "event-title"})
+            
+            if not event_titles:
+                # Fallback selector
+                event_titles = soup.select('h3[class*="EventTitle"]')
+            
+            print(f"Found {len(event_titles)} event titles on page")
+            
+            for title_elem in event_titles:
+                try:
+                    # Extract title and link from the link inside h3
+                    link_elem = title_elem.find('a')
                     
-            except Exception as e:
-                print(f"Error extracting event title: {e}")
-                continue
-        
-        return events
-        
-    except Exception as e:
-        print(f"Error navigating to {url}: {e}")
-        return []
+                    if not link_elem:
+                        continue
+                    
+                    event_link = link_elem.get('href', '')
+                    title = link_elem.get_text(strip=True)
+                    
+                    if not event_link.startswith('http'):
+                        event_link = f"https://ra.co{event_link}"
+                    
+                    if title and event_link:
+                        event_info = {
+                            'title': title,
+                            'link': event_link,
+                            'date': 'TBA',
+                            'time': 'TBA',
+                            'location': 'TBA',
+                            'price': 'TBA',
+                            'source': 'RA.co'
+                        }
+                        events.append(event_info)
+                        
+                except Exception as e:
+                    print(f"Error extracting event title: {e}")
+                    continue
+            
+            if events:
+                return events
+            
+            # If no events found, maybe we need to scroll?
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight/2)")
+            await page.wait_for_timeout(2000)
+            
+        except Exception as e:
+            print(f"Error navigating to {url} (Attempt {attempt + 1}): {e}")
+            if "ERR_NAME_NOT_RESOLVED" in str(e):
+                print("  DNS Resolution failed. Retrying with delay...")
+            await asyncio.sleep(5)
+            
+    return events
 
 
 async def scrape_ra_co_detail_page(page, event_url: str) -> Dict:
@@ -252,47 +278,78 @@ async def scrape_ra_co(
     from consent_handler import (
         create_undetected_browser,
         close_undetected_browser,
+        REAL_BROWSER_PROFILES,
+        handle_consent_and_blockages
     )
     
     browser = None
     browser_type = None
     
-    try:
-        browser, page, browser_type = await create_undetected_browser(
-            use_pydoll=True,
-            use_patchright=True,
-            headless=True
-        )
-        
-        print(f"Using {browser_type} browser")
-        
-        # Scrape listing page
-        print(f"Scraping: {url}")
-        events = await fetch_ra_co_events_from_page(page, url)
-        print(f"Found {len(events)} events on listing page")
-        
-        # Filter duplicates
-        for event in events:
-            if event['link'] not in existing_links:
-                new_events.append(event)
-                existing_links.add(event['link'])
-                
-                # Optionally fetch detail page information
-                if fetch_details:
-                    print(f"  Fetching details for: {event['title'][:50]}")
-                    detail_info = await scrape_ra_co_detail_page(page, event['link'])
-                    event.update(detail_info)
-                
-                print(f"  ✓ {event['title'][:50]}")
-        
-        all_events.extend(events)
-        
-    except Exception as e:
-        print(f"Error during RA.co scraping: {e}")
+    # Define profiles to try
+    profiles_to_try = [
+        'iphone_safari_17',
+        'android_chrome_120',
+        'windows_chrome_131',
+        'macos_chrome_131'
+    ]
     
-    finally:
-        if browser:
-            await close_undetected_browser(browser, browser_type)
+    for profile_name in profiles_to_try:
+        try:
+            print(f"Attempting RA.co scrape with profile: {profile_name}")
+            browser, page, browser_type = await create_undetected_browser(
+                use_pydoll=True,
+                use_patchright=True,
+                headless=True,
+                profile_name=profile_name
+            )
+            
+            print(f"Using {browser_type} browser")
+            
+            # Scrape listing page
+            print(f"Scraping: {url}")
+            events = await fetch_ra_co_events_from_page(page, url)
+            
+            # Check if we were blocked (too few events or specific content)
+            if len(events) < 5:
+                content = await page.content()
+                if "blocked" in content.lower() or "security check" in content.lower():
+                    print(f"⚠️  Blocked with profile {profile_name}. Retrying with next profile...")
+                    await close_undetected_browser(browser, browser_type)
+                    browser = None
+                    continue
+            
+            print(f"Found {len(events)} events on listing page")
+            
+            # Filter duplicates
+            for event in events:
+                if event['link'] not in existing_links:
+                    new_events.append(event)
+                    existing_links.add(event['link'])
+                    
+                    # Optionally fetch detail page information
+                    if fetch_details:
+                        print(f"  Fetching details for: {event['title'][:50]}")
+                        detail_info = await scrape_ra_co_detail_page(page, event['link'])
+                        event.update(detail_info)
+                    
+                    print(f"  ✓ {event['title'][:50]}")
+            
+            all_events.extend(events)
+            
+            # If we got here and have events, we succeeded
+            if len(all_events) > 0:
+                break
+                
+        except Exception as e:
+            print(f"Error during RA.co scraping with profile {profile_name}: {e}")
+            if browser:
+                await close_undetected_browser(browser, browser_type)
+                browser = None
+            continue
+    
+    # Cleanup browser if it's still open
+    if browser:
+        await close_undetected_browser(browser, browser_type)
     
     # Load existing events to preserve them
     existing_events = []

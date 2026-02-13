@@ -261,6 +261,60 @@ REAL_BROWSER_PROFILES = {
             'renderer': 'Apple M1',
         },
     },
+    'iphone_safari_17': {
+        'userAgent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'platform': 'iPhone',
+        'hardwareConcurrency': 6,
+        'deviceMemory': 6,
+        'maxTouchPoints': 5,
+        'vendor': 'Apple Computer, Inc.',
+        'language': 'en-US',
+        'languages': ['en-US'],
+        'timezone': 'America/New_York',
+        'screen': {
+            'width': 393,
+            'height': 852,
+            'availWidth': 393,
+            'availHeight': 852,
+            'colorDepth': 24,
+            'pixelDepth': 24,
+        },
+        'viewport': {
+            'width': 393,
+            'height': 727,
+        },
+        'webgl': {
+            'vendor': 'Apple Inc.',
+            'renderer': 'Apple GPU',
+        },
+    },
+    'android_chrome_120': {
+        'userAgent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36',
+        'platform': 'Linux armv8l',
+        'hardwareConcurrency': 8,
+        'deviceMemory': 8,
+        'maxTouchPoints': 5,
+        'vendor': 'Google Inc.',
+        'language': 'en-US',
+        'languages': ['en-US', 'en'],
+        'timezone': 'America/Chicago',
+        'screen': {
+            'width': 412,
+            'height': 915,
+            'availWidth': 412,
+            'availHeight': 915,
+            'colorDepth': 24,
+            'pixelDepth': 24,
+        },
+        'viewport': {
+            'width': 412,
+            'height': 800,
+        },
+        'webgl': {
+            'vendor': 'Google Inc. (ARM)',
+            'renderer': 'Adreno (TM) 740',
+        },
+    },
 }
 
 

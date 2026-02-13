@@ -290,9 +290,27 @@ async def run_all_scrapers():
             except (json.JSONDecodeError, OSError) as e:
                 print(f"Warning: Could not load existing events file: {e}")
 
+        # Merge in the new unique events
+        existing_city_events = out_data['cities'].get(location, {}).get('events', [])
+        
+        # Combine and deduplicate by link
+        all_merged = existing_city_events + unique_events
+        
+        # Deduplicate the merged list
+        seen_links = {}
+        final_events = []
+        for event in all_merged:
+            link = event.get('link', '')
+            if link:
+                if link not in seen_links:
+                    seen_links[link] = True
+                    final_events.append(event)
+            else:
+                final_events.append(event)
+
         out_data['cities'][location] = {
-            'events': unique_events,
-            'total': len(unique_events),
+            'events': final_events,
+            'total': len(final_events),
             'last_updated': datetime.now().isoformat(),
             'sources': scraper_results
         }
@@ -300,7 +318,7 @@ async def run_all_scrapers():
         with open(ALL_EVENTS_PATH, 'w') as f:
             json.dump(out_data, f, indent=2, default=str)
 
-        print(f"✓ Saved {len(unique_events)} merged events to {ALL_EVENTS_PATH}")
+        print(f"✓ Saved {len(final_events)} merged events to {ALL_EVENTS_PATH}")
 
     # Copy to frontend public folder (merge cities properly)
     frontend_cache_target = os.path.join(BASE_DIR, '..', 'fronto', 'public', 'all_events.json')

@@ -20,6 +20,17 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
   const [commentAuthor, setCommentAuthor] = useState('');
   const [commentText, setCommentText] = useState('');
 
+  useEffect(() => {
+    if (isOpen) {
+      setRsvpName('');
+      setRsvpEmail('');
+      setCalendarType(null);
+      setEnableReminder(false);
+      setCommentAuthor('');
+      setCommentText('');
+    }
+  }, [isOpen, event.id]);
+
   const {
     rsvpEvent,
     cancelRSVP,

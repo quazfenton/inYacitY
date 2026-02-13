@@ -13,6 +13,32 @@ from browser import fetch_page
 from config_loader import get_config
 
 
+# City mapping for Meetup
+MEETUP_CITY_MAP = {
+    'ca--los-angeles': 'us--ca--los-angeles',
+    'ny--new-york': 'us--ny--new-york',
+    'dc--washington': 'us--dc--washington',
+    'fl--miami': 'us--fl--miami',
+    'tx--houston': 'us--tx--houston',
+    'il--chicago': 'us--il--chicago',
+    'az--phoenix': 'us--az--phoenix',
+    'pa--philadelphia': 'us--pa--philadelphia',
+    'ca--san-diego': 'us--ca--san-diego',
+    'tx--dallas': 'us--tx--dallas',
+    'tx--austin': 'us--tx--austin',
+    'wa--seattle': 'us--wa--seattle',
+    'co--denver': 'us--co--denver',
+    'ma--boston': 'us--ma--boston',
+    'ga--atlanta': 'us--ga--atlanta',
+    'nv--las-vegas': 'us--nv--las-vegas',
+    'ca--san-francisco': 'us--ca--san-francisco',
+    'or--portland': 'us--or--portland',
+    'nv--detroit': 'us--mi--detroit',
+    'nc--charlotte': 'us--nc--charlotte',
+    'mn--minneapolis': 'us--mn--minneapolis',
+}
+
+
 def normalize_iso(dt_str: str) -> str:
     if not dt_str:
         return ""
@@ -61,6 +87,19 @@ def parse_date_time_text(text: str) -> tuple:
     return (date_val, time_val)
 
 
+def clean_meetup_description(text: str) -> str:
+    """Clean and truncate description, appending '...' if needed."""
+    if not text:
+        return ""
+    # Limit to 200 chars
+    if len(text) > 200:
+        text = text[:200]
+    # Append ... if truncated and doesn't already end with punctuation
+    if len(text) == 200 and not text.endswith(('.', '!', '?', '"', "'", '...')):
+        text = text + "..."
+    return text
+
+
 async def fetch_meetup_details(url: str) -> dict:
     """Fetch location and time from individual Meetup event page."""
     html = await fetch_page(url, use_firecrawl_fallback=True)
@@ -101,13 +140,16 @@ async def scrape_meetup(location: str = None) -> list:
     if not location:
         # Convert location format from config to Meetup format
         city_code = config.get_location()
-        if '--' in city_code:
-            parts = city_code.split('--')
-            location = f"us--{parts[0]}--{parts[1]}"
-        else:
-            location = f"us--{city_code}"
+        if city_code not in MEETUP_CITY_MAP:
+            print(f"⚠ Meetup: City '{city_code}' not supported. Skipping.")
+            return []
+        location = MEETUP_CITY_MAP.get(city_code)
     else:
         city_code = location
+        if city_code not in MEETUP_CITY_MAP:
+            print(f"⚠ Meetup: City '{city_code}' not supported. Skipping.")
+            return []
+        location = MEETUP_CITY_MAP.get(city_code)
 
     output_file = os.path.join(os.path.dirname(__file__), "meetup_events.json")
 
@@ -137,13 +179,14 @@ async def scrape_meetup(location: str = None) -> list:
             for item in items:
                 if item.get('@type') == 'Event':
                     date_val, time_val = parse_iso_datetime(item.get('startDate', ''))
+                    desc = clean_meetup_description(item.get('description', ''))
                     event = {
                         'title': item.get('name', 'Unknown'),
                         'link': item.get('url', ''),
                         'date': date_val,
                         'time': time_val,
                         'location': item.get('location', {}).get('name', 'Location TBA'),
-                        'description': item.get('description', '')[:200],
+                        'description': desc,
                         'source': 'Meetup',
                         'city': city_code
                     }

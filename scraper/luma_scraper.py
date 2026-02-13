@@ -89,10 +89,16 @@ async def scrape_luma(city: str = None) -> list:
     if not city:
         location = config.get_location()
         city_code = location
-        city = luma_map.get(location, 'la')
+        city = luma_map.get(location)
+        if not city:
+            print(f"⚠ Luma: City '{location}' not supported. Skipping.")
+            return []
     elif '--' in city:
         city_code = city
-        city = luma_map.get(city, 'la')
+        city = luma_map.get(city)
+        if not city:
+            print(f"⚠ Luma: City '{city_code}' not supported. Skipping.")
+            return []
     else:
         city_code = city
 

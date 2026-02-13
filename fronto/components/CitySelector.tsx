@@ -26,6 +26,46 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Escape key - clear search
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setTypedSearch('');
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+          searchTimeoutRef.current = null;
+        }
+        return;
+      }
+
+      // Handle Backspace key - remove last character
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        setTypedSearch(prev => {
+          const newSearch = prev.slice(0, -1);
+          // Update focus based on new search
+          if (newSearch.length > 0) {
+            const matchingIndex = cities.findIndex(city => 
+              city.name.toLowerCase().startsWith(newSearch.toLowerCase())
+            );
+            if (matchingIndex >= 0) {
+              setFocusedCityIndex(matchingIndex);
+              setHoveredCity(cities[matchingIndex].id);
+            }
+          }
+          return newSearch;
+        });
+        // Reset the clear timeout
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+        if (typedSearch.length > 1) {
+          searchTimeoutRef.current = setTimeout(() => {
+            setTypedSearch('');
+          }, 1500);
+        }
+        return;
+      }
+
       // Handle type-ahead search (letters only, not when modifier keys pressed)
       if (e.key.length === 1 && e.key.match(/[a-zA-Z]/) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
@@ -43,23 +83,15 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
           setHoveredCity(cities[matchingIndex].id);
         }
         
-        // Clear search after 1 second of inactivity
+        // Clear search after 1.5 seconds of inactivity
         if (searchTimeoutRef.current) {
           clearTimeout(searchTimeoutRef.current);
         }
         searchTimeoutRef.current = setTimeout(() => {
           setTypedSearch('');
-        }, 1000);
+        }, 1500);
         
         return;
-      }
-      
-      // Escape clears search
-      if (e.key === 'Escape') {
-        setTypedSearch('');
-        if (searchTimeoutRef.current) {
-          clearTimeout(searchTimeoutRef.current);
-        }
       }
       
       if (e.key === 'ArrowDown') {
@@ -97,7 +129,7 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
 
   // Mouse scroll zone detection with delay
   useEffect(() => {
-    const SCROLL_ZONE_HEIGHT = 0.08; // 8% of viewport height
+    const SCROLL_ZONE_HEIGHT = 0.10; // 10% of viewport height
     const ACTIVATION_DELAY = 400; // 400ms delay before scrolling
     const SCROLL_AMOUNT = 200; // pixels to scroll
     
@@ -189,11 +221,11 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] z-0"></div>
 
       {/* Scroll Zone Indicators */}
-      <div className="fixed top-0 left-0 w-full h-[8vh] pointer-events-none z-50 flex items-start justify-center pt-2 opacity-0 transition-opacity duration-300" 
+      <div className="fixed top-0 left-0 w-full h-[10vh] pointer-events-none z-50 flex items-start justify-center pt-2 opacity-0 transition-opacity duration-300" 
            style={{ opacity: scrollZoneRef.current === 'top' ? 0.3 : 0 }}>
         <div className="w-16 h-1 bg-acid rounded-full animate-pulse"></div>
       </div>
-      <div className="fixed bottom-0 left-0 w-full h-[8vh] pointer-events-none z-50 flex items-end justify-center pb-2 opacity-0 transition-opacity duration-300"
+      <div className="fixed bottom-0 left-0 w-full h-[10vh] pointer-events-none z-50 flex items-end justify-center pb-2 opacity-0 transition-opacity duration-300"
            style={{ opacity: scrollZoneRef.current === 'bottom' ? 0.3 : 0 }}>
         <div className="w-16 h-1 bg-acid rounded-full animate-pulse"></div>
       </div>

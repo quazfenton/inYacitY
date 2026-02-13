@@ -346,11 +346,11 @@ async def get_future_events_for_city(city_id: str, start_date: date = None, end_
         start_date = date.today()
     
     async with AsyncSessionLocal() as session:
-        # Build query - ordered by date and time (no redundant sorting needed by caller)
+        # Build query - ordered by date and time, filtering out past events
         query = select(Event).where(
             and_(
                 Event.city_id == city_id,
-                Event.date >= start_date
+                Event.date >= start_date  # Only future events
             )
         )
         
@@ -361,7 +361,14 @@ async def get_future_events_for_city(city_id: str, start_date: date = None, end_
         query = query.order_by(Event.date.asc(), Event.time.asc()).limit(limit)
         
         result = await session.execute(query)
-        return result.scalars().all()
+        events = result.scalars().all()
+        
+        # Append "..." to truncated descriptions (if description is cutoff without ending punctuation)
+        for event in events:
+            if event.description and len(event.description) == 500 and not event.description.endswith(('.', '!', '?', '"', "'", '...')):
+                event.description = event.description + "..."
+        
+        return events
 
 
 async def cleanup_past_events(days_to_keep: int = 30):

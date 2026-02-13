@@ -27,6 +27,9 @@ POSH_VIP_CITY_MAP = {
     "tx--dallas": "dallas",
     "tx--houston": "houston",
     "wa--seattle": "seattle",
+    "co--denver": "denver",
+    "nv--las-vegas": "las-vegas",
+    "ma--boston": "boston",
 }
 
 
@@ -59,12 +62,31 @@ def build_posh_vip_url(city_code: str) -> Optional[str]:
     return f"https://posh.vip/events/{POSH_VIP_CITY_MAP[city_code]}"
 
 
+def clean_posh_description(text: str) -> str:
+    """Clean description and append '...' if truncated."""
+    if not text:
+        return ""
+    text = re.sub(r'\s+', ' ', text).strip()
+    # If description is long, truncate and add ...
+    if len(text) > 300:
+        text = text[:300]
+        if not text.endswith(('.', '!', '?', '"', "'", '...')):
+            text = text + "..."
+    return text
+
+
 async def scrape_posh_vip(city: str = "ca--los-angeles") -> list:
     """Scrape Posh.vip events"""
+    # Check if city is supported
+    if city not in POSH_VIP_CITY_MAP:
+        print(f"⚠ Posh.vip: City '{city}' not supported. Skipping.")
+        return []
+    
     url = build_posh_vip_url(city)
     if not url:
-        print(f"City {city} not supported")
         return []
+    
+    output_file = os.path.join(os.path.dirname(__file__), "posh_vip_events.json")
     
     print(f"\nScraping Posh.vip: {url}")
     
@@ -106,11 +128,34 @@ async def scrape_posh_vip(city: str = "ca--los-angeles") -> list:
                     'date': 'TBA',
                     'time': 'TBA',
                     'location': 'TBA',
-                    'source': 'Posh.vip'
+                    'description': '',
+                    'source': 'Posh.vip',
+                    'city': city
                 })
         except Exception as e:
             continue
     
+    # Save results (city-scoped)
+    out_data = {'cities': {}, 'last_updated': datetime.now().isoformat()}
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, 'r') as f:
+                existing = json.load(f)
+                if isinstance(existing, dict) and existing.get('cities'):
+                    out_data['cities'] = existing['cities']
+        except:
+            pass
+
+    out_data['cities'][city] = {
+        'events': events,
+        'total': len(events),
+        'last_updated': datetime.now().isoformat()
+    }
+
+    with open(output_file, 'w') as f:
+        json.dump(out_data, f, indent=2)
+    
+    print(f"✓ Saved {len(events)} events to {output_file}")
     return events
 
 

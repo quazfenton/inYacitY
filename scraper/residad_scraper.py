@@ -93,17 +93,12 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
     """Scrape RA.co events for a location"""
     output_file = os.path.join(os.path.dirname(__file__), "ra_events.json")
 
-    # Use the RA_CITIES mapping if available, otherwise fall back to manual parsing
-    if location in RA_CITIES:
-        country, city = RA_CITIES[location]
-    else:
-        # Fallback to manual parsing
-        parts = location.split('--')
-        if len(parts) >= 2:
-            city = parts[1].replace('-', '')
-        else:
-            city = 'losangeles'
-        country = 'us'
+    # Use the RA_CITIES mapping if available
+    if location not in RA_CITIES:
+        print(f"⚠ RA.co: City '{location}' not supported. Skipping.")
+        return []
+    
+    country, city = RA_CITIES[location]
 
     url = f"https://ra.co/events/{country}/{city}"
     print(f"\nScraping RA.co: {url}")

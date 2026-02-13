@@ -60,6 +60,10 @@ def clean_dice_description(text: str) -> str:
     if ' About ' in cleaned:
         cleaned = cleaned.split(' About ', 1)[1].strip()
     cleaned = re.sub(r'^.*?No surprises later\.\s*', '', cleaned, flags=re.I).strip()
+    # Cut off at "..." which indicates "Read more" truncation
+    if '...' in cleaned:
+        cleaned = cleaned.split('...')[0].strip()
+        cleaned = cleaned + "..."
     return cleaned
 
 
@@ -102,13 +106,19 @@ async def scrape_dice(city: str = None, max_price: int = None) -> list:
     dice_config = config.get_scraper_config('DICE_FM')
     city_map = dice_config.get('city_map', {})
 
+    # Check if city is supported
+    if city_code not in city_map:
+        print(f"⚠ Dice.fm: City '{city_code}' not supported. Skipping.")
+        return []
+
     if max_price is None:
         max_price = dice_config.get('max_price', 0)
 
     output_file = os.path.join(os.path.dirname(__file__), "dice_events.json")
 
     # Build URL
-    city_id = city_map.get(city, 'losangeles-5982e13c613de866017c3e3a')
+    city_id = city_map.get(city)
+
     url = f"https://dice.fm/browse/{city_id}"
     if max_price == 0:
         url += "?priceTo=1"  # Free events

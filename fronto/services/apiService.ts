@@ -131,7 +131,7 @@ async function fetchEventsFromSupabase(cityId: string, limit: number = 100): Pro
 }
 
 /**
- * Load events from local cache file
+ * Load events from local cache file - FILTER OUT PAST EVENTS
  */
 async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
   try {
@@ -142,40 +142,38 @@ async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
     
     const data = await response.json();
     
+    // Get today's date in YYYY-MM-DD format for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    let cityEvents: any[] = [];
+    
     // Try to get events for specific city from nested structure
     if (data.cities && data.cities[cityId]) {
-      const cityEvents = data.cities[cityId].events || [];
-      return cityEvents.map((event: any, index: number) => ({
-        id: index + 1,
-        title: event.title,
-        link: event.link,
-        date: event.date,
-        time: event.time || 'TBA',
-        location: event.location,
-        description: event.description || '',
-        source: event.source || 'unknown',
-        city_id: cityId,
-      }));
+      cityEvents = data.cities[cityId].events || [];
+    } else if (data.events) {
+      // Fallback: try root level events and filter by city
+      cityEvents = data.events.filter((event: any) => event.city === cityId || event.city_id === cityId);
     }
     
-    // Fallback: try root level events and filter by city
-    if (data.events) {
-      return data.events
-        .filter((event: any) => event.city === cityId || event.city_id === cityId)
-        .map((event: any, index: number) => ({
-          id: index + 1,
-          title: event.title,
-          link: event.link,
-          date: event.date,
-          time: event.time || 'TBA',
-          location: event.location,
-          description: event.description || '',
-          source: event.source || 'unknown',
-          city_id: cityId,
-        }));
-    }
+    // Filter out past events (keep today and future)
+    const futureEvents = cityEvents.filter((event: any) => {
+      if (!event.date) return false;
+      return event.date >= todayStr;
+    });
     
-    return [];
+    return futureEvents.map((event: any, index: number) => ({
+      id: index + 1,
+      title: event.title,
+      link: event.link,
+      date: event.date,
+      time: event.time || 'TBA',
+      location: event.location,
+      description: event.description || '',
+      source: event.source || 'unknown',
+      city_id: cityId,
+    }));
   } catch (error) {
     console.warn('Failed to load events from cache:', error);
     return [];
@@ -216,29 +214,11 @@ export async function getCityEvents(
     return supabaseEvents;
   }
 
-  // 3. Try local cache
+  // 3. Try local cache (already filtered for future events)
   const cachedEvents = await loadEventsFromCache(cityId);
   if (cachedEvents.length > 0) {
-    console.log(`[Cache] Loaded ${cachedEvents.length} events for ${cityId}`);
-    
-    // Apply the same filters as the API call to cached data
-    let filteredEvents = cachedEvents;
-    
-    // Apply date filters
-    if (startDate) {
-      const start = new Date(startDate);
-      filteredEvents = filteredEvents.filter(event => new Date(event.date) >= start);
-    }
-    
-    if (endDate) {
-      const end = new Date(endDate);
-      filteredEvents = filteredEvents.filter(event => new Date(event.date) <= end);
-    }
-    
-    // Apply limit
-    filteredEvents = filteredEvents.slice(0, limit);
-    
-    return filteredEvents;
+    console.log(`[Cache] Loaded ${cachedEvents.length} future events for ${cityId}`);
+    return cachedEvents;
   }
 
   return [];
@@ -318,32 +298,50 @@ export function formatBackendEvent(backendEvent: BackendEvent) {
 
 /**
  * Format date from backend to frontend format
+ * FIXED: Use UTC dates to avoid timezone offset issues
  */
 function formatDate(dateStr: string): string {
   try {
-    const date = new Date(dateStr);
+    if (!dateStr) return dateStr;
+    
+    // Parse the date string as UTC (YYYY-MM-DD)
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+    const day = parseInt(parts[2], 10);
+    
+    // Create date in UTC to avoid timezone issues
+    const date = new Date(Date.UTC(year, month, day));
     
     if (isNaN(date.getTime())) {
       return dateStr;
     }
     
-    const today = new Date();
+    // Get today's date in UTC
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    
+    // Get tomorrow's date in UTC
     const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-    today.setHours(0, 0, 0, 0);
-    tomorrow.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
+    // Compare timestamps
+    const dateTime = date.getTime();
+    const todayTime = today.getTime();
+    const tomorrowTime = tomorrow.getTime();
 
-    if (date.getTime() === today.getTime()) {
+    if (dateTime === todayTime) {
       return 'Tonight';
-    } else if (date.getTime() === tomorrow.getTime()) {
+    } else if (dateTime === tomorrowTime) {
       return 'Tomorrow';
     } else {
       return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'UTC'
       });
     }
   } catch {

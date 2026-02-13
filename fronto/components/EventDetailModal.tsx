@@ -93,7 +93,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
 
   return (
     <div className="fixed inset-0 z-[999] bg-void/95 backdrop-blur-lg flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-black border border-zinc-800 overflow-hidden flex flex-col">
+      <div className="w-full max-w-2xl max-h-[calc(100vh-8rem)] bg-black border border-zinc-800 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           <h2 className="text-2xl font-black tracking-tighter uppercase truncate pr-4">

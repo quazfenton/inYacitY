@@ -299,15 +299,15 @@ async def run_all_scrapers():
 
         print(f"✓ Saved {len(unique_events)} merged events to {ALL_EVENTS_PATH}")
 
-    # Optional cache copy for frontend
-    cache_target = os.path.join(BASE_DIR, '..', 'fronto', 'public', 'cache', 'all_events.json')
-    if os.path.exists(os.path.dirname(cache_target)):
+    # Copy to frontend public folder (correct path for frontend to access)
+    frontend_cache_target = os.path.join(BASE_DIR, '..', 'fronto', 'public', 'all_events.json')
+    if os.path.exists(os.path.dirname(frontend_cache_target)):
         try:
-            with open(ALL_EVENTS_PATH, 'r') as src, open(cache_target, 'w') as dst:
+            with open(ALL_EVENTS_PATH, 'r') as src, open(frontend_cache_target, 'w') as dst:
                 dst.write(src.read())
-            print("✓ Updated frontend cache at fronto/public/cache/all_events.json")
-        except Exception:
-            pass
+            print("✓ Updated frontend cache at fronto/public/all_events.json")
+        except Exception as e:
+            print(f"Warning: Could not update frontend cache: {e}")
 
     # Print summary
     print("\n" + "=" * 70)

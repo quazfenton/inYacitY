@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CitySelector from './components/CitySelector';
 import EventCard from './components/EventCard';
+import EventDetailModal from './components/EventDetailModal';
 import SubscribeForm from './components/SubscribeForm';
 import VibeChart from './components/VibeChart';
 import ErrorBoundary from './components/ErrorBoundary';
 import AmbientMusic from './components/AmbientMusic';
-import ScrollHelper from './components/ScrollHelper';
 import EventFilterBar from './components/EventFilterBar';
 import { City, Event, ViewState, VibeData } from './types';
 import { ArrowLeft, Sparkles, X } from 'lucide-react';
@@ -31,6 +31,10 @@ const App: React.FC = () => {
   const [refreshUsed, setRefreshUsed] = useState(false);
   const [initialEventCount, setInitialEventCount] = useState(0);
   const [newEventsCount, setNewEventsCount] = useState(0);
+  
+  // Modal state - managed at App level
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [modalInitialTab, setModalInitialTab] = useState<'details' | 'rsvp' | 'comments'>('details');
 
   // Load cities from API on mount
   useEffect(() => {
@@ -55,6 +59,17 @@ const App: React.FC = () => {
     };
     loadCities();
   }, []);
+
+  // ESC key handler for modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedEvent) {
+        setSelectedEvent(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedEvent]);
 
   // Handle City Selection
   const handleCitySelect = async (city: City) => {
@@ -104,7 +119,19 @@ const App: React.FC = () => {
     setView(ViewState.LANDING);
     setSelectedCity(null);
     setEvents([]);
+    setSelectedEvent(null);
   };
+
+  // Open event modal
+  const handleEventSelect = useCallback((event: Event, initialTab: 'details' | 'rsvp' | 'comments' = 'details') => {
+    setModalInitialTab(initialTab);
+    setSelectedEvent(event);
+  }, []);
+
+  // Close modal
+  const handleCloseModal = useCallback(() => {
+    setSelectedEvent(null);
+  }, []);
 
   // Refresh/Scrape Handler (limited to 1 per entire session)
   const handleRefreshEvents = async () => {
@@ -162,7 +189,6 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <ScrollHelper />
       <AmbientMusic />
       <div className="min-h-screen bg-void text-zinc-100 selection:bg-acid selection:text-void font-sans">
 
@@ -191,6 +217,23 @@ const App: React.FC = () => {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Event Detail Modal - Single instance at App level */}
+        {selectedEvent && (
+          <>
+            {/* Backdrop overlay */}
+            <div 
+              className="fixed inset-0 bg-black/60 z-[150]"
+              onClick={handleCloseModal}
+            />
+            <EventDetailModal
+              event={selectedEvent}
+              isOpen={true}
+              initialTab={modalInitialTab}
+              onClose={handleCloseModal}
+            />
+          </>
         )}
 
         {/* Main Content Area */}
@@ -304,7 +347,7 @@ const App: React.FC = () => {
                                  animationDelay: `${idx * 120}ms`
                                }}
                              >
-                               <EventCard event={event} />
+                               <EventCard event={event} onSelect={handleEventSelect} />
                              </div>
                            ))}
                            <div className="py-20 text-center border border-acid/30 border-dashed text-acid font-mono animate-pulse">
@@ -330,7 +373,7 @@ const App: React.FC = () => {
                                animationDelay: `${idx * 120}ms`
                              }}
                            >
-                             <EventCard event={event} />
+                             <EventCard event={event} onSelect={handleEventSelect} />
                            </div>
                          ))
                        )}

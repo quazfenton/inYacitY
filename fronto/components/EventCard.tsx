@@ -1,32 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Event } from '../types';
 import { MapPin, Clock, Tag, ExternalLink } from 'lucide-react';
 import EventActionBar from './EventActionBar';
-import EventDetailModal from './EventDetailModal';
 
 interface EventCardProps {
   event: Event;
+  onSelect?: (event: Event, initialTab: "details" | "rsvp" | "comments") => void;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [initialTab, setInitialTab] = useState<'details' | 'rsvp' | 'comments'>('details');
+const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
 
   const handleRSVP = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setInitialTab('rsvp');
-    setIsModalOpen(true);
+    onSelect?.(event, 'rsvp');
   };
 
   const handleShowComments = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setInitialTab('comments');
-    setIsModalOpen(true);
+    onSelect?.(event, 'comments');
   };
 
   const handleCardClick = () => {
-    setInitialTab('details');
-    setIsModalOpen(true);
+    onSelect?.(event, 'details');
   };
 
   return (
@@ -109,13 +104,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         </div>
       </div>
 
-      {/* Event Detail Modal */}
-      <EventDetailModal
-        event={event}
-        isOpen={isModalOpen}
-        initialTab={initialTab}
-        onClose={() => setIsModalOpen(false)}
-      />
     </>
   );
 };

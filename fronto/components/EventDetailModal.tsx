@@ -42,7 +42,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
   // Fetch comments when modal opens and tab is comments
   useEffect(() => {
     if (isOpen && activeTab === 'comments') {
-      fetchComments(event.id, { limit: 50 });
+      fetchComments(event.id, 50);
     }
   }, [isOpen, activeTab, event.id, fetchComments]);
 
@@ -89,7 +89,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, isOpen, init
     if (result && !result.error) {
       setCommentText('');
       // Refresh comments after posting
-      await fetchComments(event.id, { limit: 50 });
+      await fetchComments(event.id, 50);
     }
   };
 

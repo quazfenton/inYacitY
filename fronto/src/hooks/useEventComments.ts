@@ -74,19 +74,21 @@ export function useEventComments() {
 
       try {
         const params = new URLSearchParams({
-          limit: limit.toString(),
-          offset: offset.toString(),
-          approved: approvedOnly.toString(),
+          limit: String(limit),
+          offset: String(offset),
+          approved: String(approvedOnly),
         });
 
         const response = await fetch(
           `/api/scraper/comments/${eventId}?${params}`
         );
-        const data = (await response.json()) as CommentsResponse;
-
+        
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch comments');
+          const errorData = await response.text();
+          throw new Error(errorData || 'Failed to fetch comments');
         }
+        
+        const data = (await response.json()) as CommentsResponse;
 
         setComments(data.comments);
         setTotalCount(data.total_count);
@@ -145,21 +147,15 @@ export function useEventComments() {
           body: JSON.stringify(payload),
         });
 
-        const data = (await response.json()) as PostCommentResponse;
-
         if (!response.ok) {
-          const err = new Error(
-            data.message || 'Failed to post comment'
-          );
-          (err as any).rate_limited = data.rate_limited;
-          throw err;
+          const errorText = await response.text();
+          throw new Error(errorText || 'Failed to post comment');
         }
+
+        const data = (await response.json()) as PostCommentResponse;
 
         // Refresh rate limit status
         await checkRateLimit();
-
-        // Optionally refresh comments
-        // await fetchComments(eventId);
 
         return data;
       } catch (err) {
@@ -254,6 +250,11 @@ export function useEventComments() {
   const checkRateLimit = useCallback(async (): Promise<RateLimitResponse | null> => {
     try {
       const response = await fetch('/api/scraper/comments/rate-limit/status');
+      
+      if (!response.ok) {
+        return null;
+      }
+      
       const data = (await response.json()) as RateLimitResponse;
 
       if (response.ok) {
@@ -288,106 +289,3 @@ export function useEventComments() {
     checkRateLimit,
   };
 }
-
-/**
- * Component example:
- *
- * export function EventComments({ eventId }: { eventId: string }) {
- *   const {
- *     comments,
- *     totalCount,
- *     isLoading,
- *     error,
- *     rateLimitStatus,
- *     fetchComments,
- *     postComment,
- *     deleteComment,
- *     likeComment,
- *   } = useEventComments();
- *
- *   const [authorName, setAuthorName] = useState('');
- *   const [commentText, setCommentText] = useState('');
- *   const [isSubmitting, setIsSubmitting] = useState(false);
- *
- *   useEffect(() => {
- *     fetchComments(eventId);
- *   }, [eventId, fetchComments]);
- *
- *   const handleSubmit = async (e: React.FormEvent) => {
- *     e.preventDefault();
- *     setIsSubmitting(true);
- *
- *     const result = await postComment(eventId, authorName, commentText);
- *
- *     if (result?.success) {
- *       setAuthorName('');
- *       setCommentText('');
- *       // Refresh comments
- *       await fetchComments(eventId);
- *     }
- *
- *     setIsSubmitting(false);
- *   };
- *
- *   const canPostMore =
- *     rateLimitStatus &&
- *     rateLimitStatus.comments_this_minute < rateLimitStatus.limit_per_minute;
- *
- *   return (
- *     <div className="comments-section">
- *       <h3>Comments ({totalCount})</h3>
- *
- *       {rateLimitStatus && (
- *         <div className="rate-limit-info">
- *           <p>
- *             {rateLimitStatus.comments_this_minute}/
- *             {rateLimitStatus.limit_per_minute} comments this minute
- *           </p>
- *         </div>
- *       )}
- *
- *       <form onSubmit={handleSubmit}>
- *         <input
- *           type="text"
- *           placeholder="Your name"
- *           value={authorName}
- *           onChange={(e) => setAuthorName(e.target.value)}
- *           required
- *         />
- *
- *         <textarea
- *           placeholder="Write a comment..."
- *           value={commentText}
- *           onChange={(e) => setCommentText(e.target.value)}
- *           required
- *           disabled={!canPostMore}
- *         />
- *
- *         <button type="submit" disabled={isSubmitting || !canPostMore}>
- *           {isSubmitting ? 'Posting...' : 'Post Comment'}
- *         </button>
- *       </form>
- *
- *       {error && <p className="error">{error}</p>}
- *
- *       <div className="comments-list">
- *         {comments.map((comment) => (
- *           <div key={comment.comment_id} className="comment">
- *             <h4>{comment.author_name}</h4>
- *             <p>{comment.text}</p>
- *             <div className="comment-actions">
- *               <button onClick={() => likeComment(comment.comment_id)}>
- *                 👍 {comment.likes}
- *               </button>
- *               <button onClick={() => deleteComment(comment.comment_id)}>
- *                 Delete
- *               </button>
- *             </div>
- *             <small>{new Date(comment.created_at).toLocaleDateString()}</small>
- *           </div>
- *         ))}
- *       </div>
- *     </div>
- *   );
- * }
- */

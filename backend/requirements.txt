@@ -1,15 +1,15 @@
 # Flask and Web Framework
 Flask==2.3.2
-Flask-CORS==4.0.0
-Werkzeug==2.3.6
+Flask-CORS==6.0.0
+Werkzeug==3.1.6
 
 # Database and ORM
 supabase==2.0.3
 psycopg2-binary>=2.8.6
 
 # HTTP and API
-requests==2.31.0
-urllib3==2.0.4
+requests==2.32.4
+urllib3==2.6.3
 
 # Authentication and Security
 python-dotenv==1.0.0
@@ -20,7 +20,7 @@ python-dateutil==2.8.2
 pytz==2023.3
 
 # Web Server
-gunicorn==21.2.0
+gunicorn==22.0.0
 gevent>=23.8.1
 
 # Testing
@@ -28,7 +28,7 @@ pytest==7.4.0
 pytest-cov==4.1.0
 
 # Code Quality
-black==23.7.0
+black==24.3.0
 flake8==6.0.0
 mypy==1.4.1
 

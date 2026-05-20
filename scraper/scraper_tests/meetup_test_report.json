@@ -1,0 +1,142 @@
+{
+  "scraper": "meetup",
+  "timestamp": "2026-02-05T22:48:30.632566",
+  "metrics": {
+    "total_events": 16,
+    "errors": 0,
+    "duplicates": 0,
+    "completeness_rate": {
+      "title": 100.0,
+      "date": 100.0,
+      "time": 0.0,
+      "location": 100.0,
+      "link": 100.0,
+      "description": 100.0,
+      "price": 0.0,
+      "image": 0.0
+    },
+    "data_quality": {
+      "free_events": 0,
+      "paid_events": 0,
+      "valid_dates": 16,
+      "invalid_dates": 0,
+      "valid_times": 0,
+      "invalid_times": 0,
+      "avg_description_length": 140
+    },
+    "data_samples": {
+      "title_samples": [
+        "650 HABITS FOR LIFE TO TEACH YOUR CHILDREN (Habits",
+        "Free | Jazzy Mingle in Culver Arts District",
+        "Emotional Eating Ladies (Monthly Online Meetings)"
+      ],
+      "location_samples": [
+        "Location TBA",
+        "Industry Cafe & Jazz",
+        "Location TBA",
+        "Bar Lis",
+        "Studious Coworking Space"
+      ],
+      "date_samples": [
+        "2026-02-08",
+        "2026-02-08",
+        "2026-02-08"
+      ]
+    }
+  },
+  "events_sample": [
+    {
+      "title": "650 HABITS FOR LIFE TO TEACH YOUR CHILDREN (Habits 501-650)",
+      "link": "https://www.meetup.com/650-habits-for-life-to-teach-your-children/events/312962463/",
+      "date": "2026-02-08",
+      "time": "",
+      "location": "Location TBA",
+      "description": "An audio seminar for parents teaching 650 habits (501\u2013650) to raise children, with practical steps to build character and resilience.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Free | Jazzy Mingle in Culver Arts District",
+      "link": "https://www.meetup.com/losangelesfreeconcerts/events/312648077/",
+      "date": "2026-02-08",
+      "time": "",
+      "location": "Industry Cafe & Jazz",
+      "description": "Free in-person jazz mingle featuring Jeff Smith and band for LA locals/newcomers; beginner-friendly, helping attendees make new friends while enjoying live jazz.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Emotional Eating Ladies (Monthly Online Meetings)",
+      "link": "https://www.meetup.com/mountain-view-women-ending-emotional-eating-group/events/313055537/",
+      "date": "2026-02-08",
+      "time": "",
+      "location": "Location TBA",
+      "description": "Monthly online support meeting for women addressing emotional eating. Learn to understand self-sabotage and strategies to reduce emotional eating.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Free | Rooftop Mardi Gras Party ",
+      "link": "https://www.meetup.com/losangelesfreeconcerts/events/312859713/",
+      "date": "2026-02-18",
+      "time": "",
+      "location": "Bar Lis",
+      "description": "Free rooftop Mardi Gras party for people looking to mingle; a night of music, dancing and making new friends.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Arts & Crafts Game Night in Chinatown ",
+      "link": "https://www.meetup.com/chinatown-la/events/312617711/",
+      "date": "2026-02-07",
+      "time": "",
+      "location": "Studious Coworking Space",
+      "description": "An in-person game night for board-game fans and their friends, with board games plus arts and crafts and a movie corner; attendees make new connections.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Skyline Valentine\u2019s \ud83d\udc95 | Singles Mixer at Delphi Rooftop (Before The Standard)",
+      "link": "https://www.meetup.com/la-social-scene/events/313165785/",
+      "date": "2026-02-14",
+      "time": "",
+      "location": "The Delphi",
+      "description": "Valentine's Day rooftop singles mixer for LA singles to meet potential matches.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Have an excellent meal and a drink and the best time in your life",
+      "link": "https://www.meetup.com/encino-singles-30s-50s-meetup-good-wines-and-other-drinks/events/312521050/",
+      "date": "2026-02-08",
+      "time": "",
+      "location": "The Red Lion Tavern",
+      "description": "Social dining event for adults to share a meal, drinks, and pleasant conversations. Participants leave with new connections.",
+      "source": "Meetup"
+    },
+    {
+      "title": "\ud83d\udd25Ascend Together At The Post, Pasadena\ud83d\udd25",
+      "link": "https://www.meetup.com/iwanttodothat/events/313045321/",
+      "date": "2026-02-07",
+      "time": "",
+      "location": "Location TBA",
+      "description": "In-person indoor rock climbing meetup for climbers of all levels; outcome: attendees will make new climbing partners.",
+      "source": "Meetup"
+    },
+    {
+      "title": "Free | \u591c\u4e0a\u6d77 Chinese New Year Party",
+      "link": "https://www.meetup.com/losangelesfreeconcerts/events/312885722/",
+      "date": "2026-03-01",
+      "time": "",
+      "location": "Location TBA",
+      "description": "For this **special Chinese New Year party**, chanteuse [Jessica Fichot](https://www.instagram.com/jessicafichotmusic/) returns to Benny Boy to celebrate the swing era sounds of her mother\u2019s hometown o",
+      "source": "Meetup"
+    },
+    {
+      "title": "Rewire Your Brain to Lose Weight Without Relying on Willpower",
+      "link": "https://www.meetup.com/lose-weight-for-good-free-workshops/events/312159735/",
+      "date": "2026-02-18",
+      "time": "",
+      "location": "Location TBA",
+      "description": "Online interactive weight-loss workshop for people avoiding calorie counting; you will leave with a personalized next step you can use immediately.",
+      "source": "Meetup"
+    }
+  ],
+  "total_events": 16,
+  "duplicates": 0,
+  "errors": []
+}

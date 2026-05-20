@@ -1,0 +1,142 @@
+{
+  "scraper": "eventbrite",
+  "timestamp": "2026-02-05T22:48:30.632757",
+  "metrics": {
+    "total_events": 40,
+    "errors": 0,
+    "duplicates": 0,
+    "completeness_rate": {
+      "title": 100.0,
+      "date": 100.0,
+      "time": 60.0,
+      "location": 100.0,
+      "link": 100.0,
+      "description": 0.0,
+      "price": 0.0,
+      "image": 0.0
+    },
+    "data_quality": {
+      "free_events": 0,
+      "paid_events": 0,
+      "valid_dates": 40,
+      "invalid_dates": 0,
+      "valid_times": 24,
+      "invalid_times": 0,
+      "avg_description_length": 0
+    },
+    "data_samples": {
+      "title_samples": [
+        "View Los Angeles Job Fair - Los Angeles Career Fai",
+        "View Marathon  x Run Champs  - 5K Community Run",
+        "View Shoe Palace Presents: City of Angels Powered "
+      ],
+      "location_samples": [
+        "Location TBA",
+        "Location TBA",
+        "Location TBA",
+        "Location TBA",
+        "Location TBA"
+      ],
+      "date_samples": [
+        "2026-02-05",
+        "2026-02-05",
+        "2026-02-05"
+      ]
+    }
+  },
+  "events_sample": [
+    {
+      "title": "View Los Angeles Job Fair - Los Angeles Career Fair",
+      "date": "2026-02-05",
+      "time": "11:30AM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/los-angeles-job-fair-los-angeles-career-fair-tickets-426932495587",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Marathon  x Run Champs  - 5K Community Run",
+      "date": "2026-02-05",
+      "time": "9:00AM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/marathon-x-run-champs-5k-community-run-tickets-1979825528451",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Shoe Palace Presents: City of Angels Powered by adidas",
+      "date": "2026-02-05",
+      "time": "4:00PM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/shoe-palace-presents-city-of-angels-powered-by-adidas-tickets-1981265608770",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View LOS ANGELES JOB FAIR / LOS ANGELES CAREER FAIR",
+      "date": "2026-02-05",
+      "time": "11:30AM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/los-angeles-job-fair-los-angeles-career-fair-tickets-426983127027",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View LA Career Fair: Exclusive Tech Hiring Event",
+      "date": "2026-02-05",
+      "time": "9:00AM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/la-career-fair-exclusive-tech-hiring-event-tickets-146584232385",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Los Angeles  Career Fair",
+      "date": "2026-02-05",
+      "time": "9:30AM",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/los-angeles-career-fair-tickets-122692597863",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Oxy Live! with Robin Coste Lewis, Hosted by Alexandra Grant",
+      "date": "2026-02-05",
+      "time": "TBA",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/oxy-live-with-robin-coste-lewis-hosted-by-alexandra-grant-tickets-1977520248296",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Ancestral Dreamscapes: Asian American Film & Moving Image",
+      "date": "2026-02-05",
+      "time": "TBA",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/ancestral-dreamscapes-asian-american-film-moving-image-tickets-1980349581909",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Tijuana No w/Matamoska & More TBA! FREE Till 9pm (18+)",
+      "date": "2026-02-05",
+      "time": "TBA",
+      "location": "Location TBA",
+      "link": "https://www.eventbrite.com/e/tijuana-no-wmatamoska-more-tba-free-till-9pm-18-tickets-1981827043035",
+      "description": "",
+      "source": "Eventbrite"
+    },
+    {
+      "title": "View Mark de Clive-Lowe and Nanna.B at Winter Sounds (FREE)",
+      "date": "2026-02-05",
+      "time": "TBA",
+      "location": " West Hollywood, CA",
+      "link": "https://www.eventbrite.com/e/mark-de-clive-lowe-and-nannab-at-winter-sounds-free-tickets-1976995133664",
+      "description": "",
+      "source": "Eventbrite"
+    }
+  ],
+  "total_events": 40,
+  "duplicates": 0,
+  "errors": []
+}

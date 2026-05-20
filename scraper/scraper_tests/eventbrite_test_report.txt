@@ -1,0 +1,35 @@
+
+================================================================================
+SCRAPER TEST REPORT: EVENTBRITE
+================================================================================
+
+Execution Time: 0:00:00.001783
+Total Events: 40
+Errors: 0
+Duplicates Found: 0
+
+--- DATA COMPLETENESS ---
+  ✓ date            100.0%
+  ✗ description       0.0%
+  ✗ image             0.0%
+  ✓ link            100.0%
+  ✓ location        100.0%
+  ✗ price             0.0%
+  ~ time             60.0%
+  ✓ title           100.0%
+
+--- DATA QUALITY ---
+  Free Events: 0
+  Paid Events: 0
+  Valid Dates: 40
+  Invalid Dates: 0
+  Valid Times: 24
+  Invalid Times: 0
+  Avg Description Length: 0 chars
+
+--- DATA SAMPLES ---
+  Title: View Los Angeles Job Fair - Los Angeles Career Fai
+  Location: Location TBA
+  Date: 2026-02-05
+
+================================================================================

@@ -1,0 +1,35 @@
+
+================================================================================
+SCRAPER TEST REPORT: DICE_FM
+================================================================================
+
+Execution Time: 0:00:00.001714
+Total Events: 24
+Errors: 0
+Duplicates Found: 0
+
+--- DATA COMPLETENESS ---
+  ✓ date            100.0%
+  ✗ description       0.0%
+  ✗ image             0.0%
+  ✓ link            100.0%
+  ✓ location        100.0%
+  ✗ price             0.0%
+  ✗ time              0.0%
+  ✓ title           100.0%
+
+--- DATA QUALITY ---
+  Free Events: 0
+  Paid Events: 0
+  Valid Dates: 0
+  Invalid Dates: 24
+  Valid Times: 0
+  Invalid Times: 0
+  Avg Description Length: 0 chars
+
+--- DATA SAMPLES ---
+  Title: DJ Crenshaw
+  Location: Sid's Bar
+  Date: Thu, Feb 5
+
+================================================================================

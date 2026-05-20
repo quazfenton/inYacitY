@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nocturne_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-nocturne}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nocturne_prod_pwd}
+      POSTGRES_DB: ${DB_NAME:-nocturne}
+    volumes:
+      - nocturne_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-nocturne}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  redis:
+    image: redis:7-alpine
+    container_name: nocturne_redis
+    volumes:
+      - nocturne_redis_data:/data
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nocturne_backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-nocturne}:${DB_PASSWORD:-nocturne_prod_pwd}@postgres:5432/${DB_NAME:-nocturne}
+      - REDIS_URL=redis://redis:6379
+      - ALLOWED_ORIGINS=*
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@nocturne.events}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@nocturne.events}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_KEY=${SUPABASE_KEY:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-nocturne_dev_secret_change_in_prod}
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-nocturne_admin_key_change_in_prod}
+      - ENVIRONMENT=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+      - nocturne_scraper_data:/app/scraper_data
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+      - bing_edge
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1'
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: nocturne_n8n
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-n8n_encryption_key_change_me}
+      - GENERIC_TIMEZONE=America/New_York
+      - TZ=America/New_York
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - nocturne_n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+      - bing_edge
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+volumes:
+  nocturne_postgres_data:
+  nocturne_redis_data:
+  nocturne_scraper_data:
+  nocturne_n8n_data:
+
+networks:
+  nocturne_internal:
+    driver: bridge
+  bing_edge:
+    external: true

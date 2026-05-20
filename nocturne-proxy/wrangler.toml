@@ -1,0 +1,10 @@
+name = "unified-proxy"
+main = "worker.js"
+compatibility_date = "2026-05-19"
+
+kv_namespaces = [
+  { binding = "TUNNEL_KV", id = "73b798c47b8041cf8859fa57f7776365" }
+]
+
+[observability]
+enabled = true

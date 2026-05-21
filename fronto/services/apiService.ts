@@ -241,15 +241,44 @@ export async function getCityEvents(
 /**
  * Trigger scraping for a specific city
  */
-export async function scrapeCity(cityId: string): Promise<{ message: string; city: string }> {
+export async function scrapeCity(cityId: string): Promise<{ message: string; city: string; status: string; cooldown_remaining_minutes?: number }> {
   const response = await fetch(`${API_URL}/scrape/${cityId}`, {
     method: 'POST',
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to trigger scrape: ${response.statusText}`);
   }
-  
+
+  return response.json();
+}
+
+/**
+ * Get scrape status for a specific city
+ */
+export async function getScrapeStatus(cityId: string): Promise<{
+  city: string;
+  can_refresh: boolean;
+  cooldown_remaining_minutes: number;
+  last_scraped: string | null;
+  last_events_found: number;
+  total_scrapes: number;
+}> {
+  const response = await fetch(`${API_URL}/scrape/${cityId}/status`);
+  if (!response.ok) {
+    throw new Error(`Failed to get scrape status: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
+ * Get event count for a city
+ */
+export async function getCityEventCount(cityId: string): Promise<{ city: string; event_count: number }> {
+  const response = await fetch(`${API_URL}/events/${cityId}/count`);
+  if (!response.ok) {
+    throw new Error(`Failed to get event count: ${response.statusText}`);
+  }
   return response.json();
 }
 

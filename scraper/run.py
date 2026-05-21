@@ -129,6 +129,78 @@ def load_city_events_from_file(path: str, city: str) -> list:
         return []
 
 
+def _parse_ra_co_proxy_html(html: str, city: str) -> List[Dict]:
+    """Parse RA.co listing page HTML - replicates resco.py selectors."""
+    from bs4 import BeautifulSoup
+    events = []
+    soup = BeautifulSoup(html, 'html.parser')
+
+    event_titles = soup.find_all('h3', attrs={"data-pw-test-id": "event-title"})
+    if not event_titles:
+        event_titles = soup.select('h3[class*="EventTitle"]')
+
+    for title_elem in event_titles:
+        try:
+            link_elem = title_elem.find('a')
+            if not link_elem:
+                continue
+            event_link = link_elem.get('href', '')
+            title = link_elem.get_text(strip=True)
+            if not event_link.startswith('http'):
+                event_link = f"https://ra.co{event_link}"
+            if title and event_link:
+                events.append({
+                    'title': title,
+                    'link': event_link,
+                    'date': 'TBA',
+                    'time': 'TBA',
+                    'location': 'TBA',
+                    'price': 'TBA',
+                    'source': 'RA.co',
+                    'city': city,
+                })
+        except Exception:
+            continue
+    return events
+
+
+def _parse_posh_vip_proxy_html(html: str, city: str) -> List[Dict]:
+    """Parse posh.vip listing page HTML - replicates posh_vip.py selectors."""
+    import re
+    from bs4 import BeautifulSoup
+    events = []
+    soup = BeautifulSoup(html, 'html.parser')
+
+    cards = soup.find_all('a', href=re.compile(r'/e/'))
+    for card in cards:
+        try:
+            href = card.get('href', '')
+            if not href:
+                continue
+            if href.startswith('/'):
+                href = f"https://posh.vip{href}"
+            title = None
+            title_elem = card.find(['h2', 'h3', 'h4', 'p', 'span', 'div'])
+            if title_elem:
+                title = title_elem.get_text(strip=True)
+            if not title:
+                title = card.get('aria-label', '')
+            if title and len(title) > 3 and 'posh' not in title.lower():
+                events.append({
+                    'title': title,
+                    'link': href,
+                    'date': 'TBA',
+                    'time': 'TBA',
+                    'location': 'TBA',
+                    'description': '',
+                    'source': 'Posh.vip',
+                    'city': city,
+                })
+        except Exception:
+            continue
+    return events
+
+
 async def run_all_scrapers():
     """Run all scrapers and merge results"""
 
@@ -144,15 +216,29 @@ async def run_all_scrapers():
     print(f"Browser Settings: Headless={config.get('BROWSER.HEADLESS')}")
     print("=" * 70)
 
+    # Initialize run state (for crash recovery/resume)
+    from run_state import start_run, is_scraper_complete, mark_scraper_complete, clear_state, load_resumed_events
+    state = start_run(location)
+
+    # Load any previously found events from completed scrapers
+    from run_state import get_events_found
+    prev_events = get_events_found()
+
+    # If resuming from crash, load previously saved events so they're not lost
+    completed = state.get("completed", {})
+    is_resuming = bool(completed)
     all_events = []
+    if is_resuming:
+        all_events = load_resumed_events(location, ALL_EVENTS_PATH)
+
     scraper_results = {}
-    
+
     # Initialize deduplication tracker
     tracker = ScraperDeduplicationTracker()
     print(f"[Tracker] {tracker.get_stats()['total_tracked']} events tracked from previous runs")
 
     # ===== EVENTBRITE =====
-    if config.is_scraper_enabled('EVENTBRITE'):
+    if config.is_scraper_enabled('EVENTBRITE') and not is_scraper_complete('eventbrite'):
         print("\n[1/5] Scraping Eventbrite...")
         print("-" * 70)
         try:
@@ -160,12 +246,16 @@ async def run_all_scrapers():
             all_events.extend(eventbrite_events)
             scraper_results['Eventbrite'] = len(eventbrite_events)
             print(f"✓ Eventbrite: {len(eventbrite_events)} events")
+            mark_scraper_complete('eventbrite', len(eventbrite_events))
         except Exception as e:
             print(f"✗ Eventbrite error: {e}")
             scraper_results['Eventbrite'] = 0
+    elif is_scraper_complete('eventbrite'):
+        print(f"\n[1/5] Eventbrite already complete ({prev_events.get('eventbrite', 0)} events), skipping")
+        scraper_results['Eventbrite'] = prev_events.get('eventbrite', 0)
 
     # ===== MEETUP =====
-    if config.is_scraper_enabled('MEETUP'):
+    if config.is_scraper_enabled('MEETUP') and not is_scraper_complete('meetup'):
         print("\n[2/5] Scraping Meetup...")
         print("-" * 70)
         try:
@@ -173,12 +263,16 @@ async def run_all_scrapers():
             all_events.extend(meetup_events)
             scraper_results['Meetup'] = len(meetup_events)
             print(f"✓ Meetup: {len(meetup_events)} events")
+            mark_scraper_complete('meetup', len(meetup_events))
         except Exception as e:
             print(f"✗ Meetup error: {e}")
             scraper_results['Meetup'] = 0
+    elif is_scraper_complete('meetup'):
+        print(f"\n[2/5] Meetup already complete ({prev_events.get('meetup', 0)} events), skipping")
+        scraper_results['Meetup'] = prev_events.get('meetup', 0)
 
     # ===== LUMA =====
-    if config.is_scraper_enabled('LUMA'):
+    if config.is_scraper_enabled('LUMA') and not is_scraper_complete('luma'):
         print("\n[3/5] Scraping Luma...")
         print("-" * 70)
         try:
@@ -186,12 +280,16 @@ async def run_all_scrapers():
             all_events.extend(luma_events)
             scraper_results['Luma'] = len(luma_events)
             print(f"✓ Luma: {len(luma_events)} events")
+            mark_scraper_complete('luma', len(luma_events))
         except Exception as e:
             print(f"✗ Luma error: {e}")
             scraper_results['Luma'] = 0
+    elif is_scraper_complete('luma'):
+        print(f"\n[3/5] Luma already complete ({prev_events.get('luma', 0)} events), skipping")
+        scraper_results['Luma'] = prev_events.get('luma', 0)
 
     # ===== DICE.FM =====
-    if config.is_scraper_enabled('DICE_FM'):
+    if config.is_scraper_enabled('DICE_FM') and not is_scraper_complete('dice_fm'):
         print("\n[4/5] Scraping Dice.fm...")
         print("-" * 70)
         try:
@@ -199,12 +297,16 @@ async def run_all_scrapers():
             all_events.extend(dice_events)
             scraper_results['Dice.fm'] = len(dice_events)
             print(f"✓ Dice.fm: {len(dice_events)} events")
+            mark_scraper_complete('dice_fm', len(dice_events))
         except Exception as e:
             print(f"✗ Dice.fm error: {e}")
             scraper_results['Dice.fm'] = 0
+    elif is_scraper_complete('dice_fm'):
+        print(f"\n[4/5] Dice.fm already complete ({prev_events.get('dice_fm', 0)} events), skipping")
+        scraper_results['Dice.fm'] = prev_events.get('dice_fm', 0)
 
     # ===== RA.CO =====
-    if config.is_scraper_enabled('RA_CO'):
+    if config.is_scraper_enabled('RA_CO') and not is_scraper_complete('ra_co'):
         print("\n[5/5] Scraping RA.co...")
         print("-" * 70)
         try:
@@ -212,9 +314,13 @@ async def run_all_scrapers():
             all_events.extend(ra_events)
             scraper_results['RA.co'] = len(ra_events)
             print(f"✓ RA.co: {len(ra_events)} events")
+            mark_scraper_complete('ra_co', len(ra_events))
         except Exception as e:
             print(f"✗ RA.co error: {e}")
             scraper_results['RA.co'] = 0
+    elif is_scraper_complete('ra_co'):
+        print(f"\n[5/5] RA.co already complete ({prev_events.get('ra_co', 0)} events), skipping")
+        scraper_results['RA.co'] = prev_events.get('ra_co', 0)
 
     # If no events returned, load from per-scraper files as fallback
     if not all_events:
@@ -227,6 +333,96 @@ async def run_all_scrapers():
             'ra_events.json'
         ]:
             all_events.extend(load_city_events_from_file(os.path.join(BASE_DIR, file_name), location))
+
+    # ===== NEW ADDITIONS: Last-resort roundabout methods (after ALL existing methods) =====
+    # These only run after existing scrapers + JSON cache have been tried.
+    # They cycle through discovery and proxy sources rather than rehammering the same sites.
+
+    # --- Event Discovery (keyword-based, platforms without scrapers) ---
+    discovery_config = config.get('EVENT_DISCOVERY', {})
+    if discovery_config.get('ENABLED', False) and not is_scraper_complete('discovery'):
+        print("\n[DISCOVERY] Running event discovery (last-resort)...")
+        print("-" * 70)
+        try:
+            from event_discovery import discover_events
+
+            discovery_events = await discover_events(
+                city_slug=location,
+                enable_scira=discovery_config.get('ENABLE_SCIRA', True),
+                enable_firecrawl_search=discovery_config.get('ENABLE_FIRECRAWL_SEARCH', True),
+                enable_platform_discovery=discovery_config.get('ENABLE_PLATFORM_DISCOVERY', True),
+                platforms=discovery_config.get('PLATFORMS', ['partiful', 'ra.co', 'posh.vip']),
+            )
+
+            if discovery_events:
+                all_events.extend(discovery_events)
+                scraper_results['Discovery'] = len(discovery_events)
+                print(f"✓ Discovery: {len(discovery_events)} events (quality-filtered)")
+                mark_scraper_complete('discovery', len(discovery_events))
+            else:
+                print("✓ Discovery: No new events found")
+                mark_scraper_complete('discovery', 0)
+        except Exception as e:
+            print(f"✗ Discovery error: {e}")
+            scraper_results['Discovery'] = 0
+            mark_scraper_complete('discovery', 0)
+    elif is_scraper_complete('discovery'):
+        print(f"\n[DISCOVERY] Already complete ({prev_events.get('discovery', 0)} events), skipping")
+        scraper_results['Discovery'] = prev_events.get('discovery', 0)
+
+    # --- Proxy Fallback (only if still 0 events after everything above) ---
+    proxy_config = config.get('PROXY_FALLBACK', {})
+    if proxy_config.get('ENABLED', False) and not all_events and not is_scraper_complete('proxy_fallback'):
+        print("\n[PROXY] All methods returned 0 events, trying proxy fallback...")
+        print("-" * 70)
+        try:
+            from proxy_fallback import retry_with_proxies
+
+            proxy_targets = proxy_config.get('TARGET_PLATFORMS', ['ra.co', 'posh.vip'])
+            proxy_max_retries = proxy_config.get('MAX_RETRIES', 3)
+            proxy_events_total = 0
+
+            for platform in proxy_targets:
+                if platform == 'ra.co':
+                    ra_map = config.get('SCRAPER_SETTINGS.RA_CO.city_map', {})
+                    ra_loc = ra_map.get(location, '')
+                    if ra_loc:
+                        url = f"https://ra.co/events/{ra_loc}"
+                        print(f"  [Proxy] Retrying RA.co: {url}")
+                        html = await retry_with_proxies(url, max_retries=proxy_max_retries)
+                        if html and len(html.strip()) > 500:
+                            proxy_events = _parse_ra_co_proxy_html(html, location)
+                            if proxy_events:
+                                all_events.extend(proxy_events)
+                                proxy_events_total += len(proxy_events)
+                                scraper_results['RA.co (proxy)'] = len(proxy_events)
+                                print(f"  [Proxy] RA.co: {len(proxy_events)} events via proxy")
+
+                elif platform == 'posh.vip':
+                    posh_map = config.get('SCRAPER_SETTINGS.POSH_VIP.city_map', {})
+                    posh_loc = posh_map.get(location, '')
+                    if posh_loc:
+                        url = f"https://posh.vip/events/{posh_loc}"
+                        print(f"  [Proxy] Retrying posh.vip: {url}")
+                        html = await retry_with_proxies(url, max_retries=proxy_max_retries)
+                        if html and len(html.strip()) > 500:
+                            proxy_events = _parse_posh_vip_proxy_html(html, location)
+                            if proxy_events:
+                                all_events.extend(proxy_events)
+                                proxy_events_total += len(proxy_events)
+                                scraper_results['posh.vip (proxy)'] = len(proxy_events)
+                                print(f"  [Proxy] posh.vip: {len(proxy_events)} events via proxy")
+
+            mark_scraper_complete('proxy_fallback', proxy_events_total)
+
+        except ImportError:
+            print("  [Proxy] proxy_fallback module not available")
+            mark_scraper_complete('proxy_fallback', 0)
+        except Exception as e:
+            print(f"  [Proxy] Fallback failed: {e}")
+            mark_scraper_complete('proxy_fallback', 0)
+    elif is_scraper_complete('proxy_fallback'):
+        print(f"\n[PROXY] Already complete ({prev_events.get('proxy_fallback', 0)} events), skipping")
 
     # ===== DEDUPLICATION WITH TRACKER =====
     print(f"\n[DEDUP] Checking against local tracker...")
@@ -367,6 +563,9 @@ async def run_all_scrapers():
         print(f"  {source}: {count}")
 
     print("\n" + "=" * 70)
+
+    # Clear run state on successful completion (next run will start fresh)
+    clear_state()
 
     return unique_events, tracker
 

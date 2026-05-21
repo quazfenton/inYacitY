@@ -311,6 +311,7 @@ import logging
 import os
 import asyncio
 from pathlib import Path
+from datetime import datetime, timedelta
 
 # Ensure logs directory exists
 log_dir = Path("logs")
@@ -318,6 +319,112 @@ log_dir.mkdir(parents=True, exist_ok=True)
 
 # Lock to prevent concurrent scraper runs that could interfere with each other
 scraper_lock = asyncio.Lock()
+
+# Per-city scrape tracking file
+SCRAPE_TRACKER_PATH = Path("logs") / "scrape_tracker.json"
+
+# Cooldown constants (in minutes)
+ON_DEMAND_COOLDOWN_MINUTES = 30
+CRON_COOLDOWN_MINUTES = 360  # 6 hours
+
+STALE_THRESHOLD_DAYS = 5
+MAX_STALE_CITIES_PER_RUN = 3
+
+def _load_scrape_tracker() -> Dict:
+    """Load the scrape tracker from disk."""
+    if SCRAPE_TRACKER_PATH.exists():
+        try:
+            with open(SCRAPE_TRACKER_PATH, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {"cities": {}, "last_cron_index": -1}
+
+def _save_scrape_tracker(tracker: Dict):
+    """Save the scrape tracker to disk."""
+    SCRAPE_TRACKER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(SCRAPE_TRACKER_PATH, 'w') as f:
+        json.dump(tracker, f, indent=2)
+
+def record_scrape(city: str, source: str = "manual", events_found: int = 0):
+    """Record that a city was scraped. Always updates the scrape date."""
+    tracker = _load_scrape_tracker()
+    now = datetime.utcnow().isoformat()
+    prev = tracker["cities"].get(city, {})
+    tracker["cities"][city] = {
+        "last_scraped": now,
+        "source": source,
+        "events_found": events_found,
+        "total_scrapes": prev.get("total_scrapes", 0) + 1
+    }
+    _save_scrape_tracker(tracker)
+
+def get_city_scrape_info(city: str) -> Dict:
+    """Get scrape info for a specific city."""
+    tracker = _load_scrape_tracker()
+    city_info = tracker["cities"].get(city, {})
+    if not city_info:
+        return {"last_scraped": None, "can_refresh": True, "cooldown_remaining_minutes": 0, "days_since_scrape": None}
+    last_scraped = datetime.fromisoformat(city_info["last_scraped"])
+    source = city_info.get("source", "unknown")
+    cooldown = ON_DEMAND_COOLDOWN_MINUTES if source == "manual" else CRON_COOLDOWN_MINUTES
+    elapsed = (datetime.utcnow() - last_scraped).total_seconds() / 60
+    remaining = max(0, cooldown - elapsed)
+    days_since = (datetime.utcnow() - last_scraped).total_seconds() / 86400
+    return {
+        "last_scraped": city_info["last_scraped"],
+        "source": source,
+        "events_found": city_info.get("events_found", 0),
+        "total_scrapes": city_info.get("total_scrapes", 0),
+        "can_refresh": remaining == 0,
+        "cooldown_remaining_minutes": round(remaining, 1),
+        "days_since_scrape": round(days_since, 1)
+    }
+
+def get_stale_cities(max_count: int = MAX_STALE_CITIES_PER_RUN, threshold_days: int = STALE_THRESHOLD_DAYS) -> List[str]:
+    """Find cities whose last scrape is older than threshold_days. Returns up to max_count, oldest first."""
+    supported_cities = CONFIG.get('SUPPORTED_LOCATIONS', [])
+    stale = []
+    now = datetime.utcnow()
+    for city in supported_cities:
+        info = get_city_scrape_info(city)
+        if info["last_scraped"] is None:
+            stale.append((city, 9999))
+        else:
+            days = info["days_since_scrape"]
+            if days > threshold_days:
+                stale.append((city, days))
+    stale.sort(key=lambda x: x[1], reverse=True)
+    return [city for city, _ in stale[:max_count]]
+
+def get_all_scrape_info() -> Dict:
+    """Get scrape info for all supported cities."""
+    supported_cities = CONFIG.get('SUPPORTED_LOCATIONS', [])
+    result = {}
+    for city in supported_cities:
+        result[city] = get_city_scrape_info(city)
+    return result
+
+def get_next_city_to_scrape() -> str:
+    """Get the next city in rotation for the cron job."""
+    supported_cities = CONFIG.get('SUPPORTED_LOCATIONS', [])
+    if not supported_cities:
+        return None
+    tracker = _load_scrape_tracker()
+    last_index = tracker.get("last_cron_index", -1)
+    next_index = (last_index + 1) % len(supported_cities)
+    tracker["last_cron_index"] = next_index
+    _save_scrape_tracker(tracker)
+    return supported_cities[next_index]
+
+def can_scrape_city(city: str, source: str = "manual") -> tuple[bool, float]:
+    """Check if a city can be scraped based on cooldown. Returns (can_scrape, remaining_minutes)."""
+    info = get_city_scrape_info(city)
+    if info["can_refresh"]:
+        return True, 0
+    if source == "cron":
+        return True, 0
+    return False, info["cooldown_remaining_minutes"]
 
 # Configure logging
 logging.basicConfig(
@@ -332,7 +439,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def scrape_city_events(city: str) -> Dict:
+async def scrape_city_events(city: str, source: str = "manual") -> Dict:
     """
     Scrape events for a specific city and save to database.
     Returns statistics about the scraping operation.
@@ -340,7 +447,7 @@ async def scrape_city_events(city: str) -> Dict:
     from scraper.run import run_all_scrapers
     import shutil
 
-    logger.info(f"Starting scrape for city: {city}")
+    logger.info(f"Starting scrape for city: {city} (source: {source})")
 
     # Load current config
     config = load_config()
@@ -372,6 +479,7 @@ async def scrape_city_events(city: str) -> Dict:
 
         if not os.path.exists(all_events_file):
             logger.warning(f"No events found for {city}")
+            record_scrape(city, source, 0)
             return {
                 "city": city,
                 "status": "error",
@@ -423,6 +531,9 @@ async def scrape_city_events(city: str) -> Dict:
     except Exception as e:
         logger.warning(f"Supabase sync failed (non-critical): {e}")
 
+    # Record the scrape
+    record_scrape(city, source, len(events_data))
+
     return {
         "city": city,
         "status": "success",
@@ -430,6 +541,22 @@ async def scrape_city_events(city: str) -> Dict:
         "events_saved": result['saved'],
         "events_updated": result['updated']
     }
+
+
+async def scrape_city_on_demand(city: str) -> Dict:
+    """
+    Scrape a city on-demand with cooldown enforcement.
+    Returns error if cooldown is still active.
+    """
+    can_scrape, remaining = can_scrape_city(city, source="manual")
+    if not can_scrape:
+        return {
+            "city": city,
+            "status": "cooldown",
+            "message": f"City was recently scraped. Try again in {remaining:.0f} minutes.",
+            "cooldown_remaining_minutes": remaining
+        }
+    return await scrape_city_events(city, source="manual")
 
 
 async def refresh_all_cities() -> Dict:

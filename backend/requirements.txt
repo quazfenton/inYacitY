@@ -40,3 +40,6 @@ uvicorn>=0.38.0
 # Async Support
 aiohttp>=3.7.5
 asyncio-contextmanager>=1.0.0
+
+# Scheduling (replaces n8n + system cron)
+apscheduler>=3.10.4

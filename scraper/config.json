@@ -160,6 +160,20 @@
     "INDIVIDUAL_FILES": true,
     "FORMAT": "json"
   },
+  "EVENT_DISCOVERY": {
+    "ENABLED": true,
+    "ENABLE_SCIRA": true,
+    "ENABLE_FIRECRAWL_SEARCH": true,
+    "ENABLE_PLATFORM_DISCOVERY": true,
+    "PLATFORMS": ["partiful", "ra.co", "posh.vip"],
+    "COMMENTS": "All discovery methods ON. Scira included but quality-filtered (time+location pairing required)."
+  },
+  "PROXY_FALLBACK": {
+    "ENABLED": true,
+    "TARGET_PLATFORMS": ["ra.co", "posh.vip"],
+    "MAX_RETRIES": 3,
+    "COMMENTS": "Last-resort only. Activates when ALL methods (existing + discovery + JSON cache) return 0 events."
+  },
   "LOGGING": {
     "LEVEL": "INFO",
     "TO_FILE": true,

@@ -21,7 +21,7 @@ from database import (
     engine, Base, get_db, 
     Event, Subscription, init_db
 )
-from scraper_integration import scrape_city_events, refresh_all_cities
+from scraper_integration import scrape_city_events, refresh_all_cities, scrape_city_on_demand, get_city_scrape_info, get_all_scrape_info
 
 # Import authentication utilities
 from auth import get_current_admin
@@ -85,8 +85,26 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize database
     from database import init_db_async
     await init_db_async()
+
+    # Start local scheduler (replaces n8n + system cron)
+    try:
+        from scheduler import start_scheduler
+        start_scheduler()
+        print("[OK] Local scheduler started (6hr rotate + daily maintenance)")
+    except ImportError:
+        print("[WARN] APScheduler not installed, skipping local scheduler")
+        print("       Install with: pip install apscheduler")
+    except Exception as e:
+        print(f"[WARN] Scheduler failed to start: {e}")
+
     yield
-    # Shutdown: Close database connections
+
+    # Shutdown: Stop scheduler + close database connections
+    try:
+        from scheduler import stop_scheduler
+        stop_scheduler()
+    except Exception:
+        pass
     from database import engine
     await engine.dispose()
 
@@ -173,22 +191,80 @@ async def scrape_all(background_tasks: BackgroundTasks):
     background_tasks.add_task(refresh_all_cities)
     return {"message": "Scraping initiated for all cities"}
 
-# Scrape events for a city
+# Scrape events for a city (on-demand with per-city cooldown)
 @app.post("/scrape/{city}")
 async def scrape_events(city: str, background_tasks: BackgroundTasks):
-    """Trigger scraping for a specific city"""
+    """Trigger on-demand scraping for a specific city (30min cooldown per city)"""
     from config import CONFIG
     if city not in CONFIG.get('SUPPORTED_LOCATIONS', []):
         raise HTTPException(status_code=404, detail=f"City {city} not supported")
 
+    # Check cooldown
+    info = get_city_scrape_info(city)
+    if not info["can_refresh"]:
+        return {
+            "message": f"City was recently scraped. Try again in {info['cooldown_remaining_minutes']:.0f} minutes.",
+            "city": city,
+            "status": "cooldown",
+            "cooldown_remaining_minutes": info["cooldown_remaining_minutes"],
+            "last_scraped": info["last_scraped"]
+        }
+
     # Run scraping in background
-    background_tasks.add_task(scrape_city_events, city)
+    background_tasks.add_task(scrape_city_on_demand, city)
 
     return {
         "message": f"Scraping initiated for {city}",
         "city": city,
+        "status": "started",
         "note": "Events will be synced to shared database in real-time"
     }
+
+# Get scrape status for a city
+@app.get("/scrape/{city}/status")
+async def get_scrape_status(city: str):
+    """Get scrape cooldown status for a specific city"""
+    from config import CONFIG
+    if city not in CONFIG.get('SUPPORTED_LOCATIONS', []):
+        raise HTTPException(status_code=404, detail=f"City {city} not supported")
+
+    info = get_city_scrape_info(city)
+    return {
+        "city": city,
+        "can_refresh": info["can_refresh"],
+        "cooldown_remaining_minutes": info["cooldown_remaining_minutes"],
+        "last_scraped": info["last_scraped"],
+        "last_source": info.get("source"),
+        "last_events_found": info.get("events_found", 0),
+        "total_scrapes": info.get("total_scrapes", 0)
+    }
+
+# Get scrape status for all cities
+@app.get("/scrape/status")
+async def get_all_scrape_status():
+    """Get scrape status for all supported cities"""
+    return get_all_scrape_info()
+
+# Get event count for a city
+@app.get("/events/{city}/count")
+async def get_city_event_count(city: str, db=Depends(get_db)):
+    """Get the number of future events for a city"""
+    from sqlalchemy import func, select
+    from database import Event
+    from datetime import date
+
+    from config import CONFIG
+    if city not in CONFIG.get('SUPPORTED_LOCATIONS', []):
+        raise HTTPException(status_code=404, detail=f"City {city} not supported")
+
+    today = date.today()
+    count = await db.scalar(
+        select(func.count()).select_from(Event).where(
+            Event.city == city,
+            Event.date >= today
+        )
+    )
+    return {"city": city, "event_count": count or 0}
 
 # Subscribe to email updates
 @app.post("/subscribe", response_model=SubscriptionResponse)

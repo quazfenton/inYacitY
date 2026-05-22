@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: nocturne_db
@@ -16,8 +15,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
 
-  # FastAPI Backend
+  redis:
+    image: redis:7-alpine
+    container_name: nocturne_redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - nocturne_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
   backend:
     build:
       context: ./backend
@@ -25,6 +45,7 @@ services:
     container_name: nocturne_backend
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-nocturne}:${POSTGRES_PASSWORD:-nocturne}@postgres:5432/${POSTGRES_DB:-nocturne}
+      - REDIS_URL=redis://redis:6379
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
@@ -33,16 +54,33 @@ services:
       - SMTP_FROM=${SMTP_FROM:-noreply@nocturne.events}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@nocturne.events}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY}
+      - BROWSERBASE_API_KEY=${BROWSERBASE_API_KEY}
+      - ANCHOR_BROWSER_API_KEY=${ANCHOR_BROWSER_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
+    networks:
+      - nocturne_internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1'
 
-  # Frontend (Production build)
   frontend:
     build:
       context: ./fronto
@@ -53,6 +91,13 @@ services:
     ports:
       - "5173:5173"
     restart: unless-stopped
+    networks:
+      - nocturne_internal
 
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  nocturne_internal:
+    driver: bridge

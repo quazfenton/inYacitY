@@ -1,0 +1,63 @@
+# Caddy 2 — HTTP reverse proxy (no TLS until we have a domain).
+# Routes based on URL path prefixes:
+#   /api/*, /health*  → bing backend (Hono orchestrator)
+#   /novnc/*          → noVNC web-based VNC client (on Docker host)
+#   /nocturne/*       → nocturne FastAPI backend
+#   /nocturne-n8n/*   → nocturne n8n automation
+#   /*                → 9Router (LLM gateway)
+#
+# When you get a domain:
+#   api.yourdomain.com → backend:3001
+#   router.yourdomain.com → ninerouter:3000
+#   nocturne.yourdomain.com → nocturne_backend:8000
+#   Then add { email your@email } block back for auto-TLS
+
+:80 {
+    encode zstd gzip
+
+    # Bing backend routes
+    @bing_api path /api/* /health*
+    handle @bing_api {
+        reverse_proxy backend:3001 {
+            flush_interval -1
+            transport http {
+                read_timeout  30m
+                write_timeout 30m
+            }
+        }
+    }
+
+    # Nocturne n8n routes (must come before nocturne catch-all)
+    @nocturne_n8n path /nocturne-n8n/*
+    handle @nocturne_n8n {
+        uri strip_prefix /nocturne-n8n
+        reverse_proxy nocturne_n8n:5678 {
+            flush_interval -1
+        }
+    }
+
+    # Nocturne backend routes (FastAPI) — all /nocturne/* paths
+    @nocturne path /nocturne/*
+    handle @nocturne {
+        uri strip_prefix /nocturne
+        reverse_proxy nocturne_backend:8000 {
+            flush_interval -1
+            transport http {
+                read_timeout  5m
+                write_timeout 5m
+            }
+        }
+    }
+
+    # noVNC web-based VNC client (on Docker host at 172.18.0.1:6080)
+    handle_path /novnc/* {
+        reverse_proxy 172.18.0.1:6080
+    }
+
+    # Everything else goes to 9router dashboard
+    handle {
+        reverse_proxy ninerouter:3000 {
+            flush_interval -1
+        }
+    }
+}

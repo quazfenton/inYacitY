@@ -294,7 +294,7 @@ async def fetch_page(url: str, use_firecrawl_fallback: bool = True) -> Optional[
 
 
 async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[str]:
-    """Use Hyperbrowser API v1/browser with captcha solving and full page render"""
+    """Use Hyperbrowser API v1/scrape with captcha solving"""
     if not HYPERBROWSER_API_KEY:
         return None
 
@@ -304,9 +304,10 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
             async with aiohttp.ClientSession() as session:
                 payload = {
                     "url": url,
-                    "instructions": "Render the page fully, solve any captchas or Cloudflare challenges, and return the complete HTML.",
-                    "solve_captcha": True,
-                    "capture": "html",
+                    "session_options": {
+                        "accept_cookies": True,
+                        "solve_captchas": True
+                    }
                 }
                 headers = {
                     "Authorization": f"Bearer {HYPERBROWSER_API_KEY}",
@@ -314,7 +315,7 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
                 }
 
                 async with session.post(
-                    "https://api.hyperbrowser.ai/v1/browser",
+                    "https://api.hyperbrowser.ai/v1/scrape",
                     json=payload,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=120)
@@ -326,14 +327,9 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
                         continue
 
                     data = await resp.json()
-
-                    # Search multiple keys since response structure varies
-                    for key in ("content", "html", "result", "data"):
-                        candidate = data.get(key)
-                        if isinstance(candidate, dict):
-                            candidate = candidate.get("content") or candidate.get("html")
-                        if isinstance(candidate, str) and candidate.strip():
-                            return candidate
+                    html = data.get('data', {}).get('html', '')
+                    if html:
+                        return html
 
                     if attempt < max_retries:
                         await asyncio.sleep(3)

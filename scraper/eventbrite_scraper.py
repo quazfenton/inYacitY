@@ -12,6 +12,22 @@ from bs4 import BeautifulSoup
 from browser import fetch_page
 from config_loader import get_config
 
+# Map ISO country codes to Eventbrite's full country name format
+# https://www.eventbrite.com/d/{country}--{city}/free--events/
+COUNTRY_NAME_MAP = {
+    'fr': 'france', 'gb': 'united-kingdom', 'de': 'germany',
+    'it': 'italy', 'es': 'spain', 'nl': 'netherlands',
+    'be': 'belgium', 'ch': 'switzerland', 'at': 'austria',
+    'se': 'sweden', 'dk': 'denmark', 'no': 'norway',
+    'fi': 'finland', 'pt': 'portugal', 'ie': 'ireland',
+    'jp': 'japan', 'kr': 'south-korea', 'cn': 'china',
+    'hk': 'hong-kong', 'sg': 'singapore', 'au': 'australia',
+    'nz': 'new-zealand', 'br': 'brazil', 'mx': 'mexico',
+    'ar': 'argentina', 'in': 'india', 'ng': 'nigeria',
+    'za': 'south-africa', 'ru': 'russia',
+    'us': 'united-states', 'ca': 'canada',
+}
+
 
 def parse_event_date(date_str: str) -> str:
     """Parse various date formats to YYYY-MM-DD."""
@@ -247,6 +263,15 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
 
     if not location:
         location = config.get_location()
+
+    # Transform slug to Eventbrite URL format
+    # US: /d/ny--new-york/free--events/ (slug works directly)
+    # Foreign: /d/france--paris/free--events/ (needs country name map)
+    prefix = location.split('--')[0] if '--' in location else ''
+    country_name = COUNTRY_NAME_MAP.get(prefix)
+    if country_name:
+        city = location.split('--', 1)[1]
+        location = f"{country_name}--{city}"
 
     # Get Eventbrite config
     eb_config = config.get_scraper_config('EVENTBRITE')

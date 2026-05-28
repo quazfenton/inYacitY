@@ -38,6 +38,9 @@ MEETUP_CITY_MAP = {
     'mn--minneapolis': 'us--mn--minneapolis',
 }
 
+# Derive US state codes from map keys for slug detection
+US_STATE_CODES = {k.split('--')[0] for k in MEETUP_CITY_MAP}
+
 
 def normalize_iso(dt_str: str) -> str:
     if not dt_str:
@@ -140,18 +143,18 @@ async def scrape_meetup(location: str = None) -> list:
 
     city_code = None
     if not location:
-        # Convert location format from config to Meetup format
         city_code = config.get_location()
-        if city_code not in MEETUP_CITY_MAP:
-            print(f"⚠ Meetup: City '{city_code}' not supported. Skipping.")
-            return []
-        location = MEETUP_CITY_MAP.get(city_code)
     else:
         city_code = location
-        if city_code not in MEETUP_CITY_MAP:
-            print(f"⚠ Meetup: City '{city_code}' not supported. Skipping.")
-            return []
-        location = MEETUP_CITY_MAP.get(city_code)
+    state = city_code.split('--')[0] if '--' in city_code else ''
+    meetup_location = MEETUP_CITY_MAP.get(city_code)
+    if not meetup_location:
+        if state in US_STATE_CODES:
+            meetup_location = f"us--{city_code}"
+        else:
+            city = city_code.split('--', 1)[1]
+            meetup_location = f"{state}--{city[0].upper()}{city[1:]}"
+    location = meetup_location
 
     output_file = os.path.join(os.path.dirname(__file__), "meetup_events.json")
 

@@ -599,6 +599,11 @@ async def run_all_scrapers():
 
     print("\n" + "=" * 70)
 
+    # Prune past events from tracker
+    removed = tracker.remove_past_events(days=30)
+    if removed > 0:
+        print(f"[Tracker] Removed {removed} past events from tracker")
+
     # Clear run state on successful completion (next run will start fresh)
     clear_state()
 

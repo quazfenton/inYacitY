@@ -13,6 +13,10 @@
     "tx--dallas",
     "ca--san-jose"
   ],
+  "BROWSER": {
+    "STEALTH_ENABLED": false,
+    "COOKIE_FILE": ""
+  },
   "SCRAPER": {
     "TIMEOUT": 30,
     "RETRIES": 3
@@ -76,8 +80,7 @@
     },
     "POSH_VIP": {
       "enabled": false
-    },
-    "LOCATION": "ny--new-york"
+    }
   },
   "LOCATION": "ny--new-york",
   "location_map": {

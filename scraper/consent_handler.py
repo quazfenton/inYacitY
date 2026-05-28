@@ -8,6 +8,7 @@ Implements real browser profiles and fingerprint consistency
 import asyncio
 import json
 import os
+import platform
 import random
 import re
 import time
@@ -16,6 +17,8 @@ import base64
 import hashlib
 import functools
 from datetime import datetime, timedelta
+
+IS_WINDOWS = platform.system() == "Windows"
 
 import requests
 from bs4 import BeautifulSoup
@@ -31,23 +34,23 @@ try:
     from pydoll.constants import By
     from pydoll.browser.options import ChromiumOptions
     PYDOLL_AVAILABLE = True
-    print("✅ pydoll available - Cloudflare bypass enabled")
+    print("[OK] pydoll available - Cloudflare bypass enabled")
 except ImportError:
-    print("⚠️  pydoll not available - install with: pip install pydoll")
+    print("[WARN]  pydoll not available - install with: pip install pydoll")
 
 try:
     import patchright.async_api as patchright
     PATCHRIGHT_AVAILABLE = True
-    print("✅ Patchright available - Enhanced stealth mode enabled")
+    print("[OK] Patchright available - Enhanced stealth mode enabled")
 except ImportError:
-    print("⚠️  Patchright not available - install with: pip install patchright")
+    print("[WARN]  Patchright not available - install with: pip install patchright")
 
 try:
     import botright
     BOTRIGHT_AVAILABLE = True
-    print("✅ Botright available - Advanced anti-detection enabled")
+    print("[OK] Botright available - Advanced anti-detection enabled")
 except ImportError:
-    print("⚠️  Botright not available - install with: pip install botright")
+    print("[WARN]  Botright not available - install with: pip install botright")
 
 
 # Pydoll Retry Decorator
@@ -73,10 +76,10 @@ def pydoll_retry(max_retries=3, delay=2.0, backoff=2.0, exceptions=(Exception,))
                 except exceptions as e:
                     last_exception = e
                     if attempt == max_retries:
-                        print(f"❌ {func.__name__} failed after {max_retries} retries: {e}")
+                        print(f"[FAIL] {func.__name__} failed after {max_retries} retries: {e}")
                         raise e
                     
-                    print(f"⚠️  {func.__name__} attempt {attempt + 1} failed: {e}")
+                    print(f"[WARN]  {func.__name__} attempt {attempt + 1} failed: {e}")
                     print(f"   Retrying in {current_delay:.1f} seconds...")
                     
                     await asyncio.sleep(current_delay)
@@ -106,7 +109,7 @@ class BrowserRecoveryManager:
     
     async def _restart_browser(self, browser, browser_type, **kwargs):
         """Restart the browser completely"""
-        print("🔄 Recovery strategy: Restarting browser...")
+        print("[RESTART] Recovery strategy: Restarting browser...")
         try:
             await close_undetected_browser(browser, browser_type)
             await asyncio.sleep(random.uniform(2.0, 5.0))
@@ -117,7 +120,7 @@ class BrowserRecoveryManager:
     
     async def _clear_cache_and_retry(self, browser, browser_type, **kwargs):
         """Clear browser cache and cookies"""
-        print("🧹 Recovery strategy: Clearing cache...")
+        print("[CACHE] Recovery strategy: Clearing cache...")
         try:
             if browser_type == 'pydoll':
                 # For pydoll, we need to restart as cache clearing isn't directly available
@@ -135,13 +138,13 @@ class BrowserRecoveryManager:
     
     async def _change_user_agent(self, browser, browser_type, **kwargs):
         """Change user agent and retry"""
-        print("🎭 Recovery strategy: Changing user agent...")
+        print("[UA] Recovery strategy: Changing user agent...")
         # This requires restarting with a different profile
         return await self._restart_browser(browser, browser_type, **kwargs)
     
     async def _use_different_profile(self, browser, browser_type, **kwargs):
         """Use a different browser profile"""
-        print("👤 Recovery strategy: Using different profile...")
+        print("[PROFILE] Recovery strategy: Using different profile...")
         # Select a different profile
         profiles = list(REAL_BROWSER_PROFILES.keys())
         current_profile = kwargs.get('profile_name')
@@ -155,7 +158,7 @@ class BrowserRecoveryManager:
     
     async def _add_random_delay(self, browser, browser_type, **kwargs):
         """Add random delay and continue"""
-        print("⏱️  Recovery strategy: Adding random delay...")
+        print("[DELAY]  Recovery strategy: Adding random delay...")
         delay = random.uniform(5.0, 15.0)
         await asyncio.sleep(delay)
         return browser, None, browser_type  # Return existing browser
@@ -163,7 +166,7 @@ class BrowserRecoveryManager:
     async def attempt_recovery(self, browser, browser_type, error, strategy_index=0, **kwargs):
         """Attempt recovery using available strategies"""
         if strategy_index >= len(self.recovery_strategies):
-            print("❌ All recovery strategies exhausted")
+            print("[FAIL] All recovery strategies exhausted")
             raise error
         
         try:
@@ -348,7 +351,7 @@ async def handle_consent_and_blockages(page, url: str) -> bool:
 
     # Safety check: ensure content is a string before processing
     if page_content is None or not isinstance(page_content, str):
-        print(f"⚠️  Warning: Got invalid content type {type(page_content)} for {url}")
+        print(f"[WARN]  Warning: Got invalid content type {type(page_content)} for {url}")
         page_content = ""
 
     soup = BeautifulSoup(page_content, 'html.parser')
@@ -721,7 +724,7 @@ async def handle_consent_and_blockages(page, url: str) -> bool:
 
                                     # Safety check: ensure content is a string before processing
                                     if new_content is None or not isinstance(new_content, str):
-                                        print(f"⚠️  Warning: Got invalid content type {type(new_content)} when checking consent dismissal")
+                                        print(f"[WARN]  Warning: Got invalid content type {type(new_content)} when checking consent dismissal")
                                         new_content = ""
 
                                     if not any(indicator in new_content.lower() for indicator in consent_indicators):
@@ -766,7 +769,7 @@ async def handle_consent_and_blockages(page, url: str) -> bool:
 
                     # Safety check: ensure content is a string before processing
                     if new_content is None or not isinstance(new_content, str):
-                        print(f"⚠️  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after Escape")
+                        print(f"[WARN]  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after Escape")
                         new_content = ""
 
                     if not any(indicator in new_content.lower() for indicator in consent_indicators):
@@ -813,7 +816,7 @@ async def handle_consent_and_blockages(page, url: str) -> bool:
 
                         # Safety check: ensure content is a string before processing
                         if new_content is None or not isinstance(new_content, str):
-                            print(f"⚠️  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after keyboard navigation")
+                            print(f"[WARN]  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after keyboard navigation")
                             new_content = ""
 
                         if not any(indicator in new_content.lower() for indicator in consent_indicators):
@@ -945,7 +948,7 @@ async def handle_consent_and_blockages(page, url: str) -> bool:
 
                     # Safety check: ensure content is a string before processing
                     if new_content is None or not isinstance(new_content, str):
-                        print(f"⚠️  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after JavaScript removal")
+                        print(f"[WARN]  Warning: Got invalid content type {type(new_content)} when checking consent dismissal after JavaScript removal")
                         new_content = ""
 
                     if not any(indicator in new_content.lower() for indicator in consent_indicators):
@@ -1280,12 +1283,12 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
         # Randomly select a profile for variety
         profile = random.choice(list(REAL_BROWSER_PROFILES.values()))
     
-    print(f"📋 Using profile: {profile['userAgent'][:50]}...")
+    print(f"[PROFILE] Using profile: {profile['userAgent'][:50]}...")
     
     # Method 1: Patchright (enhanced Playwright with stealth) - PRIMARY
     if use_patchright and PATCHRIGHT_AVAILABLE:
         try:
-            print("🚀 Using Patchright browser (enhanced stealth)...")
+            print("[START] Using Patchright browser (enhanced stealth)...")
             from patchright.async_api import async_playwright
 
             # Use start() instead of async with to keep browser alive
@@ -1295,8 +1298,7 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
                 args=[
                     '--disable-blink-features=AutomationControlled',
                     '--disable-dev-shm-usage',
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
+                    *(('--no-sandbox', '--disable-setuid-sandbox') if not IS_WINDOWS else ()),
                     '--disable-web-security',
                     '--disable-features=IsolateOrigins,site-per-process',
                     '--disable-infobars',
@@ -1329,14 +1331,14 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
             # Store playwright instance on browser to prevent garbage collection
             browser._playwright = playwright
 
-            print("✅ Patchright browser created successfully")
+            print("[OK] Patchright browser created successfully")
             return browser, page, 'patchright'
 
         except Exception as e:
-            print(f"⚠️  Patchright failed: {e}, falling back...")
+            print(f"[WARN]  Patchright failed: {e}, falling back...")
     
     # Method 2: Standard Playwright with enhanced anti-detection
-    print("🚀 Using standard Playwright with enhanced anti-detection...")
+    print("[START] Using standard Playwright with enhanced anti-detection...")
     try:
         from playwright.async_api import async_playwright
         
@@ -1346,8 +1348,7 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--disable-dev-shm-usage',
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
+                *(('--no-sandbox', '--disable-setuid-sandbox') if not IS_WINDOWS else ()),
                 '--disable-web-security',
                 '--disable-features=IsolateOrigins,site-per-process',
                 '--disable-infobars',
@@ -1377,83 +1378,66 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
         # Store playwright instance on browser to prevent garbage collection
         browser._playwright = playwright
         
-        print("✅ Playwright browser created successfully")
+        print("[OK] Playwright browser created successfully")
         return browser, page, 'playwright'
         
     except Exception as e:
-        print(f"⚠️  Playwright failed: {e}, falling back...")
+        print(f"[WARN]  Playwright failed: {e}, falling back...")
     
     # Method 3: Botright (advanced anti-detection)
     if use_botright and BOTRIGHT_AVAILABLE:
         try:
-            print("🚀 Using Botright browser (advanced anti-detection)...")
+            print("[START] Using Botright browser (advanced anti-detection)...")
             botright_client = await botright.Botright()
             browser = await botright_client.new_browser()
             page = await browser.new_page()
             
-            print("✅ Botright browser created successfully")
+            print("[OK] Botright browser created successfully")
             return browser, page, 'botright'
             
         except Exception as e:
-            print(f"⚠️  Botright failed: {e}, falling back...")
+            print(f"[WARN]  Botright failed: {e}, falling back...")
     
     # Method 4: pydoll (fallback for Cloudflare) - LAST RESORT
     if use_pydoll and PYDOLL_AVAILABLE:
         try:
-            print("🚀 Using pydoll browser (Cloudflare bypass fallback)...")
+            print("[START] Using pydoll browser (Cloudflare bypass fallback)...")
 
-            # Configure pydoll with real browser profile
             options = ChromiumOptions()
-
-            # Set browser preferences for realism
             options.browser_preferences = {
-                # Simulate usage history (90 days old profile)
                 'profile': {
                     'created_by_version': '120.0.6099.130',
                     'creation_time': str(time.time() - (90 * 24 * 60 * 60)),
                     'exit_type': 'Normal',
                 },
-                # Realistic content settings
                 'profile.default_content_setting_values': {
                     'cookies': 1,
                     'images': 1,
                     'javascript': 1,
-                    'notifications': 2,  # Ask (realistic)
+                    'notifications': 2,
                     'plugins': 1,
                     'popups': 0,
                     'geolocation': 2,
                     'media_stream': 2,
                 },
-                # WebRTC IP handling (prevent leaks)
                 'webrtc': {
                     'ip_handling_policy': 'disable_non_proxied_udp',
                 },
             }
-
-            # Add arguments for stealth
             options.add_argument('--disable-blink-features=AutomationControlled')
             options.add_argument(f'--window-size={profile["viewport"]["width"]},{profile["viewport"]["height"]}')
             options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-gpu')  # Helps with stability
+            if not IS_WINDOWS:
+                options.add_argument('--no-sandbox')
+            options.add_argument('--disable-gpu')
             options.add_argument('--disable-extensions')
             options.add_argument('--disable-plugins')
-            options.add_argument('--disable-images')  # Faster loading
-
-            if headless:
-                options.add_argument('--headless=new')
+            options.add_argument('--disable-images')
+            options.headless = headless
+            options.start_timeout = 30
 
             browser = PydollChrome(options=options)
-
-            # Add timeout for browser start
-            try:
-                await asyncio.wait_for(browser.start(), timeout=30.0)
-            except asyncio.TimeoutError:
-                raise Exception("pydoll browser start timeout")
-
-            # Get the page from pydoll - the API has changed
-            # Pydoll's start() method returns a Tab object that acts as the page
-            page = await browser.start()  # This returns the Tab object
+            page = await browser.start()  # returns Tab directly in 2.23.0
 
             # Apply consistent fingerprint using CDP
             await apply_consistent_fingerprint_pydoll(page, profile)
@@ -1461,11 +1445,11 @@ async def create_undetected_browser(use_pydoll=True, use_patchright=True, use_bo
             # Enable automatic Cloudflare captcha solving
             await page.enable_auto_solve_cloudflare_captcha()
 
-            print("✅ pydoll browser created successfully")
+            print("[OK] pydoll browser created successfully")
             return browser, page, 'pydoll'
 
         except Exception as e:
-            print(f"⚠️  pydoll failed: {e}")
+            print(f"[WARN]  pydoll failed: {e}")
     
     # If all methods failed
     raise Exception("All browser creation methods failed")
@@ -1550,14 +1534,14 @@ async def apply_consistent_fingerprint_pydoll(page, profile: Dict):
                     get: () => undefined
                 }});
 
-                console.log('✅ Consistent fingerprint applied');
+                console.log('[OK] Consistent fingerprint applied');
             }}
         ''')
 
-        print("✅ Applied consistent fingerprint to pydoll browser")
+        print("[OK] Applied consistent fingerprint to pydoll browser")
 
     except Exception as e:
-        print(f"⚠️  Error applying fingerprint: {e}")
+        print(f"[WARN]  Error applying fingerprint: {e}")
 
 
 async def apply_consistent_fingerprint_playwright(page, profile: Dict):
@@ -1607,14 +1591,14 @@ async def apply_consistent_fingerprint_playwright(page, profile: Dict):
                     app: {{}}
                 }};
                 
-                console.log('✅ Consistent fingerprint applied');
+                console.log('[OK] Consistent fingerprint applied');
             }}
         ''')
         
-        print("✅ Applied consistent fingerprint to Playwright browser")
+        print("[OK] Applied consistent fingerprint to Playwright browser")
         
     except Exception as e:
-        print(f"⚠️  Error applying fingerprint: {e}")
+        print(f"[WARN]  Error applying fingerprint: {e}")
 
 
 async def close_undetected_browser(browser, browser_type):
@@ -1723,16 +1707,16 @@ async def verify_fingerprint_consistency(page, browser_type='playwright') -> Tup
         is_consistent = len(issues) == 0
         
         if is_consistent:
-            print("✅ Fingerprint consistency check PASSED")
+            print("[OK] Fingerprint consistency check PASSED")
         else:
-            print(f"⚠️  Fingerprint consistency check FAILED ({len(issues)} issues)")
+            print(f"[WARN]  Fingerprint consistency check FAILED ({len(issues)} issues)")
             for issue in issues:
                 print(f"    - {issue}")
         
         return is_consistent, issues
         
     except Exception as e:
-        print(f"⚠️  Error verifying fingerprint: {e}")
+        print(f"[WARN]  Error verifying fingerprint: {e}")
         return False, [f"Verification error: {str(e)}"]
 
 
@@ -1744,7 +1728,7 @@ async def navigate_with_cloudflare_bypass(page, url, browser_type='playwright', 
     """
     if browser_type == 'pydoll' and PYDOLL_AVAILABLE:
         try:
-            print(f"🌐 Navigating with Cloudflare bypass: {url}")
+            print(f" Navigating with Cloudflare bypass: {url}")
             
             # Add random delay before navigation (human-like)
             await asyncio.sleep(random.uniform(0.5, 1.5))
@@ -1755,7 +1739,7 @@ async def navigate_with_cloudflare_bypass(page, url, browser_type='playwright', 
                 custom_selector=(By.ID, 'challenge-form') if random.choice([True, False]) else None
             ):
                 await page.go_to(url)
-                print("✅ Cloudflare bypass completed")
+                print("[OK] Cloudflare bypass completed")
             
             # Random delay after page load (human-like)
             await asyncio.sleep(random.uniform(1.0, 2.5))
@@ -1771,13 +1755,13 @@ async def navigate_with_cloudflare_bypass(page, url, browser_type='playwright', 
             
             return True
         except Exception as e:
-            print(f"⚠️  Cloudflare bypass error: {e}")
+            print(f"[WARN]  Cloudflare bypass error: {e}")
             # Fallback to regular navigation
             try:
                 await page.go_to(url)
                 return True
             except Exception as fallback_error:
-                print(f"⚠️  Fallback navigation also failed: {fallback_error}")
+                print(f"[WARN]  Fallback navigation also failed: {fallback_error}")
                 raise fallback_error
     else:
         # Standard navigation for other browser types with human-like behavior
@@ -2018,7 +2002,7 @@ async def detect_and_solve_captcha(page, max_wait: int = CAPTCHA_POLL_TIMEOUT) -
     Enhanced CAPTCHA detection and solving with multiple free services
     Supports: reCAPTCHA v2/v3, hCaptcha, Cloudflare Turnstile
     """
-    print("🔍 Checking for CAPTCHAs...")
+    print("[SEARCH] Checking for CAPTCHAs...")
     
     # Check for API keys
     solver_key = os.environ.get("CAPTCHA_SOLVER_API_KEY") or os.environ.get("CAPTCHA_API_KEY")
@@ -2039,7 +2023,7 @@ async def detect_and_solve_captcha(page, max_wait: int = CAPTCHA_POLL_TIMEOUT) -
         
         captcha_type = captcha_info['type']
         sitekey = captcha_info['sitekey']
-        print(f"🤖 Detected {captcha_type} CAPTCHA with sitekey: {sitekey[:20]}...")
+        print(f" Detected {captcha_type} CAPTCHA with sitekey: {sitekey[:20]}...")
         
         # Try multiple solving methods in order of preference
         solution = None
@@ -2066,12 +2050,12 @@ async def detect_and_solve_captcha(page, max_wait: int = CAPTCHA_POLL_TIMEOUT) -
             print("  Attempting automated bypass...")
             bypass_success = await attempt_captcha_bypass(page, captcha_type)
             if bypass_success:
-                print("  ✅ CAPTCHA bypassed successfully!")
+                print("  [OK] CAPTCHA bypassed successfully!")
                 return True
         
         # Inject solution if we got one
         if solution:
-            print(f"  ✅ Got CAPTCHA solution, injecting...")
+            print(f"  [OK] Got CAPTCHA solution, injecting...")
             await _inject_captcha_solution(page, solution, captcha_type)
             
             # Wait for page to process the solution
@@ -2094,21 +2078,21 @@ async def detect_and_solve_captcha(page, max_wait: int = CAPTCHA_POLL_TIMEOUT) -
 
             # Safety check: ensure content is a string before processing
             if new_content is None or not isinstance(new_content, str):
-                print(f"⚠️  Warning: Got invalid content type {type(new_content)} when checking CAPTCHA status")
+                print(f"[WARN]  Warning: Got invalid content type {type(new_content)} when checking CAPTCHA status")
                 new_content = ""
 
             new_soup = BeautifulSoup(new_content, 'html.parser')
             new_captcha = await _detect_captcha_on_page(page, new_soup)
             
             if not new_captcha:
-                print("  ✅ CAPTCHA solved successfully!")
+                print("  [OK] CAPTCHA solved successfully!")
                 return True
             else:
-                print("  ⚠️  CAPTCHA still present, retrying...")
+                print("  [WARN]  CAPTCHA still present, retrying...")
         
         await page.wait_for_timeout(3000)
     
-    print("  ❌ Failed to solve CAPTCHA within timeout")
+    print("  [FAIL] Failed to solve CAPTCHA within timeout")
     return False
 
 

@@ -38,10 +38,6 @@ PROXY_SOURCES = [
         "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt",
         "type": "http",
     },
-    {
-        "url": "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt",
-        "type": "socks5",
-    },
 ]
 
 
@@ -101,7 +97,7 @@ async def _fetch_proxy_list() -> List[str]:
     return list(dict.fromkeys(all_proxies))
 
 
-async def _validate_proxy(proxy: str, test_url: str = "https://httpbin.org/ip", timeout: int = 8) -> bool:
+async def _validate_proxy(proxy: str, test_url: str = "http://httpbin.org/ip", timeout: int = 5) -> bool:
     """Test if a proxy is working."""
     try:
         import aiohttp
@@ -109,7 +105,7 @@ async def _validate_proxy(proxy: str, test_url: str = "https://httpbin.org/ip", 
         proxy_type = "socks5" if proxy.startswith("socks") else "http"
         proxy_url = f"{proxy_type}://{proxy}" if not proxy.startswith("http") and not proxy.startswith("socks") else proxy
 
-        connector = aiohttp.TCPConnector(limit=1)
+        connector = aiohttp.TCPConnector(limit=1, ssl=False)
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(
                 test_url,
@@ -122,7 +118,7 @@ async def _validate_proxy(proxy: str, test_url: str = "https://httpbin.org/ip", 
         return False
 
 
-async def validate_proxies(proxies: List[str], max_concurrent: int = 10, max_valid: int = 15) -> List[str]:
+async def validate_proxies(proxies: List[str], max_concurrent: int = 20, max_valid: int = 10) -> List[str]:
     """Validate proxies concurrently, stop after finding enough working ones."""
     if not proxies:
         return []
@@ -171,6 +167,13 @@ async def get_prewarmed_proxies(force_refresh: bool = False) -> List[str]:
         print("  [Proxy] No proxies fetched, returning empty list")
         return []
 
+    # Sample down to 300 to avoid validating 7000+ proxies (too slow)
+    sample_size = min(300, len(raw_proxies))
+    if len(raw_proxies) > sample_size:
+        import random
+        raw_proxies = random.sample(raw_proxies, sample_size)
+        print(f"  [Proxy] Sampled {sample_size} proxies from {len(raw_proxies)+sample_size} total for validation")
+
     # Validate
     validated = await validate_proxies(raw_proxies)
 
@@ -180,24 +183,39 @@ async def get_prewarmed_proxies(force_refresh: bool = False) -> List[str]:
     return validated
 
 
-async def fetch_with_proxy(url: str, proxy: str, timeout: int = 30) -> Optional[str]:
+async def fetch_with_proxy(url: str, proxy: str, timeout: int = 30, profile_name: str = None) -> Optional[str]:
     """
     Fetch a URL using a specific proxy via Playwright.
-    Does NOT modify any existing fetch_page implementation.
+    Uses rotating device profiles to evade detection.
     """
     try:
         from playwright.async_api import async_playwright
+        from browser import BROWSER_PROFILES, PROFILE_ORDER, IS_WINDOWS
+
+        if profile_name is None or profile_name not in BROWSER_PROFILES:
+            import random
+            profile_name = random.choice(PROFILE_ORDER)
+        profile = BROWSER_PROFILES[profile_name]
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"]
-            )
+            args = ['--disable-dev-shm-usage', '--disable-gpu',
+                    '--disable-blink-features=AutomationControlled',
+                    f'--window-size={profile["viewport"]["width"]},{profile["viewport"]["height"]}']
+            if not IS_WINDOWS:
+                args.append('--no-sandbox')
 
+            browser = await p.chromium.launch(headless=True, args=args)
+
+            proxy_url = f"http://{proxy}" if not proxy.startswith("http://") and not proxy.startswith("socks") else proxy
             context = await browser.new_context(
-                proxy={"server": proxy},
-                viewport={"width": 1920, "height": 1080},
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                proxy={"server": proxy_url},
+                viewport=profile['viewport'],
+                screen=profile['screen'],
+                user_agent=profile['user_agent'],
+                locale=profile['locale'],
+                timezone_id=profile['timezone_id'],
+                is_mobile=profile['is_mobile'],
+                has_touch=profile['has_touch'],
             )
 
             page = await context.new_page()
@@ -238,8 +256,9 @@ async def retry_with_proxies(
     random.shuffle(proxies)
 
     for i, proxy in enumerate(proxies[:max_retries]):
-        print(f"    [Proxy] Attempt {i+1}/{max_retries} via {proxy}")
-        html = await fetch_with_proxy(url, proxy)
+        profile_name = PROFILE_ORDER[i % len(PROFILE_ORDER)]
+        print(f"    [Proxy] Attempt {i+1}/{max_retries} via {proxy} ({profile_name})")
+        html = await fetch_with_proxy(url, proxy, profile_name=profile_name)
 
         if html and len(html.strip()) > 100:
             print(f"    [Proxy] Success via {proxy}")

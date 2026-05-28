@@ -319,6 +319,47 @@ export async function subscribeToCity(
 }
 
 /**
+ * Search cities via API (full-text against LocationDatabase)
+ * Returns results with a `scraped` flag indicating if the city is in SUPPORTED_LOCATIONS.
+ */
+export async function searchCities(query: string): Promise<{
+  query: string;
+  count: number;
+  results: Array<{
+    code: string;
+    name: string;
+    tier: string;
+    state: string;
+    country: string;
+    coordinates: { latitude: number; longitude: number };
+    population?: number;
+  }>;
+}> {
+  try {
+    const resp = await fetch(`${API_URL}/locations/search?q=${encodeURIComponent(query)}&limit=10`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return {
+        query: data.query,
+        count: data.count,
+        results: (data.results || []).map((r: any) => ({
+          code: r.code,
+          name: r.name,
+          tier: r.tier,
+          state: r.state,
+          country: r.country,
+          coordinates: r.coordinates,
+          population: r.population,
+        })),
+      };
+    }
+  } catch {
+    // API not available
+  }
+  return { query, count: 0, results: [] };
+}
+
+/**
  * Format backend event to frontend event format
  */
 export function formatBackendEvent(backendEvent: BackendEvent) {

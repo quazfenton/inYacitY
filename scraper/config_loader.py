@@ -54,7 +54,9 @@ class Config:
             "BROWSER": {
                 "HEADLESS": True,
                 "TIMEOUT": 30000,
-                "WAIT_TIME": 2000
+                "WAIT_TIME": 2000,
+                "STEALTH_ENABLED": False,
+                "COOKIE_FILE": ""
             },
             "SCRAPER_SETTINGS": {
                 "EVENTBRITE": {"enabled": True},

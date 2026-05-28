@@ -9,7 +9,7 @@ RESTful API for:
 - Event filtering by location
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -136,6 +136,79 @@ async def get_location(code: str):
 # ============================================================================
 # GEOLOCATION ENDPOINTS
 # ============================================================================
+
+@router.get("/detect")
+async def detect_location(request: Request):
+    """
+    IP geolocation fallback: reads X-Forwarded-For (set by Worker from
+    cf-connecting-ip) and queries ip-api.com for city-level location data.
+    Returns nearest supported city.
+    """
+    import aiohttp
+
+    # Extract client IP from headers set by Cloudflare Worker
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else None
+
+    if not client_ip or client_ip in ("127.0.0.1", "::1", "localhost"):
+        # Fall back to request remote address
+        client_ip = request.client.host if request.client else None
+
+    if not client_ip or client_ip in ("127.0.0.1", "::1"):
+        return {
+            "success": False,
+            "error": "could not determine client IP",
+            "ip_used": None
+        }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"http://ip-api.com/json/{client_ip}",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as resp:
+                if resp.status != 200:
+                    return {"success": False, "error": f"ip-api returned {resp.status}"}
+                data = await resp.json()
+
+        if data.get("status") != "success":
+            return {"success": False, "error": data.get("message", "ip-api lookup failed")}
+
+        lat = data.get("lat")
+        lon = data.get("lon")
+        city_name = data.get("city", "")
+        region = data.get("regionName", "")
+        country = data.get("countryCode", "")
+
+        if lat is None or lon is None:
+            return {"success": False, "error": "no coordinates in ip-api response"}
+
+        # Find nearest supported city from coordinates
+        user_coords = Coordinates(lat, lon)
+        nearest = location_db.find_nearest_city(user_coords, limit=3)
+
+        return {
+            "success": True,
+            "ip": client_ip,
+            "detected": {
+                "city": city_name,
+                "region": region,
+                "country": country,
+                "latitude": lat,
+                "longitude": lon
+            },
+            "nearest_cities": [
+                {
+                    "location": loc.to_dict(),
+                    "distance_miles": round(dist, 1)
+                }
+                for loc, dist in nearest
+            ]
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 @router.post("/nearest-cities")
 async def find_nearest_cities(request: NearestCitiesRequest):

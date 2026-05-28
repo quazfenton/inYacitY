@@ -1,6 +1,10 @@
 import { City } from './types';
 
-// City mapping from backend city IDs to frontend display format
+// City mapping from backend city IDs to frontend display format.
+// Instance 1 sources (Eventbrite, Meetup, Posh.vip) support any city —
+// their URLs are computable from the city slug.
+// Instance 2 sources (Luma, Dice.fm, RA.co, Facebook) silently skip
+// cities they don't have explicit mappings for.
 export const CITY_MAPPING: Record<string, City> = {
   'ca--los-angeles': { id: 'ca--los-angeles', name: 'LOS ANGELES', slug: 'los-angeles', coordinates: { lat: 34.0522, lng: -118.2437 } },
   'ny--new-york': { id: 'ny--new-york', name: 'NEW YORK', slug: 'new-york', coordinates: { lat: 40.7128, lng: -74.0060 } },
@@ -52,4 +56,3 @@ export const CITIES: City[] = Object.values(CITY_MAPPING);
 
 // API configuration
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-

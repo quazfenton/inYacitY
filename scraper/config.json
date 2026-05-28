@@ -62,6 +62,18 @@
         "tx--houston": "us/houston"
       }
     },
+    "FACEBOOK": {
+      "enabled": true,
+      "city_map": {
+        "ca--los-angeles": ["us-los-angeles", "110970792260960"],
+        "ca--san-francisco": ["us-san-francisco", "114952118516947"],
+        "ga--atlanta": ["us-atlanta", "107991659233606"],
+        "nv--las-vegas": ["us-las-vegas", "108081209214649"],
+        "ny--new-york": ["us-new-york", "108424279189115"],
+        "tx--houston": ["us-houston", "115963528414384"],
+        "wa--seattle": ["us-seattle", "110843418940484"]
+      }
+    },
     "POSH_VIP": {
       "enabled": false
     },

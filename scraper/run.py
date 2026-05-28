@@ -20,6 +20,7 @@ from luma_scraper import scrape_luma
 from dice_scraper import scrape_dice
 from residad_scraper import scrape_ra
 from posh_vip import scrape_posh_vip
+from facebook_scraper import scrape_facebook
 
 BASE_DIR = os.path.dirname(__file__)
 ALL_EVENTS_PATH = os.path.join(BASE_DIR, 'all_events.json')
@@ -239,7 +240,7 @@ async def run_all_scrapers():
 
     # ===== EVENTBRITE =====
     if config.is_scraper_enabled('EVENTBRITE') and not is_scraper_complete('eventbrite'):
-        print("\n[1/5] Scraping Eventbrite...")
+        print("\n[1/6] Scraping Eventbrite...")
         print("-" * 70)
         try:
             eventbrite_events = await scrape_eventbrite(location)
@@ -251,12 +252,12 @@ async def run_all_scrapers():
             print(f"✗ Eventbrite error: {e}")
             scraper_results['Eventbrite'] = 0
     elif is_scraper_complete('eventbrite'):
-        print(f"\n[1/5] Eventbrite already complete ({prev_events.get('eventbrite', 0)} events), skipping")
+        print(f"\n[1/6] Eventbrite already complete ({prev_events.get('eventbrite', 0)} events), skipping")
         scraper_results['Eventbrite'] = prev_events.get('eventbrite', 0)
 
     # ===== MEETUP =====
     if config.is_scraper_enabled('MEETUP') and not is_scraper_complete('meetup'):
-        print("\n[2/5] Scraping Meetup...")
+        print("\n[2/6] Scraping Meetup...")
         print("-" * 70)
         try:
             meetup_events = await scrape_meetup(location)
@@ -268,12 +269,12 @@ async def run_all_scrapers():
             print(f"✗ Meetup error: {e}")
             scraper_results['Meetup'] = 0
     elif is_scraper_complete('meetup'):
-        print(f"\n[2/5] Meetup already complete ({prev_events.get('meetup', 0)} events), skipping")
+        print(f"\n[2/6] Meetup already complete ({prev_events.get('meetup', 0)} events), skipping")
         scraper_results['Meetup'] = prev_events.get('meetup', 0)
 
     # ===== LUMA =====
     if config.is_scraper_enabled('LUMA') and not is_scraper_complete('luma'):
-        print("\n[3/5] Scraping Luma...")
+        print("\n[3/6] Scraping Luma...")
         print("-" * 70)
         try:
             luma_events = await scrape_luma(location)
@@ -285,12 +286,12 @@ async def run_all_scrapers():
             print(f"✗ Luma error: {e}")
             scraper_results['Luma'] = 0
     elif is_scraper_complete('luma'):
-        print(f"\n[3/5] Luma already complete ({prev_events.get('luma', 0)} events), skipping")
+        print(f"\n[3/6] Luma already complete ({prev_events.get('luma', 0)} events), skipping")
         scraper_results['Luma'] = prev_events.get('luma', 0)
 
     # ===== DICE.FM =====
     if config.is_scraper_enabled('DICE_FM') and not is_scraper_complete('dice_fm'):
-        print("\n[4/5] Scraping Dice.fm...")
+        print("\n[4/6] Scraping Dice.fm...")
         print("-" * 70)
         try:
             dice_events = await scrape_dice(location)
@@ -302,12 +303,12 @@ async def run_all_scrapers():
             print(f"✗ Dice.fm error: {e}")
             scraper_results['Dice.fm'] = 0
     elif is_scraper_complete('dice_fm'):
-        print(f"\n[4/5] Dice.fm already complete ({prev_events.get('dice_fm', 0)} events), skipping")
+        print(f"\n[4/6] Dice.fm already complete ({prev_events.get('dice_fm', 0)} events), skipping")
         scraper_results['Dice.fm'] = prev_events.get('dice_fm', 0)
 
     # ===== RA.CO =====
     if config.is_scraper_enabled('RA_CO') and not is_scraper_complete('ra_co'):
-        print("\n[5/5] Scraping RA.co...")
+        print("\n[5/6] Scraping RA.co...")
         print("-" * 70)
         try:
             ra_events = await scrape_ra(location)
@@ -319,8 +320,25 @@ async def run_all_scrapers():
             print(f"✗ RA.co error: {e}")
             scraper_results['RA.co'] = 0
     elif is_scraper_complete('ra_co'):
-        print(f"\n[5/5] RA.co already complete ({prev_events.get('ra_co', 0)} events), skipping")
+        print(f"\n[5/6] RA.co already complete ({prev_events.get('ra_co', 0)} events), skipping")
         scraper_results['RA.co'] = prev_events.get('ra_co', 0)
+
+    # ===== FACEBOOK =====
+    if config.is_scraper_enabled('FACEBOOK') and not is_scraper_complete('facebook'):
+        print("\n[6/6] Scraping Facebook Events...")
+        print("-" * 70)
+        try:
+            facebook_events = await scrape_facebook(location)
+            all_events.extend(facebook_events)
+            scraper_results['Facebook'] = len(facebook_events)
+            print(f"✓ Facebook: {len(facebook_events)} events")
+            mark_scraper_complete('facebook', len(facebook_events))
+        except Exception as e:
+            print(f"✗ Facebook error: {e}")
+            scraper_results['Facebook'] = 0
+    elif is_scraper_complete('facebook'):
+        print(f"\n[6/6] Facebook already complete ({prev_events.get('facebook', 0)} events), skipping")
+        scraper_results['Facebook'] = prev_events.get('facebook', 0)
 
     # If no events returned, load from per-scraper files as fallback
     if not all_events:
@@ -330,7 +348,8 @@ async def run_all_scrapers():
             'meetup_events.json',
             'luma_events.json',
             'dice_events.json',
-            'ra_events.json'
+            'ra_events.json',
+            'facebook_events.json'
         ]:
             all_events.extend(load_city_events_from_file(os.path.join(BASE_DIR, file_name), location))
 

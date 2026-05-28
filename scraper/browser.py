@@ -52,11 +52,12 @@ async def dismiss_overlays(tab) -> None:
             # 2: Find and click close buttons — only aria-label Close/Dismiss (safe, no redirect)
             """(function() {
                 const selectors = [
+                    // Exact Facebook login prompt close button (most specific, try first)
+                    'div[aria-label="Close"][role="button"]',
                     '[aria-label="Close"]', '[aria-label="Dismiss"]',
                     '[aria-label="close"]', '[aria-label="dismiss"]',
                     'div[role="dialog"] [aria-label="Close"]',
                     'div[role="dialog"] [aria-label="close"]',
-                    'div[aria-label="Close"][role="button"]',
                     'div[aria-label="close"][role="button"]',
                     'div[role="dialog"] div[aria-label="Close"]',
                     'div[role="dialog"] div[aria-label="close"]',
@@ -133,29 +134,57 @@ async def scroll_page(tab, max_scrolls: int = 15, scroll_pause: float = 2.0, scr
     Returns:
         Number of scrolls performed
     """
+    def _get_height(v):
+        """Extract numeric height from pydoll execute_script return value.
+        Returns dict like {'result': {'result': {'type': 'number', 'value': 127}}}"""
+        try:
+            if isinstance(v, dict):
+                inner = v.get('result', {})
+                if isinstance(inner, dict):
+                    inner2 = inner.get('result', {})
+                    if isinstance(inner2, dict):
+                        val = inner2.get('value')
+                        if isinstance(val, (int, float)):
+                            return val
+                        # string that could be numeric
+                        if isinstance(val, str):
+                            try:
+                                return float(val)
+                            except ValueError:
+                                pass
+            if isinstance(v, (int, float)):
+                return v
+        except Exception:
+            pass
+        return 0
+
     try:
-        last_height = await tab.execute_script("return document.body.scrollHeight")
+        raw = await tab.execute_script("return document.body.scrollHeight")
+        last_height = _get_height(raw)
     except Exception:
         return 0
     
+    if last_height == 0:
+        print("  [scroll] Could not get page height")
+        return 0
+
     no_change_count = 0
     scrolls_done = 0
-    
+
     for i in range(max_scrolls):
-        # Scroll to bottom
         try:
             await tab.execute_script("window.scrollTo(0, document.body.scrollHeight)")
         except Exception:
             break
-        
+
         await asyncio.sleep(scroll_pause)
-        
-        # Check if height changed (new content loaded)
+
         try:
-            new_height = await tab.execute_script("return document.body.scrollHeight")
+            raw = await tab.execute_script("return document.body.scrollHeight")
+            new_height = _get_height(raw)
         except Exception:
             break
-        
+
         if new_height > last_height:
             no_change_count = 0
             last_height = new_height
@@ -164,7 +193,7 @@ async def scroll_page(tab, max_scrolls: int = 15, scroll_pause: float = 2.0, scr
             no_change_count += 1
             if no_change_count >= scroll_attempts_before_stop:
                 break
-    
+
     if scrolls_done > 0:
         print(f"  [scroll] Performed {scrolls_done} scrolls, final height {last_height}")
     return scrolls_done

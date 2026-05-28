@@ -511,6 +511,14 @@ async def run_all_scrapers():
             'sources': scraper_results
         }
 
+        # Prune past events from ALL cities before writing cache
+        today_str = datetime.now().date().isoformat()
+        for city_key in list(out_data['cities'].keys()):
+            city_data = out_data['cities'][city_key]
+            city_events = city_data.get('events', [])
+            city_data['events'] = [e for e in city_events if e.get('date', '') >= today_str]
+            city_data['total'] = len(city_data['events'])
+
         with open(ALL_EVENTS_PATH, 'w') as f:
             json.dump(out_data, f, indent=2, default=str)
 
@@ -540,6 +548,14 @@ async def run_all_scrapers():
                     'last_updated': datetime.now().isoformat(),
                     'sources': scraper_results
                 }
+
+            # Prune past events from ALL cities before writing frontend cache
+            today_str = datetime.now().date().isoformat()
+            for city_key in list(merged_data['cities'].keys()):
+                city_data = merged_data['cities'][city_key]
+                city_events = city_data.get('events', [])
+                city_data['events'] = [e for e in city_events if e.get('date', '') >= today_str]
+                city_data['total'] = len(city_data['events'])
             
             with open(frontend_cache_target, 'w') as f:
                 json.dump(merged_data, f, indent=2, default=str)

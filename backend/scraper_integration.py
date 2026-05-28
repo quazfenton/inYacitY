@@ -10,7 +10,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, List
 
-# Add scraper to path - handle different directory structures
+# Add scraper directory to path for direct imports
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(backend_dir)
 scraper_dir = os.path.join(project_root, 'scraper')
@@ -444,7 +444,7 @@ async def scrape_city_events(city: str, source: str = "manual") -> Dict:
     Scrape events for a specific city and save to database.
     Returns statistics about the scraping operation.
     """
-    from scraper.run import run_all_scrapers
+    from run import run_all_scrapers
     import shutil
 
     logger.info(f"Starting scrape for city: {city} (source: {source})")
@@ -458,13 +458,13 @@ async def scrape_city_events(city: str, source: str = "manual") -> Dict:
     # Run the scrapers - use lock to prevent concurrent access to shared resources
     logger.info(f"Running scrapers for {city}...")
 
-    # Change to scraper directory and run - protected by lock to prevent race conditions
-    scraper_dir = os.path.join(os.path.dirname(__file__), '../scraper')
+    # Scraper directory is at project root (same level as backend dir)
+    scraper_dir = os.path.join(os.path.dirname(__file__), 'scraper')
     original_dir = os.getcwd()
 
     async with scraper_lock:
         # Save temporary config (inside the lock to prevent race conditions)
-        config_path = os.path.join(os.path.dirname(__file__), '../scraper/config.json')
+        config_path = os.path.join(scraper_dir, 'config.json')
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
 
@@ -564,7 +564,7 @@ async def refresh_all_cities() -> Dict:
     Scrape events for all supported cities.
     Returns aggregated statistics.
     """
-    from scraper.run import run_all_scrapers
+    from run import run_all_scrapers
 
     supported_cities = CONFIG.get('SUPPORTED_LOCATIONS', [])
 

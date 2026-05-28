@@ -16,7 +16,7 @@ const https = require('https');
 const WORKER_URL = process.env.WORKER_URL || process.env.npm_package_config_worker_url;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || process.env.npm_package_config_admin_token;
 
-const SSH_KEY = require('path').join(process.env.USERPROFILE || '/home/ubuntu', '.ssh/id_rsa_oci');
+const SSH_KEY = require('path').join(process.env.HOME || process.env.USERPROFILE || '/home/ubuntu', '.ssh/id_rsa_oci');
 
 let lastUrl = null;
 const cacheFile = require('path').join(__dirname, '..', 'nocturne-proxy', '.last-url');

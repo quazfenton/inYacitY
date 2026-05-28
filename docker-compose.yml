@@ -72,9 +72,11 @@ services:
         condition: service_started
     volumes:
       - ./logs:/app/logs
+      - ./scraper:/app/scraper
     restart: unless-stopped
     networks:
       - nocturne_internal
+      - shared_edge
     deploy:
       resources:
         limits:
@@ -101,3 +103,5 @@ volumes:
 networks:
   nocturne_internal:
     driver: bridge
+  shared_edge:
+    external: true

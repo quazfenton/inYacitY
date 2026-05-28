@@ -146,10 +146,8 @@ async function loadEventsFromCache(cityId: string): Promise<BackendEvent[]> {
     
     const data = await response.json();
     
-    // Get today's date in YYYY-MM-DD format for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    // Get today's UTC date in YYYY-MM-DD format for comparison
+    const todayStr = new Date().toISOString().split('T')[0];
     
     let cityEvents: any[] = [];
     
@@ -364,7 +362,7 @@ function formatDate(dateStr: string): string {
     
     // Get today's date in UTC
     const now = new Date();
-    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     
     // Get tomorrow's date in UTC
     const tomorrow = new Date(today);

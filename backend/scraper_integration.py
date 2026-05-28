@@ -12,8 +12,7 @@ from typing import Dict, List
 
 # Add scraper directory to path for direct imports
 backend_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(backend_dir)
-scraper_dir = os.path.join(project_root, 'scraper')
+scraper_dir = os.path.join(backend_dir, 'scraper')
 
 if scraper_dir not in sys.path:
     sys.path.insert(0, scraper_dir)

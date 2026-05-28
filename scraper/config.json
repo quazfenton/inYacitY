@@ -17,5 +17,61 @@
     "TIMEOUT": 30,
     "RETRIES": 3
   },
-  "LOCATION": "fl--miami"
+  "SCRAPER_SETTINGS": {
+    "EVENTBRITE": {
+      "enabled": true,
+      "main_pages": 1
+    },
+    "MEETUP": {
+      "enabled": true
+    },
+    "LUMA": {
+      "enabled": true,
+      "location_map": {
+        "dc--washington": "dc",
+        "ny--new-york": "nyc",
+        "ca--los-angeles": "la",
+        "ca--san-francisco": "sf",
+        "tx--houston": "houston",
+        "il--chicago": "chicago",
+        "fl--miami": "miami"
+      }
+    },
+    "DICE_FM": {
+      "enabled": true,
+      "city_map": {
+        "ca--los-angeles": "losangeles-5982e13c613de866017c3e3a",
+        "ny--new-york": "new_york-5bbf4db0f06331478e9b2c59",
+        "fl--miami": "miami-5e3bf1b0fe75488ec46cdf9f",
+        "il--chicago": "chicago-5b238ca66e4bcd93783835b0",
+        "tx--austin": "austin-5e3c24db136e51081e406ed3",
+        "ca--san-francisco": "sanfrancisco-60dee10ce5e339918757f0db",
+        "ca--san-diego": "san-diego-5e3c28af136e51081e406ed5",
+        "dc--washington": "washingtondc-5e3c290f136e51081e406ed6"
+      }
+    },
+    "RA_CO": {
+      "enabled": true,
+      "city_map": {
+        "ca--los-angeles": "us/losangeles",
+        "ny--new-york": "us/newyorkcity",
+        "ca--san-francisco": "us/sanfrancisco",
+        "dc--washington": "us/washingtondc",
+        "fl--miami": "us/miami",
+        "il--chicago": "us/chicago",
+        "tx--houston": "us/houston"
+      }
+    },
+    "POSH_VIP": {
+      "enabled": false
+    },
+    "LOCATION": "ny--new-york"
+  },
+  "LOCATION": "ny--new-york",
+  "location_map": {
+    "ny--new-york": "new-york"
+  },
+  "city_map": {
+    "ny--new-york": "new-york"
+  }
 }

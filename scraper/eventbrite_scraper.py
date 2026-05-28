@@ -67,6 +67,27 @@ def parse_event_date(date_str: str) -> str:
             except ValueError:
                 pass
 
+    # Relative weekday names (e.g. "Saturday at 10:00 AM")
+    wd_match = re.search(
+        r'(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday'
+        r'|Mon|Tue|Wed|Thu|Fri|Sat|Sun)',
+        text, re.I
+    )
+    if wd_match and not re.search(r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*', text, re.I):
+        weekday_map = {
+            'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+            'friday': 4, 'saturday': 5, 'sunday': 6,
+            'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3,
+            'fri': 4, 'sat': 5, 'sun': 6,
+        }
+        target = weekday_map.get(wd_match.group(1).lower())
+        if target is not None:
+            days_ahead = target - today.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+            event_date = today + timedelta(days=days_ahead)
+            return event_date.strftime("%Y-%m-%d")
+
     return ""
 
 
@@ -289,34 +310,43 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
 
         await asyncio.sleep(1)  # Be nice
 
-    # Enrich with event page details when missing data
-    for event in all_events:
-        if (not event.get('date')) or event.get('time') == "TBA" or event.get('location') == "Location TBA" or not event.get('description'):
-            detail = await fetch_page(event['link'], use_firecrawl_fallback=True)
-            if detail:
-                detail_soup = BeautifulSoup(detail, 'html.parser')
-                if not event.get('title'):
-                    title_elem = detail_soup.find('h1', attrs={'data-testid': 'event-title'})
-                    if title_elem:
-                        event['title'] = clean_title(title_elem.get_text(strip=True))
-                if not event.get('date') or event.get('time') == "TBA":
-                    date_elem = detail_soup.find(attrs={'data-testid': 'conversion-bar-date'})
-                    if date_elem:
-                        date_text = date_elem.get_text(strip=True)
-                        parsed_date = parse_event_date(date_text)
-                        if parsed_date:
-                            event['date'] = parsed_date
-                        event['time'] = extract_time(date_text)
-                if event.get('location') == "Location TBA":
-                    loc_elem = detail_soup.find(attrs={'data-testid': 'event-venue'})
-                    if loc_elem:
-                        event['location'] = loc_elem.get_text(strip=True)
-                if not event.get('description'):
-                    desc_elem = detail_soup.select_one('div[data-testid="section-wrapper-overview"]') or detail_soup.select_one('.Overview_summary__kcVOq')
-                    if desc_elem:
-                        desc_text = desc_elem.get_text(" ", strip=True)
-                        event['description'] = clean_description(desc_text)[:500]
-            await asyncio.sleep(0.5)
+    # Enrich with event page details when missing data (parallel with concurrency limit)
+    async def enrich_event(event):
+        if not ((not event.get('date')) or event.get('time') == "TBA" or event.get('location') == "Location TBA" or not event.get('description')):
+            return
+        detail = await fetch_page(event['link'], use_firecrawl_fallback=True, skip_playwright=True)
+        if not detail:
+            return
+        detail_soup = BeautifulSoup(detail, 'html.parser')
+        if not event.get('title'):
+            title_elem = detail_soup.find('h1', attrs={'data-testid': 'event-title'})
+            if title_elem:
+                event['title'] = clean_title(title_elem.get_text(strip=True))
+        if not event.get('date') or event.get('time') == "TBA":
+            date_elem = detail_soup.find(attrs={'data-testid': 'conversion-bar-date'})
+            if date_elem:
+                date_text = date_elem.get_text(strip=True)
+                parsed_date = parse_event_date(date_text)
+                if parsed_date:
+                    event['date'] = parsed_date
+                event['time'] = extract_time(date_text)
+        if event.get('location') == "Location TBA":
+            loc_elem = detail_soup.find(attrs={'data-testid': 'event-venue'})
+            if loc_elem:
+                event['location'] = loc_elem.get_text(strip=True)
+        if not event.get('description'):
+            desc_elem = detail_soup.select_one('div[data-testid="section-wrapper-overview"]') or detail_soup.select_one('.Overview_summary__kcVOq')
+            if desc_elem:
+                desc_text = desc_elem.get_text(" ", strip=True)
+                event['description'] = clean_description(desc_text)[:500]
+
+    sem = asyncio.Semaphore(5)
+    async def bounded_enrich(event):
+        async with sem:
+            await enrich_event(event)
+
+    if all_events:
+        await asyncio.gather(*[bounded_enrich(e) for e in all_events])
 
     # Save results (city-scoped)
     out_data = {'cities': {}, 'last_updated': datetime.now().isoformat()}

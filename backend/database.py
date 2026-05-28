@@ -202,10 +202,10 @@ async def save_events(events_data: list, city: str):
             if isinstance(event_date, str):
                 try:
                     event_date = datetime.strptime(event_date, '%Y-%m-%d').date()
-                except ValueError:
-                    event_date = datetime.utcnow().date()
+                except (ValueError, TypeError):
+                    continue
             elif not isinstance(event_date, date):
-                event_date = datetime.utcnow().date()
+                continue
 
             event_dict = {
                 'title': event_data.get('title', 'Unknown'),

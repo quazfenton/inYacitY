@@ -136,8 +136,6 @@ async def fetch_with_firecrawl(url: str, max_retries: int = 2) -> Optional[str]:
                     "url": url,
                     "formats": ["html"],
                     "onlyMainContent": False,
-                    "render": True,
-                    "maxAge": 0,
                 }
 
                 async with session.post(
@@ -154,19 +152,10 @@ async def fetch_with_firecrawl(url: str, max_retries: int = 2) -> Optional[str]:
 
                     data = await resp.json()
 
-                    # v2 response: data is at root level, not nested in 'data'
                     if data.get('success'):
-                        html = data.get('html', '')
+                        html = data.get('data', {}).get('html', '')
                         if html:
                             return html
-
-                    # Fallback: search nested keys for HTML content
-                    for key in ("html", "content", "page", "body", "scrape", "data"):
-                        candidate = data.get(key)
-                        if isinstance(candidate, dict):
-                            candidate = candidate.get("html") or candidate.get("content")
-                        if isinstance(candidate, str) and candidate.strip():
-                            return candidate
 
                     if attempt < max_retries:
                         await asyncio.sleep(2 ** attempt)
@@ -180,10 +169,22 @@ async def fetch_with_firecrawl(url: str, max_retries: int = 2) -> Optional[str]:
     return None
 
 
-async def fetch_page(url: str, use_firecrawl_fallback: bool = True) -> Optional[str]:
+async def fetch_page(url: str, use_firecrawl_fallback: bool = True, skip_playwright: bool = False) -> Optional[str]:
     """
     Fetch page content using Playwright, with Firecrawl/Hyperbrowser fallback
     """
+    # Skip playwright and go straight to fallback if requested
+    if skip_playwright:
+        print("Trying Firecrawl (skip_playwright)...")
+        html = await fetch_with_firecrawl(url)
+        if html:
+            from content_validator import validate_html_content
+            is_valid, reason = validate_html_content(html)
+            if is_valid:
+                print("Firecrawl succeeded (content validated)")
+                return html
+        return None
+
     # Try Playwright first
     browser = None
     try:
@@ -294,7 +295,7 @@ async def fetch_page(url: str, use_firecrawl_fallback: bool = True) -> Optional[
 
 
 async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[str]:
-    """Use Hyperbrowser API v1/scrape with captcha solving"""
+    """Use Hyperbrowser API (/api/scrape) with captcha solving"""
     if not HYPERBROWSER_API_KEY:
         return None
 
@@ -302,20 +303,14 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
         try:
             import aiohttp
             async with aiohttp.ClientSession() as session:
-                payload = {
-                    "url": url,
-                    "session_options": {
-                        "accept_cookies": True,
-                        "solve_captchas": True
-                    }
-                }
+                payload = {"url": url, "formats": ["html"]}
                 headers = {
-                    "Authorization": f"Bearer {HYPERBROWSER_API_KEY}",
+                    "x-api-key": HYPERBROWSER_API_KEY,
                     "Content-Type": "application/json",
                 }
 
                 async with session.post(
-                    "https://api.hyperbrowser.ai/v1/scrape",
+                    "https://api.hyperbrowser.ai/api/scrape",
                     json=payload,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=120)
@@ -327,6 +322,29 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
                         continue
 
                     data = await resp.json()
+                    job_id = data.get("jobId")
+                    if job_id:
+                        for poll in range(30):
+                            await asyncio.sleep(2)
+                            async with session.get(
+                                f"https://api.hyperbrowser.ai/api/scrape/{job_id}",
+                                headers=headers,
+                                timeout=aiohttp.ClientTimeout(total=30)
+                            ) as status_resp:
+                                if status_resp.status != 200:
+                                    break
+                                status_data = await status_resp.json()
+                                if status_data.get("status") == "completed":
+                                    html = (
+                                        status_data.get("data", {}).get("html", "")
+                                        or status_data.get("result", {}).get("html", "")
+                                    )
+                                    if html:
+                                        return html
+                                    break
+                                elif status_data.get("status") in ("failed", "error"):
+                                    break
+
                     html = data.get('data', {}).get('html', '')
                     if html:
                         return html
@@ -343,73 +361,106 @@ async def fetch_with_hyperbrowser(url: str, max_retries: int = 1) -> Optional[st
     return None
 
 
+BROWSERBASE_PROJECT_ID = None
+
+async def _get_browserbase_project_id() -> Optional[str]:
+    """Discover Browserbase project ID from API"""
+    global BROWSERBASE_PROJECT_ID
+    if BROWSERBASE_PROJECT_ID:
+        return BROWSERBASE_PROJECT_ID
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.browserbase.com/v1/projects",
+                headers={"x-bb-api-key": BROWSERBASE_API_KEY},
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
+                if resp.status == 200:
+                    projects = await resp.json()
+                    if projects and len(projects) > 0:
+                        BROWSERBASE_PROJECT_ID = projects[0]["id"]
+                        return BROWSERBASE_PROJECT_ID
+    except:
+        pass
+    return None
+
+
 async def fetch_with_browserbase(url: str, max_retries: int = 1) -> Optional[str]:
-    """Use Browserbase API for headless browser with stealth and proxy rotation"""
+    """Use Browserbase remote browser via session + Playwright connect"""
     if not BROWSERBASE_API_KEY:
         return None
 
+    project_id = await _get_browserbase_project_id()
+    if not project_id:
+        print("Browserbase: Could not discover project ID")
+        return None
+
     for attempt in range(max_retries + 1):
+        session_id = None
         try:
             import aiohttp
-            async with aiohttp.ClientSession() as session:
-                headers = {
-                    "Authorization": f"Bearer {BROWSERBASE_API_KEY}",
-                    "Content-Type": "application/json",
-                }
-                payload = {
-                    "url": url,
-                    "timeout": 45000,
-                    "stealth": True,
-                    "perform_actions": [
-                        {"type": "scroll", "direction": "down", "amount": 2},
-                        {"type": "wait", "duration": 2000},
-                    ],
-                }
+            from playwright.async_api import async_playwright
 
-                async with session.post(
+            # 1. Create session
+            async with aiohttp.ClientSession() as s:
+                async with s.post(
                     "https://api.browserbase.com/v1/sessions",
-                    json=payload,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=90)
+                    json={"projectId": project_id},
+                    headers={"x-bb-api-key": BROWSERBASE_API_KEY, "Content-Type": "application/json"},
+                    timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
                     if resp.status != 200:
-                        print(f"Browserbase attempt {attempt+1}: status {resp.status}")
-                        if attempt < max_retries:
-                            await asyncio.sleep(3)
+                        body = await resp.text()
+                        print(f"Browserbase session creation: {resp.status} {body[:200]}")
                         continue
-
                     data = await resp.json()
-
-                    # Browserbase returns HTML in various keys depending on endpoint
-                    for key in ("html", "content", "dom", "page", "data"):
-                        candidate = data.get(key)
-                        if isinstance(candidate, dict):
-                            candidate = candidate.get("html") or candidate.get("content")
-                        if isinstance(candidate, str) and candidate.strip():
-                            return candidate
-
-                    # Check nested session structure
-                    session_data = data.get("session") or data.get("data")
-                    if isinstance(session_data, dict):
-                        for key in ("html", "content", "dom"):
-                            candidate = session_data.get(key)
-                            if isinstance(candidate, str) and candidate.strip():
-                                return candidate
-
-                    if attempt < max_retries:
-                        await asyncio.sleep(3)
+                    connect_url = data.get("connectUrl")
+                    session_id = data.get("id")
+                    if not connect_url or not session_id:
+                        print("Browserbase: No connectUrl in session response")
                         continue
-                    return None
+
+            # 2. Connect via Playwright remote and navigate
+            p = await async_playwright().start()
+            try:
+                browser = await p.chromium.connect(connect_url)
+                page = await browser.new_page()
+                await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+                await asyncio.sleep(3)
+                html = await page.content()
+                await browser.close()
+                await p.stop()
+                if html and len(html.strip()) > 500:
+                    return html
+            except Exception as e:
+                print(f"Browserbase Playwright error: {e}")
+                try:
+                    await p.stop()
+                except:
+                    pass
 
         except Exception as e:
             print(f"Browserbase attempt {attempt+1} failed: {e}")
+        finally:
+            # 3. Cleanup: delete session
+            if session_id:
+                try:
+                    import aiohttp
+                    async with aiohttp.ClientSession() as s:
+                        await s.delete(
+                            f"https://api.browserbase.com/v1/sessions/{session_id}",
+                            headers={"x-bb-api-key": BROWSERBASE_API_KEY}
+                        )
+                except:
+                    pass
             if attempt < max_retries:
                 await asyncio.sleep(3)
     return None
 
 
 async def fetch_with_anchorbrowser(url: str, max_retries: int = 1) -> Optional[str]:
-    """Use Anchorbrowser API for anti-bot bypass with CAPTCHA solving"""
+    """Use Anchorbrowser Web Unlocker API for anti-bot bypass"""
     if not ANCHOR_BROWSER_API_KEY:
         return None
 
@@ -418,46 +469,28 @@ async def fetch_with_anchorbrowser(url: str, max_retries: int = 1) -> Optional[s
             import aiohttp
             async with aiohttp.ClientSession() as session:
                 headers = {
-                    "Authorization": f"Bearer {ANCHOR_BROWSER_API_KEY}",
+                    "anchor-api-key": ANCHOR_BROWSER_API_KEY,
                     "Content-Type": "application/json",
                 }
-                payload = {
-                    "url": url,
-                    "wait": "networkidle",
-                    "timeout": 60,
-                    "bypass_cloudflare": True,
-                    "solve_captcha": True,
-                }
+                payload = {"url": url}
 
                 async with session.post(
-                    "https://api.anchorbrowser.io/v1/page",
+                    "https://api.anchorbrowser.io/v1/tools/fetch/webpage",
                     json=payload,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=90)
                 ) as resp:
                     if resp.status != 200:
                         print(f"Anchorbrowser attempt {attempt+1}: status {resp.status}")
+                        raw = await resp.text()
+                        print(f"  Response: {raw[:300]}")
                         if attempt < max_retries:
                             await asyncio.sleep(3)
                         continue
 
-                    data = await resp.json()
-
-                    # Anchorbrowser returns content in various keys
-                    for key in ("content", "html", "result", "data", "page"):
-                        candidate = data.get(key)
-                        if isinstance(candidate, dict):
-                            candidate = candidate.get("content") or candidate.get("html")
-                        if isinstance(candidate, str) and candidate.strip():
-                            return candidate
-
-                    # Check nested structure
-                    nested = data.get("data") or data.get("page") or data.get("browser")
-                    if isinstance(nested, dict):
-                        for key in ("content", "html"):
-                            candidate = nested.get(key)
-                            if isinstance(candidate, str) and candidate.strip():
-                                return candidate
+                    html = await resp.text()
+                    if html and len(html.strip()) > 500:
+                        return html
 
                     if attempt < max_retries:
                         await asyncio.sleep(3)

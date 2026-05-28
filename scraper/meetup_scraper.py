@@ -46,16 +46,18 @@ def normalize_iso(dt_str: str) -> str:
 
 
 def parse_iso_datetime(dt_str: str) -> tuple:
-    """Parse ISO datetime to (date, time)."""
+    """Parse ISO datetime to (date, time) in Eastern time."""
     if not dt_str:
         return ("", "")
     try:
-        # Handle 'Z' suffix (UTC) by replacing with '+00:00'
         if dt_str.endswith('Z'):
             cleaned = dt_str[:-1] + '+00:00'
         else:
             cleaned = normalize_iso(dt_str)
         dt = datetime.fromisoformat(cleaned)
+        if dt.tzinfo is not None:
+            from zoneinfo import ZoneInfo
+            dt = dt.astimezone(ZoneInfo("America/New_York"))
         return (dt.strftime("%Y-%m-%d"), dt.strftime("%I:%M %p").lstrip('0'))
     except ValueError:
         return ("", "")

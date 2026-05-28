@@ -10,7 +10,6 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from browser import fetch_page
-from playwright.async_api import async_playwright
 
 
 # City mapping
@@ -50,43 +49,8 @@ def parse_ra_date(date_text: str) -> str:
 
 
 async def fetch_ra_html(url: str) -> str:
-    """Try multiple strategies to fetch RA HTML."""
-    # First try with Playwright mobile profile
-    browser = None
-    p = None
-    try:
-        p = await async_playwright().start()
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            viewport={'width': 375, 'height': 812},
-            device_scale_factor=2,
-            is_mobile=True,
-            has_touch=True,
-        )
-        page = await context.new_page()
-        await page.goto(url, wait_until="networkidle", timeout=60000)
-        await asyncio.sleep(3)
-        html = await page.content()
-        await browser.close()
-        await p.stop()
-        return html
-    except Exception as e:
-        print(f"Playwright error: {e}")
-        if browser:
-            try:
-                await browser.close()
-            except:
-                pass
-        if p:
-            try:
-                await p.stop()
-            except:
-                pass
-
-    # Fallback: fetch_page (Firecrawl/Hyperbrowser fallback configured in browser.py)
-    html = await fetch_page(url, use_firecrawl_fallback=True)
-    return html or ""
+    """Fetch RA HTML via fetch_page which has robust block detection + Firecrawl fallback."""
+    return await fetch_page(url, use_firecrawl_fallback=True) or ""
 
 
 async def scrape_ra(location: str = "ca--los-angeles") -> list:
@@ -131,9 +95,11 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
             date_text = ""
             venue = "TBA"
             if parent:
-                date_elem = parent.find('span', class_=re.compile(r'Text', re.I))
-                if date_elem:
-                    date_text = parse_ra_date(date_elem.get_text(strip=True)) or date_elem.get_text(strip=True)
+                for span in parent.find_all('span', class_=re.compile(r'Text', re.I)):
+                    txt = span.get_text(strip=True)
+                    if re.search(r'(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[,.]?\s+\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', txt):
+                        date_text = parse_ra_date(txt) or txt
+                        break
                 venue_elem = parent.find(attrs={'data-pw-test-id': 'event-venue-link'})
                 if venue_elem:
                     venue = venue_elem.get_text(strip=True)
@@ -155,29 +121,53 @@ async def scrape_ra(location: str = "ca--los-angeles") -> list:
 
     print(f"Extracted {len(events)} events")
 
-    # Enrich from individual event pages
+    # Enrich from individual event pages (parallel with skip_playwright)
+    enrichment_tasks = []
     for event in events:
         needs_enrichment = (
-            (event.get('description') == '') or  # Empty string instead of None check
-            (event.get('date') == '') or  # Empty string instead of None check
+            (event.get('description') == '') or
+            (event.get('date') == '') or
             (event.get('location') in ("TBA", "Location TBA"))
         )
-        
         if needs_enrichment:
-            detail_html = await fetch_page(event['link'], use_firecrawl_fallback=True)
-            if detail_html:
-                detail_soup = BeautifulSoup(detail_html, 'html.parser')
-                desc_elem = detail_soup.find(class_=re.compile(r'EventDescription', re.I))
-                if desc_elem and event.get('description') == '':
-                    event['description'] = desc_elem.get_text(" ", strip=True)[:500]
-                venue_elem = detail_soup.find(attrs={'data-pw-test-id': 'event-venue-link'})
-                if venue_elem and event.get('location') in ("TBA", "Location TBA"):
-                    event['location'] = venue_elem.get_text(strip=True)
-                if event.get('date') == '':
-                    date_elem = detail_soup.find(attrs={'data-tracking-id': 'event-detail-bar'})
-                    if date_elem:
-                        event['date'] = date_elem.get_text(" ", strip=True)
-            await asyncio.sleep(0.3)
+            enrichment_tasks.append(event)
+
+    if enrichment_tasks:
+        sem = asyncio.Semaphore(5)
+
+        async def enrich_event(event):
+            async with sem:
+                detail_html = await fetch_page(event['link'], use_firecrawl_fallback=True, skip_playwright=True)
+                if detail_html:
+                    detail_soup = BeautifulSoup(detail_html, 'html.parser')
+                    desc_elem = detail_soup.find(class_=re.compile(r'EventDescription', re.I))
+                    if desc_elem and event.get('description') == '':
+                        event['description'] = desc_elem.get_text(" ", strip=True)[:500]
+                    venue_elem = detail_soup.find(attrs={'data-pw-test-id': 'event-venue-link'})
+                    if venue_elem and event.get('location') in ("TBA", "Location TBA"):
+                        event['location'] = venue_elem.get_text(strip=True)
+                    if event.get('date') == '' or event.get('time') == '':
+                        detail_bar = detail_soup.find(attrs={'data-tracking-id': 'event-detail-bar'})
+                        if detail_bar:
+                            bar_text = detail_bar.get_text(" ", strip=True)
+                            if event.get('date') == '':
+                                parsed = parse_ra_date(bar_text)
+                                if parsed:
+                                    event['date'] = parsed
+                            if event.get('time') == '':
+                                time_match = re.search(r'(\d{1,2}:\d{2})\s*(?:am|pm)', bar_text, re.I)
+                                if not time_match:
+                                    time_match = re.search(r'(\d{1,2}):(\d{2})', bar_text)
+                                if time_match:
+                                    h, m = int(time_match.group(1)), int(time_match.group(2))
+                                    ampm = "AM" if h < 12 else "PM"
+                                    if h > 12:
+                                        h = h - 12
+                                    elif h == 0:
+                                        h = 12
+                                    event['time'] = f"{h}:{m:02d} {ampm}"
+
+        await asyncio.gather(*[enrich_event(e) for e in enrichment_tasks])
 
     # Save results (city-scoped)
     out_data = {'cities': {}, 'last_updated': datetime.now().isoformat()}

@@ -3,9 +3,14 @@ import React, { useEffect } from 'react';
 /**
  * ScrollHelper provides automatic edge-triggered scrolling
  * When user moves mouse to top/bottom 10% of screen, page slowly scrolls after a delay
+ * This helper is disabled on touch-enabled devices.
  */
 const ScrollHelper: React.FC = () => {
   useEffect(() => {
+    // Check if the device is touch-enabled
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouchDevice) return;
+
     let animationFrameId: number;
     let scrollVelocity = 0;
     let currentZone: 'none' | 'top' | 'bottom' = 'none';

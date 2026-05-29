@@ -12,6 +12,9 @@
  *
  * IMPORTANT: Does NOT strip prefixes. The full path goes to Caddy on the VM,
  * which already has route matchers for /copa/*, /nocturne/*, /api/*, etc.
+ *
+ * OPTIMIZATION: Uses in-memory counters with periodic KV sync to avoid
+ * excessive KV writes (was doing a PUT on every request for rate limiting).
  */
 
 const CORS_HEADERS = {
@@ -24,6 +27,39 @@ const CORS_HEADERS = {
 // Rate limit: 100 requests per IP per 60s window
 const RATE_LIMIT_WINDOW = 60;
 const RATE_LIMIT_MAX = 100;
+const KV_SYNC_INTERVAL = 10; // Sync to KV every 10 seconds (was every request)
+
+// In-memory counters to reduce KV writes (same fix as edge-gateway)
+const memoryCounters = new Map();
+const lastSyncTimes = new Map();
+const CLEANUP_INTERVAL = 60;
+let lastCleanup = 0;
+
+function getWindowKey(ip) {
+  const windowNum = Math.floor(Date.now() / (RATE_LIMIT_WINDOW * 1000));
+  return `rl:${ip}:${windowNum}`;
+}
+
+function cleanupOldEntries() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL * 1000) return;
+  lastCleanup = now;
+  const currentWindow = Math.floor(now / (RATE_LIMIT_WINDOW * 1000));
+  for (const key of memoryCounters.keys()) {
+    const keyWindow = parseInt(key.split(':').pop() || '0', 10);
+    if (keyWindow < currentWindow - 1) {
+      memoryCounters.delete(key);
+      lastSyncTimes.delete(key);
+    }
+  }
+}
+
+async function syncToKV(env, ip, count) {
+  const windowKey = getWindowKey(ip);
+  try {
+    await env.TUNNEL_KV.put(windowKey, String(count), { expirationTtl: RATE_LIMIT_WINDOW + 1 });
+  } catch { /* silent fail - local counter still tracks */ }
+}
 
 export default {
   async fetch(request, env) {
@@ -44,21 +80,35 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    // ─── Rate Limiting ───────────────────────────────────────────────
+    // ─── Rate Limiting (optimized to reduce KV writes) ───────────────
     if (env.TUNNEL_KV) {
       const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-      const key = `rl:${ip}`;
-      const current = await env.TUNNEL_KV.get(key);
-      const count = current ? parseInt(current, 10) : 0;
+      const windowKey = getWindowKey(ip);
 
-      if (count >= RATE_LIMIT_MAX) {
+      // Get or create counter
+      let counter = memoryCounters.get(windowKey);
+      if (!counter) {
+        const stored = await env.TUNNEL_KV.get(windowKey);
+        counter = stored ? parseInt(stored, 10) : 0;
+      }
+
+      if (counter >= RATE_LIMIT_MAX) {
         return jsonResponse(
           { error: 'Too many requests', retryAfter: RATE_LIMIT_WINDOW },
           { status: 429, headers: { 'Retry-After': String(RATE_LIMIT_WINDOW) } }
         );
       }
 
-      await env.TUNNEL_KV.put(key, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW });
+      // Increment and periodically sync to KV
+      counter++;
+      memoryCounters.set(windowKey, counter);
+      cleanupOldEntries();
+
+      const lastSync = lastSyncTimes.get(windowKey) || 0;
+      if (Date.now() - lastSync >= KV_SYNC_INTERVAL * 1000) {
+        await syncToKV(env, ip, counter);
+        lastSyncTimes.set(windowKey, Date.now());
+      }
     }
 
     // ─── Get Tunnel URL ──────────────────────────────────────────────

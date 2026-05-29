@@ -42,11 +42,11 @@
     "sc--charleston",
     "al--birmingham",
     "ut--salt-lake-city",
-    "nm--albuquerque",
+    "nm--albuquerque"
   ],
   "SCRAPER": {
     "TIMEOUT": 30,
     "RETRIES": 3
   },
-  "LOCATION": "ca--san-francisco"
+  "LOCATION": "la--new-orleans"
 }

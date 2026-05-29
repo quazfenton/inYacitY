@@ -462,7 +462,19 @@
       "total": 0,
       "last_updated": "2026-05-29T05:18:53.061392",
       "sources": {}
+    },
+    "ut--salt-lake-city": {
+      "events": [],
+      "total": 0,
+      "last_updated": "2026-05-29T12:24:01.426579",
+      "sources": {}
+    },
+    "la--new-orleans": {
+      "events": [],
+      "total": 0,
+      "last_updated": "2026-05-29T12:34:46.060299",
+      "sources": {}
     }
   },
-  "last_updated": "2026-05-29T05:18:53.061255"
+  "last_updated": "2026-05-29T12:34:46.060161"
 }

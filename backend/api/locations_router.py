@@ -15,7 +15,7 @@ from typing import List, Optional
 from datetime import datetime
 import math
 
-from backend.models.locations import (
+from models.locations import (
     Coordinates, Location, LocationPreference, LocationDatabase,
     LocationTier
 )
@@ -401,7 +401,7 @@ async def get_events_nearby(
     Requires database integration
     """
     try:
-        from backend.database import AsyncSessionLocal, Event
+        from database import AsyncSessionLocal, Event
         from sqlalchemy import select, and_
         from datetime import date
         
@@ -468,7 +468,7 @@ async def get_events_by_city(
     Get events for a specific city, optionally including nearby cities
     """
     try:
-        from backend.database import AsyncSessionLocal, Event
+        from database import AsyncSessionLocal, Event
         from sqlalchemy import select
         
         # Get city location

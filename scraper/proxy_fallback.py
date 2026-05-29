@@ -22,7 +22,7 @@ from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 
 PROXY_CACHE_FILE = Path(__file__).parent / "proxy_cache.json"
-PROXY_CACHE_TTL_SECONDS = 3600  # Refresh proxy list every hour
+PROXY_CACHE_TTL_SECONDS = 300  # Refresh proxy list every 5 min (free proxies die fast)
 
 # Public GitHub sources for free proxy lists
 PROXY_SOURCES = [
@@ -35,8 +35,20 @@ PROXY_SOURCES = [
         "type": "http",
     },
     {
+        "url": "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks5.txt",
+        "type": "socks5",
+    },
+    {
+        "url": "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/socks4.txt",
+        "type": "socks4",
+    },
+    {
         "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt",
         "type": "http",
+    },
+    {
+        "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/socks5.txt",
+        "type": "socks5",
     },
 ]
 
@@ -64,7 +76,7 @@ def _save_proxy_cache(cache: Dict):
 
 
 async def _fetch_proxy_list() -> List[str]:
-    """Fetch proxy lists from all GitHub sources."""
+    """Fetch proxy lists from all GitHub sources, prefixing with type."""
     all_proxies: List[str] = []
 
     try:
@@ -79,12 +91,12 @@ async def _fetch_proxy_list() -> List[str]:
                         if resp.status == 200:
                             text = await resp.text()
                             lines = [
-                                line.strip()
+                                f"{source['type']}://{line.strip()}"
                                 for line in text.strip().split("\n")
                                 if line.strip() and ":" in line
                             ]
                             all_proxies.extend(lines)
-                            print(f"  [Proxy] Fetched {len(lines)} from {source['url'].split('/')[-1]}")
+                            print(f"  [Proxy] Fetched {len(lines)} {source['type']} from {source['url'].split('/')[-1]}")
                 except Exception as e:
                     print(f"  [Proxy] Failed to fetch {source['url'].split('/')[-1]}: {e}")
 
@@ -93,23 +105,28 @@ async def _fetch_proxy_list() -> List[str]:
     except Exception as e:
         print(f"  [Proxy] Failed to fetch proxy lists: {e}")
 
-    # Deduplicate
-    return list(dict.fromkeys(all_proxies))
+    # Deduplicate by address (strip type prefix for dedup key)
+    seen = set()
+    result = []
+    for p in all_proxies:
+        addr = p.split("://", 1)[1]
+        if addr not in seen:
+            seen.add(addr)
+            result.append(p)
+    return result
 
 
-async def _validate_proxy(proxy: str, test_url: str = "http://httpbin.org/ip", timeout: int = 5) -> bool:
-    """Test if a proxy is working."""
+async def _validate_proxy(proxy: str, timeout: int = 5) -> bool:
+    """Test if a proxy can make HTTPS connections (free HTTP proxies often fail on HTTPS).
+    Uses httpbin.org (no Cloudflare) — RA.co is tested later at fetch time."""
     try:
         import aiohttp
-
-        proxy_type = "socks5" if proxy.startswith("socks") else "http"
-        proxy_url = f"{proxy_type}://{proxy}" if not proxy.startswith("http") and not proxy.startswith("socks") else proxy
 
         connector = aiohttp.TCPConnector(limit=1, ssl=False)
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(
-                test_url,
-                proxy=proxy_url,
+                "https://httpbin.org/ip",
+                proxy=proxy,
                 timeout=aiohttp.ClientTimeout(total=timeout)
             ) as resp:
                 return resp.status == 200
@@ -167,8 +184,7 @@ async def get_prewarmed_proxies(force_refresh: bool = False) -> List[str]:
         print("  [Proxy] No proxies fetched, returning empty list")
         return []
 
-    # Sample down to 300 to avoid validating 7000+ proxies (too slow)
-    sample_size = min(300, len(raw_proxies))
+    sample_size = min(500, len(raw_proxies))
     if len(raw_proxies) > sample_size:
         import random
         raw_proxies = random.sample(raw_proxies, sample_size)
@@ -185,53 +201,32 @@ async def get_prewarmed_proxies(force_refresh: bool = False) -> List[str]:
 
 async def fetch_with_proxy(url: str, proxy: str, timeout: int = 30, profile_name: str = None) -> Optional[str]:
     """
-    Fetch a URL using a specific proxy via Playwright.
-    Uses rotating device profiles to evade detection.
+    Fetch a URL using a specific proxy via aiohttp (lightweight, no Playwright).
+    Proxy string includes type prefix: http://ip:port, socks5://ip:port, socks4://ip:port
     """
     try:
-        from playwright.async_api import async_playwright
-        from browser import BROWSER_PROFILES, PROFILE_ORDER, IS_WINDOWS
+        import aiohttp
 
-        if profile_name is None or profile_name not in BROWSER_PROFILES:
-            import random
-            profile_name = random.choice(PROFILE_ORDER)
-        profile = BROWSER_PROFILES[profile_name]
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
 
-        async with async_playwright() as p:
-            args = ['--disable-dev-shm-usage', '--disable-gpu',
-                    '--disable-blink-features=AutomationControlled',
-                    f'--window-size={profile["viewport"]["width"]},{profile["viewport"]["height"]}']
-            if not IS_WINDOWS:
-                args.append('--no-sandbox')
-
-            browser = await p.chromium.launch(headless=True, args=args)
-
-            proxy_url = f"http://{proxy}" if not proxy.startswith("http://") and not proxy.startswith("socks") else proxy
-            context = await browser.new_context(
-                proxy={"server": proxy_url},
-                viewport=profile['viewport'],
-                screen=profile['screen'],
-                user_agent=profile['user_agent'],
-                locale=profile['locale'],
-                timezone_id=profile['timezone_id'],
-                is_mobile=profile['is_mobile'],
-                has_touch=profile['has_touch'],
-            )
-
-            page = await context.new_page()
-
-            try:
-                await page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
-                await asyncio.sleep(2)
-                html = await page.content()
-                await browser.close()
-                return html
-            except Exception:
-                await browser.close()
+        connector = aiohttp.TCPConnector(limit=1, ssl=False)
+        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+            async with session.get(
+                url,
+                proxy=proxy,
+                timeout=aiohttp.ClientTimeout(total=timeout)
+            ) as resp:
+                if resp.status == 200:
+                    html = await resp.text()
+                    if html and len(html.strip()) > 200:
+                        return html
                 return None
 
     except Exception as e:
-        print(f"    [Proxy] fetch_with_proxy failed for {proxy}: {e}")
         return None
 
 
@@ -241,32 +236,42 @@ async def retry_with_proxies(
     force_refresh_proxies: bool = False,
 ) -> Optional[str]:
     """
-    Retry fetching a URL using rotating proxies.
-    Only call this AFTER all existing methods have failed.
+    Retry fetching a URL using rotating proxies via aiohttp (fast, lightweight).
+    If all proxy attempts fail, falls back to Playwright (no proxy) as last resort
+    for sites that block proxy IPs but allow direct browser access.
     """
     proxies = await get_prewarmed_proxies(force_refresh=force_refresh_proxies)
 
-    if not proxies:
+    if proxies:
+        print(f"  [Proxy] Retrying {url} with {max_retries} proxy attempts...")
+        random.shuffle(proxies)
+
+        for i, proxy in enumerate(proxies[:max_retries]):
+            print(f"    [Proxy] Attempt {i+1}/{max_retries}: {proxy.split('://')[0]}://...{proxy[-10:]}")
+            html = await fetch_with_proxy(url, proxy, timeout=15)
+
+            if html and len(html.strip()) > 100:
+                print(f"    [Proxy] Success via proxy")
+                return html
+
+            await asyncio.sleep(1)
+
+        print("  [Proxy] All proxy attempts failed")
+    else:
         print("  [Proxy] No working proxies available")
-        return None
 
-    print(f"  [Proxy] Retrying {url} with {max_retries} proxy attempts...")
-
-    # Shuffle to distribute load
-    random.shuffle(proxies)
-
-    for i, proxy in enumerate(proxies[:max_retries]):
-        profile_name = PROFILE_ORDER[i % len(PROFILE_ORDER)]
-        print(f"    [Proxy] Attempt {i+1}/{max_retries} via {proxy} ({profile_name})")
-        html = await fetch_with_proxy(url, proxy, profile_name=profile_name)
-
-        if html and len(html.strip()) > 100:
-            print(f"    [Proxy] Success via {proxy}")
+    # Fallback: try Playwright directly (no proxy) as last resort
+    # This handles sites that block proxy IPs but allow clean infra IPs
+    try:
+        from browser import fetch_page
+        print(f"  [Proxy] Fallback: trying Playwright (no proxy) directly...")
+        html = await fetch_page(url, use_firecrawl_fallback=False, skip_playwright=False)
+        if html and len(html.strip()) > 200:
+            print(f"  [Proxy] Playwright direct succeeded ({len(html)} bytes)")
             return html
+    except Exception as e:
+        print(f"  [Proxy] Playwright direct fallback failed: {e}")
 
-        await asyncio.sleep(1)
-
-    print("  [Proxy] All proxy attempts failed")
     return None
 
 

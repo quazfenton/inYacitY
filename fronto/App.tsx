@@ -188,6 +188,10 @@ const App: React.FC = () => {
     setSelectedCity(null);
     setEvents([]);
     setSelectedEvent(null);
+    // Clear saved preference so next visit lands on home page
+    localStorage.removeItem('inyacity_location_preference');
+    localStorage.removeItem('inyacity_user_location');
+    localStorage.removeItem('inyacity_location_cache');
   };
 
   // Open event modal
@@ -264,7 +268,8 @@ const App: React.FC = () => {
       <ScrollHelper />
       <div className="min-h-screen bg-void text-zinc-100 selection:bg-acid selection:text-void font-sans">
 
-        {/* Persistent Nav/Header */}
+        {/* Persistent Nav/Header — hidden on city feed so RETURN_TO_MAP is unobstructed */}
+        {view !== ViewState.CITY_FEED && (
         <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 mix-blend-difference text-white pointer-events-none">
           <div className="font-mono font-bold tracking-tighter text-xl pointer-events-auto cursor-pointer" onClick={() => setShowAbout(true)}>
             NOCTURNE<span className="text-acid">///</span>
@@ -273,6 +278,7 @@ const App: React.FC = () => {
             {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
           </div>
         </nav>
+        )}
 
         {/* About Modal */}
         {showAbout && (

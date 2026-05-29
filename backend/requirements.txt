@@ -43,3 +43,6 @@ asyncio-contextmanager>=1.0.0
 
 # Scheduling (replaces n8n + system cron)
 apscheduler>=3.10.4
+
+# Scraper dependencies (mounted from /opt/nocturne/scraper)
+beautifulsoup4>=4.12.0

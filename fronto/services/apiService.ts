@@ -336,7 +336,7 @@ export async function searchCities(query: string): Promise<{
   }>;
 }> {
   try {
-    const resp = await fetch(`${API_URL}/locations/search?q=${encodeURIComponent(query)}&limit=10`);
+    const resp = await fetch(`${API_URL}/api/locations/search?q=${encodeURIComponent(query)}&limit=10`);
     if (resp.ok) {
       const data = await resp.json();
       return {

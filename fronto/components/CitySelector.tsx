@@ -21,6 +21,9 @@ interface CitySelectorProps {
   initialLoad?: boolean;
 }
 
+// Module-level flag — persists across mount/unmount so returning to map doesn't re-trigger auto-detect
+let _autoDetectHasRun = false;
+
 const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLoad = false }) => {
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
   const [focusedCityIndex, setFocusedCityIndex] = useState(0);
@@ -52,10 +55,10 @@ const CitySelector: React.FC<CitySelectorProps> = ({ onSelect, cities, initialLo
     onSelect(city);
   }, [onSelect, saveCityPreference]);
 
-  // Auto-detect on mount (saved preference → old cache → browser geo → IP fallback)
+  // Auto-detect on mount — only runs once per session (skipped when returning from city feed)
   useEffect(() => {
-    if (cities.length === 0 || detectionStartedRef.current) return;
-    detectionStartedRef.current = true;
+    if (cities.length === 0 || _autoDetectHasRun) return;
+    _autoDetectHasRun = true;
 
     // 1. Saved preference from hook's system
     const saved = loadPreference();

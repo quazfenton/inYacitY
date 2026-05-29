@@ -4,6 +4,6 @@
   "installCommand": "npm ci",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+    { "source": "/api/(.*)", "destination": "https://shared-ingress.veli0.workers.dev/nocturne/api/$1" }
   ]
 }

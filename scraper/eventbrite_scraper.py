@@ -264,14 +264,19 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
     if not location:
         location = config.get_location()
 
+    original_city_code = location  # Preserve original city ID for event attribution
+
     # Transform slug to Eventbrite URL format
-    # US: /d/ny--new-york/free--events/ (slug works directly)
+    # US: /d/united-states--los-angeles/free--events/
     # Foreign: /d/france--paris/free--events/ (needs country name map)
     prefix = location.split('--')[0] if '--' in location else ''
-    country_name = COUNTRY_NAME_MAP.get(prefix)
-    if country_name:
-        city = location.split('--', 1)[1]
-        location = f"{country_name}--{city}"
+    city = location.split('--', 1)[1] if '--' in location else location
+    # US state codes override the prefix-to-country map (ca=California, not Canada)
+    US_STATES = {'al','ak','az','ar','ca','co','ct','de','dc','fl','ga','hi','id','il','in','ia','ks','ky','la','me','md','ma','mi','mn','ms','mo','mt','ne','nv','nh','nj','nm','ny','nc','nd','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','vt','va','wa','wv','wi','wy'}
+    if prefix in US_STATES:
+        location = f"united-states--{city}"
+    elif prefix in COUNTRY_NAME_MAP:
+        location = f"{COUNTRY_NAME_MAP[prefix]}--{city}"
 
     # Get Eventbrite config
     eb_config = config.get_scraper_config('EVENTBRITE')
@@ -280,17 +285,17 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
 
     output_file = os.path.join(os.path.dirname(__file__), "eventbrite_events.json")
 
-    # Load existing events (city-scoped)
+    # Load existing events (city-scoped, keyed by original city code)
     existing_links = set()
     if os.path.exists(output_file):
         try:
             with open(output_file, 'r') as f:
                 data = json.load(f)
                 if 'cities' in data:
-                    existing_links = {e.get('link', '') for e in data['cities'].get(location, {}).get('events', [])}
+                    existing_links = {e.get('link', '') for e in data['cities'].get(original_city_code, {}).get('events', [])}
                 else:
                     existing_links = {e.get('link', '') for e in data.get('events', [])}
-            print(f"Loaded {len(existing_links)} existing events for {location}")
+            print(f"Loaded {len(existing_links)} existing events for {original_city_code}")
         except:
             pass
 
@@ -323,7 +328,7 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         # Filter duplicates
         new_events = [e for e in events if e['link'] not in existing_links]
         for e in new_events:
-            e['city'] = location
+            e['city'] = original_city_code
         all_events.extend(new_events)
         existing_links.update(e['link'] for e in new_events)
 
@@ -384,9 +389,20 @@ async def scrape_eventbrite(location: str = None, max_pages: int = None) -> list
         except:
             pass
 
-    out_data['cities'][location] = {
-        'events': all_events,
-        'total': len(all_events),
+    # Merge existing cached events with newly scraped ones (don't lose existing data)
+    existing_city_events = out_data['cities'].get(original_city_code, {}).get('events', [])
+    merged_by_link = {}
+    for e in existing_city_events:
+        if e.get('link'):
+            merged_by_link[e['link']] = e
+    for e in all_events:
+        if e.get('link'):
+            merged_by_link[e['link']] = e
+    merged_events = list(merged_by_link.values())
+
+    out_data['cities'][original_city_code] = {
+        'events': merged_events,
+        'total': len(merged_events),
         'last_updated': datetime.now().isoformat()
     }
 

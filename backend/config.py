@@ -1,6 +1,6 @@
 import os
 
-# Supported locations (city IDs)
+# Supported locations (city IDs) — sync'd with scraper/config_sync.json
 SUPPORTED_LOCATIONS = [
     'ca--los-angeles',
     'ny--new-york',
@@ -13,7 +13,38 @@ SUPPORTED_LOCATIONS = [
     'tx--san-antonio',
     'ca--san-diego',
     'tx--dallas',
-    'ca--san-jose'
+    'tx--austin',
+    'wa--seattle',
+    'co--denver',
+    'ma--boston',
+    'ga--atlanta',
+    'nv--las-vegas',
+    'mi--detroit',
+    'or--portland',
+    'nc--charlotte',
+    'tn--nashville',
+    'ok--oklahoma-city',
+    'la--new-orleans',
+    'fl--orlando',
+    'fl--tampa',
+    'ca--san-jose',
+    'ca--san-francisco',
+    'ny--buffalo',
+    'oh--columbus',
+    'oh--cleveland',
+    'in--indianapolis',
+    'mo--kansas-city',
+    'mo--st-louis',
+    'ca--sacramento',
+    'tx--fort-worth',
+    'va--richmond',
+    'mn--minneapolis',
+    'wi--milwaukee',
+    'ky--louisville',
+    'sc--charleston',
+    'al--birmingham',
+    'ut--salt-lake-city',
+    'nm--albuquerque',
 ]
 
 # Configuration dictionary

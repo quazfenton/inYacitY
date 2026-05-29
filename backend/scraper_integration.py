@@ -463,7 +463,19 @@ async def scrape_city_events(city: str, source: str = "manual") -> Dict:
 
     async with scraper_lock:
         # Save temporary config (inside the lock to prevent race conditions)
+        # Merge with full scraper config to preserve city maps, browser, proxy settings
         config_path = os.path.join(scraper_dir, 'config.json')
+        full_config_path = os.path.join(scraper_dir, 'config_sync.json')
+        try:
+            with open(full_config_path, 'r') as f:
+                full = json.load(f)
+                for k in ('BROWSER', 'SCRAPER_SETTINGS', 'PROXY_FALLBACK', 'DATA', 'OUTPUT', 'LOGGING'):
+                    if k in full:
+                        config.setdefault(k, full[k])
+        except (json.JSONDecodeError, IOError):
+            pass
+        # Ensure LOCATION and SUPPORTED_LOCATIONS come from the backend
+        config['LOCATION'] = city
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
 

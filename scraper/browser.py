@@ -529,110 +529,111 @@ async def fetch_page(url: str, use_firecrawl_fallback: bool = True, skip_playwri
     Fetch page content using Playwright, with Firecrawl/Hyperbrowser fallback
     """
     # Skip playwright and go straight to fallback if requested
-    if skip_playwright:
-        print("Trying Firecrawl (skip_playwright)...")
-        html = await fetch_with_firecrawl(url)
-        if html:
-            from content_validator import validate_html_content
-            is_valid, reason = validate_html_content(html)
-            if is_valid:
-                print("Firecrawl succeeded (content validated)")
-                return html
-        return None
+    skip_pw = skip_playwright or os.environ.get('SKIP_PLAYWRIGHT', '').lower() in ('1', 'true', 'yes')
 
-    # Try Playwright first
+    # Try Playwright first (unless skipped)
+    if skip_pw:
+        print("Playwright globally disabled, trying fallbacks...")
     browser = None
-    try:
-        print(f"Fetching with Playwright: {url}")
-        browser, page = await create_browser(headless=True)
-        
-        # Inject cookies if configured
-        await inject_cookies_playwright(page.context)
-        
-        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        await asyncio.sleep(3)
-        
-        html = await page.content()
-
-        # Check if blocked - be more specific to avoid false positives
-        html_lower = html.lower()
-
-        # Check for explicit blocked page indicators (full page blocks)
-        block_page_indicators = [
-            'access denied',
-            'captcha required',
-            'please complete the security check',
-            'verify you are human',
-            'human verification',
-            'automated access is blocked',
-            'bot detected',
-            'suspicious activity detected',
-            'your ip has been blocked',
-            'checking if the site connection is secure',
-            'cloudflare',
-        ]
-
-        for indicator in block_page_indicators:
-            if indicator in html_lower:
-                print(f"Playwright: Page appears blocked ({indicator}), will try fallback")
-                raise Exception("Blocked")
-
-        # Check for HTTP status codes in error context (not CSS IDs)
-        if 'http error 429' in html_lower or 'error 429' in html_lower or 'status 429' in html_lower:
-            print("Playwright: Rate limited (429), will try fallback")
-            raise Exception("Blocked")
-
-        if 'http error 403' in html_lower or 'error 403' in html_lower or 'status 403' in html_lower:
-            print("Playwright: Forbidden (403), will try fallback")
-            raise Exception("Blocked")
-
-        if 'http error 401' in html_lower or 'error 401' in html_lower or 'status 401' in html_lower:
-            print("Playwright: Unauthorized (401), will try fallback")
-            raise Exception("Blocked")
-
-        # Check for empty or near-empty page (another sign of being blocked)
-        body_text = await page.inner_text('body')
-        if len(body_text.strip()) < 50:
-            print(f"Playwright: Page body nearly empty ({len(body_text.strip())} chars), will try fallback")
-            raise Exception("Blocked")
-        
-        await close_browser(browser)
-        return html
-        
-    except Exception as e:
-        print(f"Playwright error: {e}")
-        if browser:
-            await close_browser(browser)
-
-    # Retry Playwright with different device profiles (mobile often evades desktop-targeted blocking)
-    for retry_profile in ['mobile_iphone', 'mobile_android', 'desktop_mac']:
-        print(f"Retrying Playwright with profile '{retry_profile}'...")
-        p_browser = None
+    if not skip_pw:
         try:
-            p_browser, page = await create_browser(headless=True, profile_name=retry_profile)
+            print(f"Fetching with Playwright: {url}")
+            browser, page = await create_browser(headless=True)
+
             # Inject cookies if configured
             await inject_cookies_playwright(page.context)
+
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await asyncio.sleep(3)
+
             html = await page.content()
+
+            # Check if blocked - be more specific to avoid false positives
             html_lower = html.lower()
-            blocked = any(ind in html_lower for ind in [
-                'access denied', 'captcha required', 'please complete the security check',
-                'verify you are human', 'cloudflare', 'checking if the site connection is secure',
-                'automated access is blocked', 'bot detected', 'suspicious activity detected',
-            ])
-            if not blocked:
-                body_text = await page.inner_text('body')
-                if len(body_text.strip()) >= 50:
-                    print(f"Playwright ({retry_profile}) succeeded")
-                    await close_browser(p_browser)
-                    return html
-            print(f"Playwright ({retry_profile}): blocked")
-            await close_browser(p_browser)
-        except Exception as e2:
-            print(f"Playwright ({retry_profile}): {e2}")
-            if p_browser:
+
+            # Check for explicit blocked page indicators (full page blocks)
+            block_page_indicators = [
+                'access denied',
+                'captcha required',
+                'please complete the security check',
+                'verify you are human',
+                'human verification',
+                'automated access is blocked',
+                'bot detected',
+                'suspicious activity detected',
+                'your ip has been blocked',
+                'checking if the site connection is secure',
+                'cloudflare',
+            ]
+
+            for indicator in block_page_indicators:
+                if indicator in html_lower:
+                    print(f"Playwright: Page appears blocked ({indicator}), will try fallback")
+                    raise Exception("Blocked")
+
+            # Check for HTTP status codes in error context (not CSS IDs)
+            if 'http error 429' in html_lower or 'error 429' in html_lower or 'status 429' in html_lower:
+                print("Playwright: Rate limited (429), will try fallback")
+                raise Exception("Blocked")
+
+            if 'http error 403' in html_lower or 'error 403' in html_lower or 'status 403' in html_lower:
+                print("Playwright: Forbidden (403), will try fallback")
+                raise Exception("Blocked")
+
+            if 'http error 401' in html_lower or 'error 401' in html_lower or 'status 401' in html_lower:
+                print("Playwright: Unauthorized (401), will try fallback")
+                raise Exception("Blocked")
+
+            # Check for empty or near-empty page (another sign of being blocked)
+            body_text = await page.inner_text('body')
+            if len(body_text.strip()) < 50:
+                print(f"Playwright: Page body nearly empty ({len(body_text.strip())} chars), will try fallback")
+                raise Exception("Blocked")
+
+            await close_browser(browser)
+            return html
+
+        except Exception as e:
+            print(f"Playwright error: {e}")
+            if browser:
+                await close_browser(browser)
+
+    # Retry Playwright with different device profiles
+    if not skip_pw:
+        for retry_profile in ['mobile_iphone', 'mobile_android', 'desktop_mac']:
+            print(f"Retrying Playwright with profile '{retry_profile}'...")
+            p_browser = None
+            try:
+                p_browser, page = await create_browser(headless=True, profile_name=retry_profile)
+                await inject_cookies_playwright(page.context)
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                await asyncio.sleep(3)
+                html = await page.content()
+                html_lower = html.lower()
+                blocked = any(ind in html_lower for ind in [
+                    'access denied', 'captcha required', 'please complete the security check',
+                    'verify you are human', 'cloudflare', 'checking if the site connection is secure',
+                    'automated access is blocked', 'bot detected', 'suspicious activity detected',
+                ])
+                if not blocked:
+                    body_text = await page.inner_text('body')
+                    if len(body_text.strip()) >= 50:
+                        from content_validator import validate_html_content
+                        is_valid, reason = validate_html_content(html)
+                        if is_valid:
+                            print(f"Playwright ({retry_profile}) succeeded")
+                            await close_browser(p_browser)
+                            return html
+                        print(f"Playwright ({retry_profile}): content invalid ({reason}), trying fallback")
+                    else:
+                        print(f"Playwright ({retry_profile}): blocked")
+                else:
+                    print(f"Playwright ({retry_profile}): blocked")
                 await close_browser(p_browser)
+            except Exception as e2:
+                print(f"Playwright ({retry_profile}): {e2}")
+                if p_browser:
+                    await close_browser(p_browser)
 
     # Try paid API fallbacks
     if use_firecrawl_fallback:

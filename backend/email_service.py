@@ -20,6 +20,11 @@ SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", "noreply@nocturne.events")
 
+# AgentMail configuration (alternative to SMTP)
+AGENTMAIL_API_KEY = os.environ.get("AGENTMAIL_API_KEY", "")
+AGENTMAIL_INBOX_ID = os.environ.get("AGENTMAIL_INBOX_ID", "")
+AGENTMAIL_FROM_EMAIL = os.environ.get("AGENTMAIL_FROM_EMAIL", "noreply@nocturne.events")
+
 # SendGrid configuration (alternative to SMTP)
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@nocturne.events")
@@ -179,6 +184,39 @@ async def send_email_via_smtp(
         return False
 
 
+async def send_email_via_agentmail(
+    to_email: str,
+    subject: str,
+    html_content: str
+) -> bool:
+    """
+    Send email using AgentMail API
+    """
+    if not AGENTMAIL_API_KEY or not AGENTMAIL_INBOX_ID:
+        print("AgentMail API key or Inbox ID not configured, skipping email send")
+        return False
+    
+    try:
+        from agentmail import AgentMail
+        
+        def _send_sync():
+            client = AgentMail(api_key=AGENTMAIL_API_KEY)
+            client.inboxes.messages.send(
+                inbox_id=AGENTMAIL_INBOX_ID,
+                to=to_email,
+                subject=subject,
+                text="", # Fallback text
+                html=html_content
+            )
+            
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _send_sync)
+        return True
+    except Exception as e:
+        print(f"Error sending email via AgentMail: {e}")
+        return False
+
+
 async def send_email_via_sendgrid(
     to_email: str,
     subject: str,
@@ -249,21 +287,22 @@ async def send_email(
     # Determine which method to try first
     if prefer_sendgrid and SENDGRID_API_KEY:
         success = await send_email_via_sendgrid(to_email, subject, html_content)
-        if success:
-            return True
-        # Fallback to SMTP
-        return await send_email_via_smtp(to_email, subject, html_content)
-    elif SMTP_USER and SMTP_PASSWORD:
+        if success: return True
+    
+    if AGENTMAIL_API_KEY and AGENTMAIL_INBOX_ID:
+        success = await send_email_via_agentmail(to_email, subject, html_content)
+        if success: return True
+        
+    if SMTP_USER and SMTP_PASSWORD:
         success = await send_email_via_smtp(to_email, subject, html_content)
-        if success:
-            return True
-        # Fallback to SendGrid
-        return await send_email_via_sendgrid(to_email, subject, html_content)
-    elif SENDGRID_API_KEY:
-        return await send_email_via_sendgrid(to_email, subject, html_content)
-    else:
-        print("No email service configured (SMTP or SendGrid)")
-        return False
+        if success: return True
+        
+    if SENDGRID_API_KEY:
+        success = await send_email_via_sendgrid(to_email, subject, html_content)
+        if success: return True
+        
+    print("No email service configured or all methods failed (AgentMail, SMTP, SendGrid)")
+    return False
 
 
 async def send_subscription_confirmation(email: str, city_name: str, city: str) -> bool:

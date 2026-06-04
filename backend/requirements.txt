@@ -46,3 +46,4 @@ apscheduler>=3.10.4
 
 # Scraper dependencies (mounted from /opt/nocturne/scraper)
 beautifulsoup4>=4.12.0
+agentmail>=0.5.3

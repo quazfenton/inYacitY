@@ -463,25 +463,29 @@ async def scrape_city_events(city: str, source: str = "manual") -> Dict:
 
     async with scraper_lock:
         # Save temporary config (inside the lock to prevent race conditions)
-        # Merge with full scraper config to preserve city maps, browser, proxy settings
+        # Start with existing full config from scraper directory to preserve all settings
         config_path = os.path.join(scraper_dir, 'config.json')
-        full_config_path = os.path.join(scraper_dir, 'config_sync.json')
         try:
-            with open(full_config_path, 'r') as f:
-                full = json.load(f)
-                for k in ('BROWSER', 'SCRAPER_SETTINGS', 'PROXY_FALLBACK', 'DATA', 'OUTPUT', 'LOGGING'):
-                    if k in full:
-                        config.setdefault(k, full[k])
+            with open(config_path, 'r') as f:
+                config = json.load(f)
         except (json.JSONDecodeError, IOError):
-            pass
-        # Ensure LOCATION and SUPPORTED_LOCATIONS come from the backend
+            config = {'LOCATION': city, 'SUPPORTED_LOCATIONS': [city]}
+        # Only update location - keep all SCRAPER_SETTINGS, BROWSER, etc.
         config['LOCATION'] = city
+        config['SUPPORTED_LOCATIONS'] = list(CONFIG.get('SUPPORTED_LOCATIONS', [city]))
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
 
         # Force reload the Config singleton so scrapers see the newly written config
         from config_loader import get_config as refresh_config
         refresh_config().force_reload(config_path)
+
+        # Clear run state files to ensure scrapers actually run (not skipped due to prior completion)
+        for state_file in ['run_state.json', 'run_completed.json']:
+            state_path = os.path.join(scraper_dir, state_file)
+            if os.path.exists(state_path):
+                os.remove(state_path)
+                logger.info(f"Cleared {state_file} for fresh scrape")
 
         try:
             os.chdir(scraper_dir)

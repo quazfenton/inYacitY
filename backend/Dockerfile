@@ -30,6 +30,11 @@ RUN mkdir -p logs
 
 RUN useradd --create-home --shell /bin/bash --uid 1000 --user-group appuser
 
+# Copy Playwright browsers from root install to appuser (root installs during build)
+RUN mkdir -p /home/appuser/.cache && \
+    cp -r /root/.cache/ms-playwright /home/appuser/.cache/ && \
+    chown -R appuser:appuser /home/appuser/.cache/
+
 RUN chown -R appuser:appuser /app
 
 USER appuser

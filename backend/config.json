@@ -43,8 +43,9 @@
     "sc--charleston",
     "al--birmingham",
     "ut--salt-lake-city",
-    "nm--albuquerque",
-  ],  "BROWSER": {
+    "nm--albuquerque"
+  ],
+  "BROWSER": {
     "HEADLESS": true,
     "TIMEOUT": 30000,
     "WAIT_TIME": 2000,

@@ -1,480 +1,1002 @@
 {
   "cities": {
-    "dc--washington": {
+    "ny--new-york": {
       "events": [
         {
-          "title": "Speaker Friend-a-thon: 11-Hour Zoom for 11 Years of Innovation Women",
-          "date": "2026-05-29",
-          "time": "8:00AM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/speaker-friend-a-thon-11-hour-zoom-for-11-years-of-innovation-women-tickets-1988523590589",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Ultimate Speaker Event",
-          "date": "2026-05-29",
-          "time": "8:00AM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/ultimate-speaker-event-tickets-1988791206034",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Billion Dollar Impact Networking Virtual",
-          "date": "2026-05-30",
-          "time": "10:00AM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/billion-dollar-impact-networking-virtual-tickets-1989918249050",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "From Entrepreneur to CEO: The Leadership Skills You Didn't Think You'd Need",
-          "date": "2026-05-30",
-          "time": "1:00PM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/from-entrepreneur-to-ceo-the-leadership-skills-you-didnt-think-youd-need-tickets-1989845327941",
-          "description": "You built a $250k business. Now your biggest bottleneck is you. You built a $250k business. Now your biggest bottleneck is you. You know how to build. You don't yet know how to lead people and no one tells you that's a completely different skill set until your team is already a problem. You hit the milestone. You hired people. You thought that was the hard part.Then something shifted.Suddenly you're managing personalities, navigating conflict, chasing accountability, and wondering why the people",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Accessing the App Store & Google Play Store",
-          "date": "2026-05-30",
-          "time": "10:00AM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/accessing-the-app-store-google-play-store-tickets-1986218605316",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Fine-Tuning Wildlife Photography with Nate Luebbe",
-          "date": "2026-05-30",
-          "time": "10:30AM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room A)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-fine-tuning-wildlife-photography-with-nate-luebbe-tickets-1988870380848",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Power to the People - Solution-based Candidate Forum",
-          "date": "2026-05-30",
-          "time": "1:00PM",
-          "location": "Spokane \u00b7 Mead High School",
-          "link": "https://www.eventbrite.com/e/power-to-the-people-solution-based-candidate-forum-tickets-1989177070164",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Comm Lead Screen Summit 2026: Student Creativity & Impact",
-          "date": "2026-05-30",
-          "time": "6:00PM",
-          "location": "Seattle \u00b7 The University of Washington Club (FAC)",
-          "link": "https://www.eventbrite.com/e/comm-lead-screen-summit-2026-student-creativity-impact-tickets-1987802000293",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Photographing for the Story + Sale with Vanessa Joy",
-          "date": "2026-05-30",
-          "time": "9:00AM",
-          "location": "Seattle \u00b7 The Collective Seattle - Alpenglow Room",
-          "link": "https://www.eventbrite.com.ar/e/photofest-photographing-for-the-story-sale-with-vanessa-joy-tickets-1988873390851",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Evolving your Bird Photography with Ben Knoot",
-          "date": "2026-05-30",
-          "time": "4:00PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Alpenglow Room",
-          "link": "https://www.eventbrite.com.ar/e/photofest-evolving-your-bird-photography-with-ben-knoot-tickets-1989124074653",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Clean & Check with Fujifilm [FRIDAY]",
-          "date": "2026-05-30",
-          "time": "9:00AM",
-          "location": "Seattle \u00b7 Glazer's Camera - Classroom on 2nd Floor",
-          "link": "https://www.eventbrite.com.ar/e/photofest-clean-check-with-fujifilm-friday-tickets-1989114999509",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Live Angel Guidance & Energy Activation for spiritual Women healers coaches",
-          "date": "2026-05-30",
-          "time": "11:00AM",
-          "location": "Free",
-          "link": "https://www.eventbrite.com/e/live-angel-guidance-energy-activation-for-spiritual-women-healers-coaches-tickets-1989766672681",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "From Sea To Sky",
-          "date": "2026-05-30",
-          "time": "6:30PM",
-          "location": "Seattle \u00b7 St. Paul's Episcopal Church",
-          "link": "https://www.eventbrite.com/e/from-sea-to-sky-tickets-1987790101704",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Planes, Boats & Waterfront Stories Photowalk with Sony",
-          "date": "2026-05-30",
-          "time": "2:00PM",
-          "location": "Seattle \u00b7 Glazer's Camera - Meet outside of the entrance on Republican",
-          "link": "https://www.eventbrite.com.ar/e/photofest-planes-boats-waterfront-stories-photowalk-with-sony-tickets-1989330292456",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Photoshoot at Gas Works Park with Chloe Ramirez & Nikon",
-          "date": "2026-05-30",
-          "time": "7:00PM",
-          "location": "Seattle \u00b7 Gas Works Park",
-          "link": "https://www.eventbrite.com.ar/e/photofest-photoshoot-at-gas-works-park-with-chloe-ramirez-nikon-tickets-1988895821943",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Fight The Good Fight Summit",
-          "date": "2026-05-30",
-          "time": "2:30PM",
-          "location": "Seattle \u00b7 Gracie Barra Seattle",
-          "link": "https://www.eventbrite.com/e/fight-the-good-fight-summit-tickets-1986694996214",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Live Second Labs - Seattle, WA",
-          "date": "2026-05-30",
-          "time": "9:00AM",
-          "location": "Bothell \u00b7 Canyon Hills Community Church",
-          "link": "https://www.eventbrite.com/e/live-second-labs-seattle-wa-tickets-1989044504657",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | All New Camera Secrets with John Greengo",
-          "date": "2026-05-30",
-          "time": "12:15PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room B)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-all-new-camera-secrets-with-john-greengo-tickets-1988880563304",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Vintage Portrait Workshop with Lindsey Ruth",
-          "date": "2026-05-30",
-          "time": "1:00PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Alpenglow Room",
-          "link": "https://www.eventbrite.com.ar/e/photofest-vintage-portrait-workshop-with-lindsey-ruth-tickets-1988866785093",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | Storytelling for Traveling Photographers with David Julian",
-          "date": "2026-05-30",
-          "time": "2:30PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Alpenglow Room",
-          "link": "https://www.eventbrite.com.ar/e/photofest-storytelling-for-traveling-photographers-with-david-julian-tickets-1988957800322",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Scott Kurashige discusses \"American Peril\"",
-          "date": "2026-05-30",
-          "time": "2:00PM",
-          "location": "Seattle \u00b7 Seattle Public Library-Central Library",
-          "link": "https://www.eventbrite.com/e/scott-kurashige-discusses-american-peril-tickets-1984166683964",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "PhotoFest | The Business Side of Photography with Vanessa Joy",
-          "date": "2026-05-30",
+          "title": "3rd Annual Opportunity Hub Career Fair",
+          "date": "2026-06-05",
           "time": "12:30PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room A)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-the-business-side-of-photography-with-vanessa-joy-tickets-1988876954510",
+          "location": "Brooklyn \u00b7 1540 Van Siclen Ave",
+          "link": "https://www.eventbrite.com/e/3rd-annual-opportunity-hub-career-fair-tickets-1988344722590",
           "description": "",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "PhotoFest | Focusing & Sharpness with John Greengo",
-          "date": "2026-05-31",
-          "time": "2:15PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room A)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-focusing-sharpness-with-john-greengo-tickets-1988880916360",
-          "description": "",
+          "title": "Cultivating Resilient Food Systems in a Changing Climate | in-person",
+          "date": "2026-06-05",
+          "time": "6:00PM",
+          "location": "Millbrook \u00b7 Cary Institute of Ecosystem Studies",
+          "link": "https://www.eventbrite.com/e/cultivating-resilient-food-systems-in-a-changing-climate-in-person-tickets-1988779547162",
+          "description": "A lecture on food security in a changing world, featuring Dr. Cary Fowler. On Friday, June 5, at 7 pm, join Cary Institute for a lecture on food security in a changing world, featuring Dr. Cary Fowler, an American agriculturalist who recently served as the U.S. Special Envoy for Global Food Security. Fowler will discuss how feeding a growing global population by 2050 will depend on getting the fundamentals right: maintaining fertile soils, ensuring reliable water supplies, and developing product",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "PhotoFest | The Soul of a Structure & Space with Kara Mercer",
-          "date": "2026-05-31",
+          "title": "2026 Annual Housing Resource Fair (Free)",
+          "date": "2026-06-06",
+          "time": "10:00AM",
+          "location": "Brooklyn \u00b7 Brooklyn College Student Center",
+          "link": "https://www.eventbrite.com/e/2026-annual-housing-resource-fair-free-tickets-1987654392795",
+          "description": "If you're a tenant, homebuyer, homeowner, or seeking housing, this event will provide you with the needed info. to meet your housing needs. Whether you're a tenant, a first time homebuyer, a seasoned homeowner or someone seeking a place to live, this Housing Fair will provide you will the resources and information to meet your housing needs. In our exhibit hall , there will exhibitors from city agencies , small businesses , lenders and community based organizations to answer any housing question",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "La Nueva Yo \"On The Block\u00a8\" | Celebrando el mes de las MADRES",
+          "date": "2026-06-06",
           "time": "12:00PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room A)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-the-soul-of-a-structure-space-with-kara-mercer-tickets-1988960718049",
+          "location": "New York \u00b7 Quisqueya Plaza",
+          "link": "https://www.eventbrite.com/e/la-nueva-yo-on-the-block-celebrando-el-mes-de-las-madres-tickets-1988824162608",
           "description": "",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "PhotoFest | Worldbuilding Through Photography with Lindsey Ruth",
-          "date": "2026-05-31",
-          "time": "12:15PM",
-          "location": "Seattle \u00b7 The Collective Seattle - Slacktide (2nd Floor, Room B)",
-          "link": "https://www.eventbrite.com.ar/e/photofest-worldbuilding-through-photography-with-lindsey-ruth-tickets-1988879100930",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Vancouver/Portland LGBTQ+ Wedding Expo",
-          "date": "2026-05-31",
-          "time": "12:30PM",
-          "location": "Vancouver \u00b7 Hilton Vancouver Washington",
-          "link": "https://www.eventbrite.com/e/vancouverportland-lgbtq-wedding-expo-tickets-1984412908428",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Miss Yakama Nation Pageant 2026",
-          "date": "2026-06-02",
-          "time": "6:00PM",
-          "location": "Toppenish \u00b7 Legends Casino Hotel",
-          "link": "https://www.eventbrite.com/e/miss-yakama-nation-pageant-2026-tickets-1988777644471",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Wave Books Poetry Reading",
-          "date": "2026-06-02",
-          "time": "7:00PM",
-          "location": "Seattle \u00b7 ANTiPODE Art Gallery",
-          "link": "https://www.eventbrite.com/e/wave-books-poetry-reading-tickets-1988720279892",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "2026 Reverse Vendor Trade Show",
-          "date": "2026-06-03",
-          "time": "11:00AM",
-          "location": "Seattle \u00b7 Fisher Pavilion",
-          "link": "https://www.eventbrite.com/e/2026-reverse-vendor-trade-show-tickets-1983913325161",
-          "description": "This annual networking event allows vendors to introduce themselves to various public agencies, including the City of Seattle. Join us at the 2026 Reverse Vendor Trade Show! This event will occur in person at the Fisher Pavilion, 305 Harrison St, Seattle, WA 98109, on Wednesday, June 3, 2026, from 11:00 AM to 3:00 PM PDT . But what is a Reverse Vendor Trade Show? It's an event where vendors can visit booths hosted by public agencies rather than the agencies visiting the vendors. This unique setu",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "The Exchange - 2nd Annual Innovation Exchange",
-          "date": "2026-06-03",
-          "time": "8:00AM",
-          "location": "Bellevue \u00b7 Meydenbauer Center",
-          "link": "https://www.eventbrite.com/e/the-exchange-2nd-annual-innovation-exchange-tickets-1987646315636",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "An Evening with Elaine Pagels",
-          "date": "2026-06-04",
-          "time": "7:00PM",
-          "location": "Seattle \u00b7 St. Stephen's Episcopal Church",
-          "link": "https://www.eventbrite.com/e/an-evening-with-elaine-pagels-tickets-1988568847955",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Join Biggest Community | Investors Founders | Seattle | Online",
-          "date": "2026-06-04",
-          "time": "10:00AM",
-          "location": "Seattle \u00b7 Seattle",
-          "link": "https://www.eventbrite.com/e/join-biggest-community-investors-founders-seattle-online-tickets-1972270174183",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Hillary's Book Launch: THE WELL IS DEEP",
-          "date": "2026-06-04",
-          "time": "6:30PM",
-          "location": "Seattle \u00b7 Vermillion",
-          "link": "https://www.eventbrite.com/e/hillarys-book-launch-the-well-is-deep-tickets-1987029336234",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Celebrate Renton's Hat Trick!",
-          "date": "2026-06-06",
-          "time": "1:00PM",
-          "location": "Renton \u00b7 Logan Avenue South",
-          "link": "https://www.eventbrite.com/e/celebrate-rentons-hat-trick-tickets-1986338126808",
-          "description": "Join us Saturday, June 6, from 1 to 8 p.m. for the official grand opening of Legacy Square, Renton Market, and Piazza Park. Get ready, Renton! You\u2019re about to feel the energy explode downtown with the full trifecta coming to life. Next month, you\u2019ll walk through the doors and gates of Legacy Square, gather in Piazza Park, and tour the Renton Market. We want YOU there to celebrate the moment you helped make possible. This is your chance to be part of one massive grand opening. On Saturday, June 6",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "So Much More!",
-          "date": "2026-06-06",
-          "time": "6:00PM",
-          "location": "Bothell \u00b7 Evergreen Church",
-          "link": "https://www.eventbrite.com/e/so-much-more-tickets-1985757052800",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Day 3 | Nikon Tour Seattle | NIKKOR Z LENS DAY",
+          "title": "Big Boro Bike Ride 2026",
           "date": "2026-06-07",
-          "time": "10:00AM",
-          "location": "Just added",
-          "link": "https://www.eventbrite.com/e/day-3-nikon-tour-seattle-nikkor-z-lens-day-tickets-1989388880695",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Can I Kick It?! Black Brilliance in Motion FREE + All Ages",
-          "date": "2026-06-07",
-          "time": "1:00PM",
-          "location": "Seattle \u00b7 Langston Hughes Performing Arts Institute",
-          "link": "https://www.eventbrite.com/e/can-i-kick-it-black-brilliance-in-motion-free-all-ages-tickets-1989407324862",
-          "description": "",
-          "source": "Eventbrite",
-          "city": "dc--washington"
-        },
-        {
-          "title": "Olympia Career Fair",
-          "date": "2026-06-08",
           "time": "9:30AM",
-          "location": "Olympia \u00b7 Hilton",
-          "link": "https://www.eventbrite.com/e/olympia-career-fair-tickets-775239471127",
-          "description": "",
+          "location": "The Bronx \u00b7 Macombs Dam Park",
+          "link": "https://www.eventbrite.com/e/big-boro-bike-ride-2026-tickets-1986733023956",
+          "description": "We invite you to participate in our annual celebration of unity within New York City\u2019s vibrant cycling community. Peace and blessings family. We are back this year with the same massive vibes, with a different name. The BIG BORO BIKE RIDE has a purpose and a mission that is ingrained in bicycle advocacy, fellowship, and overall community growth. This year will be better than ever. On Sunday, June 7th, 2026 we will be meeting at Macombs Dam Park in the Bronx (across from Yankees Stadium) @ 9am. T",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "30th Anniversary - Bell Harbor International Conference Center",
+          "title": "The GIST's Love is a Team Sport Pop Up: New York",
+          "date": "2026-06-07",
+          "time": "1:00PM",
+          "location": "Brooklyn \u00b7 Athena Keke\u2019s",
+          "link": "https://www.eventbrite.com/e/the-gists-love-is-a-team-sport-pop-up-new-york-tickets-1989125356487",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Drums Along the Hudson 2026: A Native American & Multicultural Celebration",
+          "date": "2026-06-07",
+          "time": "11:00AM",
+          "location": "New York \u00b7 Inwood Hill Park",
+          "link": "https://www.eventbrite.com/e/drums-along-the-hudson-2026-a-native-american-multicultural-celebration-tickets-1985593459488",
+          "description": "Featuring: Mohawk Elder Tom Porter, a Pow Wow led by Louis Mofsie, storytelling, crafts, food, and more! Lotus Music and Dance is thrilled to announce that Drums Along the Hudson: A Native American Festival and Multicultural Celebration will celebrate its 24th anniversary on Sunday, June 7th, 2026! This all-day event features an open air pow wow - a celebratory gathering of Native American people - led by Louis Mofsie and the Thunderbird American Indian Dancers . Mohawk Elder Tom Porter will giv",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Health Equity Speaker Series - Pursuing Exceptional Quality for All",
           "date": "2026-06-08",
-          "time": "3:00PM",
-          "location": "Seattle \u00b7 Bell Harbor International Conference Center",
-          "link": "https://www.eventbrite.com/e/30th-anniversary-bell-harbor-international-conference-center-tickets-1986080254505",
-          "description": "",
+          "time": "12:00PM",
+          "location": "New York \u00b7 NYU Langone Health",
+          "link": "https://www.eventbrite.com/e/health-equity-speaker-series-pursuing-exceptional-quality-for-all-tickets-1988031977160",
+          "description": "Join us in-person or virtually for the IEHE Health Equity Speaker Series, covering current trends in health equity research and care. With this series, we aim to provide a forum for faculty, students, and staff to engage in meaningful conversations and become informed about recent trends and insights in the field of health equity. Participants of this series will gain more knowledge on health disparities and become empowered to engage in actions that contribute to health equity in research, medi",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "Washington Department of Commerce Federal Grants Workshop - Airway Heights",
+          "title": "QVNYC x LGBTQ Policy Center Present: Move Ya Body Pride Film Screening",
+          "date": "2026-06-08",
+          "time": "5:30PM",
+          "location": "New York \u00b7 Roosevelt House Public Policy Institute at Hunter College",
+          "link": "https://www.eventbrite.com/e/qvnyc-x-lgbtq-policy-center-present-move-ya-body-pride-film-screening-tickets-1989677567164",
+          "description": "In celebration of Pride Month, join us for a captivating and uplifting film screening, Move Ya Body: The Birth of House Music Queer Voices NYC Film Festival and the LGBTQ Policy Center are proud to present Move Ya Body: The Birth of House! Join us for an unforgettable evening celebrating Pride Month with a special screening of Move Ya Body , directed by Elegance Bratton. This powerful film honors the joy, culture, and groundbreaking contributions of Black and Brown queer musicians, who helped sh",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Pura x Calm present: The Scents of Calm Immersive Experience",
+          "date": "2026-06-09",
+          "time": "12:00PM",
+          "location": "New York \u00b7 Gansevoort Plaza",
+          "link": "https://www.eventbrite.com/e/pura-x-calm-present-the-scents-of-calm-immersive-experience-tickets-1989683053574",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "LEVITICUS - NEW YORK: FREE Horror Queers Sneak Screening",
+          "date": "2026-06-09",
+          "time": "6:00PM",
+          "location": "New York \u00b7 Regal Essex Crossing",
+          "link": "https://www.eventbrite.com/e/leviticus-new-york-free-horror-queers-sneak-screening-tickets-1989876370791",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Samuel Adams Crafting Dreams Beer Bash 2026",
           "date": "2026-06-11",
-          "time": "10:00AM",
-          "location": "Airway Heights \u00b7 Northern Quest Resort & Casino",
-          "link": "https://www.eventbrite.com/e/washington-department-of-commerce-federal-grants-workshop-airway-heights-tickets-1986012333351",
-          "description": "",
+          "time": "6:30PM",
+          "location": "New York \u00b7 The Dumbo Loft",
+          "link": "https://www.eventbrite.com/e/samuel-adams-crafting-dreams-beer-bash-2026-tickets-1987542053786",
+          "description": "Celebrate our Samuel Adams Brewing the American Dream Experienceship finalists at the Crafting Dreams Beer Bash! Crafting Dreams Beer Bash is a manifestation of Samuel Adams' passion to support the craft beer industry. The festival will bring together six craft brewer finalists of the Brewing & Business Experienceship to join Samuel Adams Brewing the American Dream in New York. Attendees will get to meet the finalists, learn about their respective business journeys, taste their brews and ultimat",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "\u0294\u0259\u019b s\u0259sq\u0300\u02b7u\u0294 - Come Together",
-          "date": "2026-06-13",
+          "title": "You Are Invited! NYPL / New York State Job Fair",
+          "date": "2026-06-11",
           "time": "11:00AM",
-          "location": "Seattle \u00b7 The Herons Nest Outdoor",
-          "link": "https://www.eventbrite.com/e/ssqwu-come-together-tickets-1988795494862",
-          "description": "",
+          "location": "New York \u00b7 Epiphany Library",
+          "link": "https://www.eventbrite.com/e/you-are-invited-nypl-new-york-state-job-fair-tickets-1990179631853",
+          "description": "You\u2019re invited to the New York Public Library\u2019s New York State Opportunities in Government Career Fair, hosted by the Epiphany Library! *This event is in-person at the Epiphany Library Are you interested in a job with New York State or New York City? Join the New York Public Library\u2019s Career Services team, along with the New York State Departments of Labor and Civil Service, at our New York State Opportunities in Government Career Fair, happening on Thursday, June 11, 2026, from 11 AM to 2:30 PM",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "2026 Skyway Juneteenth Celebration and Festival",
+          "title": "Rejecting Hate: A Special Friday Worship Night Service",
+          "date": "2026-06-12",
+          "time": "6:00PM",
+          "location": "New York \u00b7 The Temple Emanu-El Streicker Center",
+          "link": "https://www.eventbrite.com/e/rejecting-hate-a-special-friday-worship-night-service-tickets-1989657376774",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Bryant Park Yoga Day Presented by Halara",
           "date": "2026-06-13",
-          "time": "3:00PM",
-          "location": "Seattle \u00b7 Campbell Hill Elementary School",
-          "link": "https://www.eventbrite.com/e/2026-skyway-juneteenth-celebration-and-festival-tickets-1986756683723",
+          "time": "9:00AM",
+          "location": "New York \u00b7 Bryant Park",
+          "link": "https://www.eventbrite.com/e/bryant-park-yoga-day-presented-by-halara-tickets-1989914075567",
           "description": "",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "Women\u2019s Health & Wellness Fair \u2013 Wellness, Pampering & Prevention",
-          "date": "2026-06-13",
-          "time": "11:00AM",
-          "location": "Federal Way \u00b7 Keller Williams Realty Puget Sound",
-          "link": "https://www.eventbrite.com/e/womens-health-wellness-fair-wellness-pampering-prevention-tickets-1986931277939",
-          "description": "",
+          "title": "Groundbreaking Ceremony - Shirley Masjid",
+          "date": "2026-06-14",
+          "time": "12:00PM",
+          "location": "Shirley \u00b7 516 William Floyd Pkwy",
+          "link": "https://www.eventbrite.com/e/groundbreaking-ceremony-shirley-masjid-tickets-1988690538936",
+          "description": "Join us for the historic groundbreaking of Shirley Masjid! \ufe0f Celebrate this long-awaited milestone of faith and community. All are welcome! After years of vision, hard work, and community dedication, we are excited to celebrate this monumental milestone together, the official Groundbreaking Ceremon y of Shirley Masjid . This is more than the start of construction; it is the beginning of a lasting legacy of faith, unity, education, and service for generations to come. Bring your family and friend",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "Joshua Becker's Uncluttered Faith Tour",
+          "title": "Staten Island NEW TEACHER Fair",
           "date": "2026-06-16",
-          "time": "7:00PM",
-          "location": "Tacoma \u00b7 Anchor Church Tacoma",
-          "link": "https://www.eventbrite.com/e/joshua-beckers-uncluttered-faith-tour-tickets-1988022157790",
+          "time": "4:30PM",
+          "location": "Staten Island \u00b7 College of Staten Island - Building 1P",
+          "link": "https://www.eventbrite.com/e/staten-island-new-teacher-fair-tickets-1988365965127",
           "description": "",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
         },
         {
-          "title": "Seattle Job Fair June 17, 2026 - Seattle Career Fairs",
+          "title": "Drawing Together | The League's 145th Annual Meeting + Party",
+          "date": "2026-06-16",
+          "time": "5:30PM",
+          "location": "Brooklyn \u00b7 Brooklyn Public Library - Central Branch",
+          "link": "https://www.eventbrite.com/e/drawing-together-the-leagues-145th-annual-meeting-party-tickets-1988844239659",
+          "description": "Join the League for \u201cDrawing Together,\u201d our 145th Annual Meeting + Party celebrating design and the public imagination. The program will begin at 5:30 p.m. on Tuesday, June 16, in the Dr. S. Stevan Dweck Cultural Center, with a brief report on the past year\u2019s activities at the League by President Nat Oppenheimer and Executive Director Jacob R. Moore . Representatives from the League's Next Generation programs will highlight the many ways in which the League works to support built environment stu",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Brooklyn Job Fair June 17, 2026 - Brooklyn Career Fairs",
           "date": "2026-06-17",
           "time": "10:00AM",
-          "location": "Seattle \u00b7 Seattle",
-          "link": "https://www.eventbrite.com/e/seattle-job-fair-june-17-2026-seattle-career-fairs-tickets-1750918697959",
+          "location": "Brooklyn \u00b7 Brooklyn",
+          "link": "https://www.eventbrite.com/e/brooklyn-job-fair-june-17-2026-brooklyn-career-fairs-tickets-1865507014699",
+          "description": "Are you looking for a job in Brooklyn? If you are, this event is a must-attend. Meet with top hiring companies in Brooklyn. BROOKLYN VIRTUAL JOB FAIR JUNE 17, 2026 DISCOVER YOUR NEXT CAREER OPPORTUNITY AT OUR VIRTUAL JOB FAIR Are you currently seeking employment in the vibrant city of Brooklyn? Look no further! Register now and join us at the highly anticipated Brooklyn Virtual Job Fair. With a proven track record of organizing successful hiring events nationwide, Best Hire Career Fairs guarante",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Evening Yoga on the Spring Place Rooftop In Tribeca",
+          "date": "2026-06-18",
+          "time": "6:00PM",
+          "location": "New York \u00b7 Spring Place",
+          "link": "https://www.eventbrite.com/e/evening-yoga-on-the-spring-place-rooftop-in-tribeca-tickets-1987019733512",
           "description": "",
           "source": "Eventbrite",
-          "city": "dc--washington"
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Manhattan Anti-Prom",
+          "date": "2026-06-18",
+          "time": "6:30PM",
+          "location": "New York \u00b7 New York Public Library - Stephen A. Schwarzman Building",
+          "link": "https://www.eventbrite.com/e/manhattan-anti-prom-tickets-1985400402048",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Juneteenth NYC 2026 | Black Kings, Virtual Summit, Parade, Festival & Famil",
+          "date": "2026-06-18",
+          "time": "6:00PM",
+          "location": "New York \u00b7 Juneteenth NYC Festival Grounds",
+          "link": "https://www.eventbrite.com/e/juneteenth-nyc-2026-black-kings-virtual-summit-parade-festival-famil-tickets-1986911119645",
+          "description": "Celebrate Black freedom, culture & excellence across 3 powerful days in NYC. Performances, vendors, youth activities & more. Free to attend! Celebrate Freedom, Culture, Community & Black Excellence at Juneteenth NYC 2026 Join us for a powerful multi-day Juneteenth experience filled with celebration, education, community engagement, youth activities, performances, and cultural pride. This year\u2019s featured experiences include: \ud83d\udc51 Black Kings Celebration Thursday, June 18, 2026 6:00 PM \u2013 11:00 PM Jer",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "Swedish Midsummer Festival",
+          "date": "2026-06-20",
+          "time": "4:00PM",
+          "location": "New York \u00b7 Nelson A. Rockefeller Park",
+          "link": "https://www.eventbrite.com/e/swedish-midsummer-festival-tickets-1987785655405",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
+        },
+        {
+          "title": "New York Job Fair June 25, 2026 - New York Career Fairs",
+          "date": "2026-06-25",
+          "time": "10:00AM",
+          "location": "New York \u00b7 New York",
+          "link": "https://www.eventbrite.com/e/new-york-job-fair-june-25-2026-new-york-career-fairs-tickets-1854043657489",
+          "description": "Are you looking for a job in New York? If you are, this event is a must-attend. Meet with top hiring companies in New York. NEW YORK VIRTUAL JOB FAIR JUNE 25, 2026 DISCOVER YOUR NEXT CAREER OPPORTUNITY AT OUR VIRTUAL JOB FAIR Are you currently seeking employment in the vibrant city of New York? Look no further! Register now and join us at the highly anticipated New York Virtual Job Fair. With a proven track record of organizing successful hiring events nationwide, Best Hire Career Fairs guarante",
+          "source": "Eventbrite",
+          "city": "ny--new-york"
         }
       ],
-      "total": 45,
-      "last_updated": "2026-05-29T05:04:26.033339",
+      "total": 24,
+      "last_updated": "2026-06-04T04:21:58.048090",
       "sources": {}
     },
-    "ca--san-francisco": {
+    "ca--los-angeles": {
       "events": [],
       "total": 0,
-      "last_updated": "2026-05-29T05:18:53.061392",
+      "last_updated": "2026-06-03T23:37:00.819849",
+      "sources": {}
+    },
+    "nm--albuquerque": {
+      "events": [],
+      "total": 0,
+      "last_updated": "2026-06-03T19:09:40.444947",
+      "sources": {}
+    },
+    "fl--miami": {
+      "events": [
+        {
+          "title": "Join Biggest Community | Investors Founders | Miami | Online",
+          "date": "2026-06-04",
+          "time": "1:00PM",
+          "location": "Miami \u00b7 Miami",
+          "link": "https://www.eventbrite.com/e/join-biggest-community-investors-founders-miami-online-tickets-1972265070919",
+          "description": "Get ready to connect with the brightest minds in the investor and founder community for a game-changing event experience. Join Biggest Community | Investors Founders | Free Entry ============ HOW DOES IT WORK? Register your interest & if validated, we will invite you. Connect with investors & founders. Grow your valuable network. Important: If we won't have enough delegates, the event will be held Online, connecting people from different cities / countries. P S: Only Shortlisted delegates will b",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Fountainhead Residency Open House: Session 4",
+          "date": "2026-06-04",
+          "time": "7:00PM",
+          "location": "Miami \u00b7 The Fountainhead Residency",
+          "link": "https://www.eventbrite.com/e/fountainhead-residency-open-house-session-4-tickets-1866260518449",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "\"The Reach of Light\" Pride Art Exhibition Opening - Gay in the Gables",
+          "date": "2026-06-05",
+          "time": "6:00PM",
+          "location": "Coral Gables \u00b7 Coral Gables Congregational United Church of Christ",
+          "link": "https://www.eventbrite.com/e/the-reach-of-light-pride-art-exhibition-opening-gay-in-the-gables-tickets-1987618013985",
+          "description": "Florida LGBTQIA+ Artists present contemporary portraiture within the scared setting of the historic Coral Gables United Church. The Reach of Light - Pride Art Exhibition Opening Gay in the Gables is pleased to announce the debut of a limited-time art exhibition featuring acclaimed Florida LGBTQIA+ artists Josh Aronson, Celeste Burns, Ricky Cohete, Juicy Love Dion, David Gary Lloyd and Michael Zimmerer at 3010 Desoto Blvd in Coral Gables. Launching this June in honor of Pride Month, the exhibitio",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Miami Creative Arts Pop-Up",
+          "date": "2026-06-05",
+          "time": "8:00AM",
+          "location": "Miami Beach \u00b7 The Temple House",
+          "link": "https://www.eventbrite.com/e/miami-creative-arts-pop-up-tickets-1987594338170",
+          "description": "Join us in Miami for a fun pop-up full of unique art, cool vibes, and creative energy! Miami Creative Arts Pop-Up Join us at The Temple House on June 5, 2026 at 8:00 AM (Eastern Time) for a super chill day celebrating creativity! Whether you're into art, design, or just want to vibe with fellow creatives, this pop-up is the place to be. Come explore unique works, meet cool people, and get inspired in a laid-back setting. Vendor Booth Pricing & Information We are excited to welcome service provid",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "TUMBAO IS BACK IN MIAMI AT 1-800-LUCKY",
+          "date": "2026-06-06",
+          "time": "9:00PM",
+          "location": "Miami \u00b7 1-800-Lucky",
+          "link": "https://www.eventbrite.com/e/tumbao-is-back-in-miami-at-1-800-lucky-tickets-1989600092435",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Bolero | An Evening with Raquel Puig Zald\u00edvar",
+          "date": "2026-06-06",
+          "time": "6:00PM",
+          "location": "Coral Gables \u00b7 Books & Books",
+          "link": "https://www.eventbrite.com/e/bolero-an-evening-with-raquel-puig-zaldivar-tickets-1986849223512",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "CHILL ACT EXPO \u00b7 Miami",
+          "date": "2026-06-06",
+          "time": "10:00AM",
+          "location": "Miami \u00b7 James L. Knight Center Miami",
+          "link": "https://www.eventbrite.com/e/chill-act-expo-miami-tickets-1976630728719",
+          "description": "CHILL ACT EXPO is America's largest neurodiversity kids' activity expo. Free admission for the whole family. Where: James L. Knight Center Miami \u00b7 400 SE 2nd Ave, Miami, FL 33131 What you'll find: 1,200+ carnival-game prizes, sensory-friendly activities, top kids' activity providers, special-needs services (ABA, OT, PT, speech, schools, parent support), free pre-screenings, concessions, and live entertainment. Registration: Free admission \u2014 please register on chillactexpo.com so we know you're c",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "FACING THE FUTURE: SOUTH FLORIDA VS CLIMATE CHANGE FILM SCREENING",
+          "date": "2026-06-09",
+          "time": "6:45PM",
+          "location": "Key Biscayne \u00b7 Rosenstiel School of Marine, Atmospheric, and Earth Science",
+          "link": "https://www.eventbrite.com/e/facing-the-future-south-florida-vs-climate-change-film-screening-tickets-1988928027270",
+          "description": "WLRN's newest original production documents important efforts our community is taking to raise awareness on South FL's vulnerable regions FACING THE FUTURE: SOUTH FLORIDA VS CLIMATE CHANGE Densely developed, low-lying South Florida is one of the most vulnerable regions to sea-level rise and climate change in the U.S. and the world. This film documents a number of important efforts our community is taking to raise awareness of these challenges and address the impacts already being felt throughout",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "WorQ World Cup Lounge",
+          "date": "2026-06-11",
+          "time": "10:00AM",
+          "location": "Just added",
+          "link": "https://www.eventbrite.com/e/worq-world-cup-lounge-tickets-1990518680958",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Miami Hiring Event",
+          "date": "2026-06-11",
+          "time": "9:30AM",
+          "location": "Miami \u00b7 Hyatt",
+          "link": "https://www.eventbrite.com/e/miami-hiring-event-tickets-1985768801942",
+          "description": "Meet live with hiring employers EMPLOYERS ARE HIRING AT OUR PROFESSIONAL HIRING EVENTS! Join us for a great day of recruiting! Dress to impress, connect live with the HR Teams from local and Fortune 500 companies to apply to full time and part time positions. What can you expect? Recruiters and HR professionals' network with local job seekers at our one day hiring event. What type of jobs are available? Available jobs and career paths vary by hiring event. We provide all registered attendees wit",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "2026 Miami Summer Arts, Crafts & Food Market Fest",
+          "date": "2026-06-12",
+          "time": "10:00AM",
+          "location": "Miami \u00b7 Tropical Park",
+          "link": "https://www.eventbrite.com/e/2026-miami-summer-arts-crafts-food-market-fest-tickets-1987744937617",
+          "description": "Join us at the 2026 Miami Summer Arts, Crafts & Food Market Fest for a fun day of local vibes and tasty bites! 2026 Miami Summer Arts, Crafts & Food Market Fest \ud83d\udcc5 June 12\u201314, 2026 \ud83d\udccd Miami, Florida \ud83c\udf9f Free Admission | Family-Friendly Event Celebrate the start of summer at the 2026 Miami Summer Arts, Crafts & Food Market Fest , a vibrant open air marketplace featuring local artisans, makers, small businesses, and food vendors. Set in the heart of Miami, this lively three day festival brings togethe",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Baptist Health Fit Fest",
+          "date": "2026-06-13",
+          "time": "10:00AM",
+          "location": "Doral \u00b7 Downtown Doral Charter Upper School",
+          "link": "https://www.eventbrite.com/e/baptist-health-fit-fest-tickets-1985400689909",
+          "description": "Join us for a day of yoga, dance, wellness, games, giveaways, bites & more with friends and family! Step into the ultimate wellness experience in Doral \u2014 with energizing workouts, inspiring activities, and unforgettable moments with friends, family, and the community! Bring your friends and family for a day packed with: \ud83d\udcaaFun workouts & breakout sessions \ud83c\udf4dFree health screenings \ud83e\udd51Healthy bites from local restaurants \ud83e\udde9Activities for all ages \ud83c\udfb6Live DJ \ud83d\udc9aGiveaways & so much more! Wellness Programming:",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Miami Kids Magazine Family Fest 2026!",
+          "date": "2026-06-13",
+          "time": "10:00AM",
+          "location": "Miami \u00b7 Regatta Park in Coconut Grove",
+          "link": "https://www.eventbrite.com/e/miami-kids-magazine-family-fest-2026-tickets-1989237492890",
+          "description": "Miami Kids Family Fest returns June 13 at Regatta Park! Free rides, giveaways, ice cream, live shows & fun for all ages celebrating 10 years \ud83c\udf89\ud83c\udf88 MIAMI KIDS MAGAZINE FAMILY FEST IS BACK \u2014 AND WE\u2019RE CELEBRATING 10 AMAZING YEARS! \ud83c\udf88\ud83c\udf89 Join us for our BIGGEST FREE FAMILY EVENT OF THE YEAR at the beautiful Regatta Park in Coconut Grove! \ud83c\udf34\u2600\ufe0f \ud83d\udcc5 Saturday, June 13th \ud83d\udd59 10:00 AM \u2013 12:30 PM \ud83d\udccd Regatta Park \u2013 2700 S Bayshore Dr, Miami, FL 33133 Bring the whole family (and your furry friends too \ud83d\udc36) for a FUN-FILL",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Finn-Con@MDC 2026",
+          "date": "2026-06-13",
+          "time": "1:00PM",
+          "location": "Miami \u00b7 Miami Dade College - North Campus",
+          "link": "https://www.eventbrite.com/e/finn-conmdc-2026-tickets-1985182490268",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "FREE PILATES PARTY",
+          "date": "2026-06-13",
+          "time": "9:00AM",
+          "location": "Miami \u00b7 7400 NW 7th St unit 109",
+          "link": "https://www.eventbrite.com/e/free-pilates-party-tickets-1985667328432",
+          "description": "Grand Opening FREE! Reformer Pilates for all levels. 2-part system: heated pilates, yoga cool-down weight loss & recovery. The Sculpt Room \u2013 Boutique Pilates & Wellness Studio in North Miami Discover a transformative mind-body experience at The Sculpt Room , a premier Pilates studio in North Miami . Our boutique fitness studio offers a unique, multi-part wellness experience designed to sculpt your body, strengthen your core, and restore your mind . Begin with heated reformer Pilates in a 90\u00b0 stu",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "World Cup Watch Party",
+          "date": "2026-06-13",
+          "time": "5:00PM",
+          "location": "Miami \u00b7 Peacock Park",
+          "link": "https://www.eventbrite.com/e/world-cup-watch-party-tickets-1989118483931",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Tampa Bay Buccaneer Elijah Roberts Free Youth Football Camp",
+          "date": "2026-06-13",
+          "time": "5:00PM",
+          "location": "Miami \u00b7 3000 SW 87th Ave",
+          "link": "https://www.eventbrite.com/e/tampa-bay-buccaneer-elijah-roberts-free-youth-football-camp-tickets-1988432167139",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Miami Job Fair June 17, 2026 - Miami Career Fairs",
+          "date": "2026-06-17",
+          "time": "10:00AM",
+          "location": "Miami \u00b7 Miami",
+          "link": "https://www.eventbrite.com/e/miami-job-fair-june-17-2026-miami-career-fairs-tickets-1853625998259",
+          "description": "Are you looking for a job in the Miami area? If you are, then you need to register and attend this event. MIAMI VIRTUAL JOB FAIR JUNE 17, 2026 DISCOVER YOUR NEXT CAREER OPPORTUNITY AT OUR VIRTUAL JOB FAIR Are you currently seeking employment in the vibrant city of Miami? Look no further! Register now and join us at the highly anticipated Miami Virtual Job Fair. With a proven track record of organizing successful hiring events nationwide, Best Hire Career Fairs guarantees an unparalleled experien",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "The Reading Party | Books & Books x CocoWalk Summer Solstice",
+          "date": "2026-06-20",
+          "time": "4:00PM",
+          "location": "Miami \u00b7 CocoWalk",
+          "link": "https://www.eventbrite.com/e/the-reading-party-books-books-x-cocowalk-summer-solstice-tickets-1989838840537",
+          "description": "Summer Solstice fun continues with a Silent Reading party in the plaza hosted by Books & Books' very own Alyssa Exp\u00f3sito. Unplug, unwind, and settle into a cozy evening of books, community, and conversation in the plaza. In collaboration with Books & Books, the Books & Books Literary Foundation, and CocoWalk\u2019s Summer Solstice Celebration, this special gathering invites guests to slow down and savor the simple joy of reading together. Join fellow readers in the CocoWalk plaza for a peaceful, sile",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        },
+        {
+          "title": "Oasis Health Expo 2026 Miami",
+          "date": "2026-06-20",
+          "time": "10:00AM",
+          "location": "Miami \u00b7 Midway Crossings",
+          "link": "https://www.eventbrite.com/e/oasis-health-expo-2026-miami-tickets-1984751113007",
+          "description": "The ultimate journey to your sound health and wellness Welcome to the Oasis Health Expo 2026 Miami ! Get ready to embark on a journey towards ultimate well-being. Join us on Saturday, June 20th, 2026 and Sunday, June 21st, 2026 to experience a day filled with health, wellness, and vitality. Snapshot: Expected attendance: 5000 daily Venue: Midway Crossings Times of event: 10am to 5pm daily Date: June 20th and June 21st, 2026 {Limited Vendor Spots left} Reserve your vendor booth Now at: www.oasish",
+          "source": "Eventbrite",
+          "city": "fl--miami"
+        }
+      ],
+      "total": 20,
+      "last_updated": "2026-06-04T02:49:33.084189",
       "sources": {}
     },
     "ut--salt-lake-city": {
+      "events": [
+        {
+          "title": "Join Biggest Community | Investors Founders | Salt Lake City | Online",
+          "link": "https://www.meetup.com/investor/events/314804603/",
+          "date": "2026-06-04",
+          "time": "1:00 PM",
+          "location": "Salt Lake City",
+          "description": "Please reserve your spot by registering on the below link :\n**Reserve**\nhttps://www.eventbrite.com/e/join-biggest-community-investors-founders-salt-lake-city-online-tickets-1972282092832?aff=meetup\n**...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Guided Meditation & Check-In: Coming Home to Yourself with Self-Compassion",
+          "link": "https://www.meetup.com/the-la-curiosity-collective-inner-work-self-discovery/events/314694317/",
+          "date": "2026-06-04",
+          "time": "10:00 PM",
+          "location": "Link visible for attendees",
+          "description": "Join us this month for a gentle and nurturing Guided Meditation and Check-In as we explore the theme of Self-Compassion. Together we'll get honest about the way we talk to ourselves and practice repla...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Toss Your Own New York Style Pizza",
+          "link": "https://www.meetup.com/lets-eat-free-cooking-classes/events/315022121/",
+          "date": "2026-06-04",
+          "time": "8:00 PM",
+          "location": "Murray Park",
+          "description": "\"We give you the dough, you smash it, you pound it, you fling it in the air; and then you get to put your sauce and you get to sprinkle your cheese, and then - you slide it into the oven. It's all sup...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Your Strengths, Utah\u2019s Future: Building a State Where All Can Thrive",
+          "date": "2026-06-05",
+          "time": "8:30AM",
+          "location": "Midvale \u00b7 Zions Technology Campus",
+          "link": "https://www.eventbrite.com/e/your-strengths-utahs-future-building-a-state-where-all-can-thrive-tickets-1988488476562",
+          "description": "Discover your top strengths and learn how to apply them to accelerate A Bolder Way Forward. This interactive, research\u2011grounded workshop is designed for current and emerging leaders, partners, and advocates within A Bolder Way Forward (BWF)\u2014the statewide initiative hosted by the Utah Women & Leadership Project (UWLP) to ensure that more Utah girls, women, and families truly thrive. Participants should complete the StrengthsFinder 2.0 Assessment prior to attending and bring their results to fully",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Join Biggest Community | Investors Founders | Salt Lake City | Online",
+          "date": "2026-06-05",
+          "time": "11:00AM",
+          "location": "Salt Lake City \u00b7 Salt Lake City",
+          "link": "https://www.eventbrite.com/e/join-biggest-community-investors-founders-salt-lake-city-online-tickets-1972282092832",
+          "description": "Get ready to connect with the biggest community of investors and founders in Salt Lake City. It's going to be an event to remember! Join Biggest Community | Investors Founders | Free Entry ============ HOW DOES IT WORK? Register your interest & if validated, we will invite you. Connect with investors & founders. Grow your valuable network. Important: If we won't have enough delegates, the event will be held Online, connecting people from different cities / countries. P S: Only Shortlisted delega",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Hair Restoration at Gateway Aesthetic",
+          "date": "2026-06-05",
+          "time": "5:00PM",
+          "location": "Salt Lake City \u00b7 Gateway Aesthetic Institute and Laser Center",
+          "link": "https://www.eventbrite.com/e/hair-restoration-at-gateway-aesthetic-tickets-1988506783318",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Yoga in the Garden",
+          "date": "2026-06-05",
+          "time": "9:00AM",
+          "location": "West Jordan \u00b7 Conservation Garden Park",
+          "link": "https://www.eventbrite.com/e/yoga-in-the-garden-tickets-1984506063056",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Localscapes: Irrigation Workshop",
+          "date": "2026-06-05",
+          "time": "2:00PM",
+          "location": "West Jordan \u00b7 Conservation Garden Park",
+          "link": "https://www.eventbrite.com/e/localscapes-irrigation-workshop-tickets-1988031244970",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Vuori City Creek x BODYROK",
+          "date": "2026-06-06",
+          "time": "8:00AM",
+          "location": "Salt Lake City \u00b7 Vuori City Creek",
+          "link": "https://www.eventbrite.com/e/vuori-city-creek-x-bodyrok-tickets-1989443193145",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "CHaRM Recycling Collection Event - Cottonwood Heights",
+          "date": "2026-06-06",
+          "time": "9:00AM",
+          "location": "Cottonwood Heights \u00b7 2378 East Fort Union Blvd",
+          "link": "https://www.eventbrite.com/e/charm-recycling-collection-event-cottonwood-heights-tickets-1985561960273",
+          "description": "Join URA and Cottonwood Heights as we collect a large variety of hard-to-recycle materials! Join the Utah Recycling Alliance in keeping hard-to-recycle items out of landfill! CHaRM stands for Collection of Hard to Recycle Materials. These pop-up events help residents repurpose and recycle materials that would otherwise be landfilled. The URA is proud to work in partnership with Cottonwood Heights to host a CHaRM event on June 6th, from 9am to noon. The URA team and volunteers will be available t",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Roots & Resilience: Bloom \u2014 Art Therapy Open House 2026",
+          "date": "2026-06-06",
+          "time": "11:00AM",
+          "location": "Murray \u00b7 Radiant Mind Wellness",
+          "link": "https://www.eventbrite.com/e/roots-resilience-bloom-art-therapy-open-house-2026-tickets-1989761826185",
+          "description": "Free art therapy open house for all ages. Creativity, community & connection in Murray, UT. Welcome to Roots & Resilience: Bloom \u2014 Art Therapy Open House at Radiant Mind Wellness! Join us on Saturday, June 6, 2026, from 11:00 AM to 2:00 PM at Radiant Mind Wellness, located at 111 E 5600 S, Suite 200, Murray, UT 84107. This open house offers a valuable opportunity to explore the world of art therapy and expressive healing. It's a chance to reconnect with creativity, community, and your inner resi",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Farm and Sun Solar Viewing Party - June 2026",
+          "date": "2026-06-06",
+          "time": "11:00AM",
+          "location": "Murray \u00b7 Wheeler Historic Farm",
+          "link": "https://www.eventbrite.com/e/farm-and-sun-solar-viewing-party-june-2026-tickets-1990109506105",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "A New Place",
+          "link": "https://www.meetup.com/crazy-fun-shit-to-do-in-slc/events/314927163/",
+          "date": "2026-06-06",
+          "time": "8:00 PM",
+          "location": "Shades Brewing Tap Room",
+          "description": "I know it says shades, but it\u2019s now called the engine room. It looks tasty from what I\u2019ve seen on the videos on Facebook or Instagram. Let\u2019s enjoy a nice pre-summer meal together.",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Mat Pilates Remixed",
+          "date": "2026-06-07",
+          "time": "10:30AM",
+          "location": "Millcreek \u00b7 The Grandview at Millcreek Common",
+          "link": "https://www.eventbrite.com/e/mat-pilates-remixed-tickets-1987179977807",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Kiln SLC's Coworking Week + Events!",
+          "date": "2026-06-08",
+          "time": "9:00AM",
+          "location": "Salt Lake City \u00b7 26 S Rio Grande St",
+          "link": "https://www.eventbrite.com/e/kiln-slcs-coworking-week-events-tickets-1989668067751",
+          "description": "Curious about coworking? Come experience the energy of our space for a full week, on us! Sign up once, come as many days as you'd like. \u2728Join Us for a Complimentary Week of Coworking at Kiln! We\u2019ve curated a full lineup of events so you can get a true taste of the Kiln lifestyle while doing your best work. Invite your colleagues, friends, and fellow founders to try our space for free! The Week\u2019s Lineup: Monday: Kick off & Professional Refresh 9:00 AM \u2013 11:00 AM: Arrive and take a short tour to g",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Craft Lake City Workshop: Crafting a Mural From Start to Finish",
+          "date": "2026-06-09",
+          "time": "6:00PM",
+          "location": "Midvale \u00b7 Midvale City Hall",
+          "link": "https://www.eventbrite.com/e/craft-lake-city-workshop-crafting-a-mural-from-start-to-finish-tickets-1988933690208",
+          "description": "Learn how to turn a sketch into a mural from 3 local muralists during Los Muros on Main in Midvale! Craft Lake City Workshop : From Sketch to Wall: Crafting a Mural From Start to Finish Join Craft Lake City for an interactive mural workshop at the 2026 Los Muros on Main: Midvale City Mural Festival! In this two-hour class, three local muralists will break down their process for transforming a small sketch into a large-scale mural\u2014covering techniques for scaling, sectioning, and transferring desi",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Green Drinks - Air Quality discussion at Lone Pine Gear Exchange",
+          "date": "2026-06-09",
+          "time": "6:00PM",
+          "location": "Millcreek \u00b7 Lone Pine Gear Exchange",
+          "link": "https://www.eventbrite.com/e/green-drinks-air-quality-discussion-at-lone-pine-gear-exchange-tickets-1982261151465",
+          "description": "Learn about SLC air quality and solutions for keeping it clear at our June Green Drinks! Enjoy drinks and bites at the legendary Lone Pine Gear exchange while benefiting from a timely discussion on air quality. Featured speakers: Lexi Tuddenham, HEAL HEAL\u2019s mission is to protect Utah\u2019s environment and its people by promoting clean air, clean energy, and comprehensive solutions to radioactive and toxic waste. It's main goals are: Protecting Communities from Air Pollution Building an inclusive cle",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Salt Lake City Biblical Answers to Life and Bible Study Meetup Group",
+          "link": "https://www.meetup.com/salt-lake-city-biblical-answers-to-life-meetup-group/events/314885446/",
+          "date": "2026-06-09",
+          "time": "9:00 PM",
+          "location": "Every week on Tuesday until April 20, 2027",
+          "description": "Hello, my name is Jason Hamilton and I have been a Bible studier, believer, preacher and teacher for the last 20 years. This group is designed to give people a non-judgmental avenue to ask questions a...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Knitting and Drinking at Caffe Molise",
+          "link": "https://www.meetup.com/slc-knitters-who-drink-or-drinkers-who-knit/events/314926910/",
+          "date": "2026-06-09",
+          "time": "8:00 PM",
+          "location": "Caffe Molise",
+          "description": "Bring your portable craft WIP to work on with friendly people over dinner and drinks!",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Utah\u2019s Progress Report on America\u2019s Anniversary",
+          "date": "2026-06-10",
+          "time": "11:45AM",
+          "location": "Salt Lake City \u00b7 Zions Bank Founders Room",
+          "link": "https://www.eventbrite.com/e/utahs-progress-report-on-americas-anniversary-tickets-1989678965346",
+          "description": "Join us for lunch as we discuss the state of the state. How does Utah compare? The bipartisan State of the Nation Project is \u201cAmerica\u2019s progress report,\u201d assessing how the U.S. is doing as a country. The Project is launching its 250th Anniversary Edition in June with its first State of the States project. This special \u201cUtah\u2019s progress report\u201d event will include the first look at Utah's data and how the state compares. This important event will feature a conversation about the high points of the ",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "June: Volunteer with MyHometown",
+          "date": "2026-06-10",
+          "time": "8:00AM",
+          "location": "West Valley City \u00b7 3305 Scottsdale Dr",
+          "link": "https://www.eventbrite.com/e/june-volunteer-with-myhometown-tickets-1988864483208",
+          "description": "Join us for June's volunteer activity! Bring your friends and family! Hi friends! I'm so excited for this month's activity with MyHometown. This is a nonprofit focused on strengthening neighborhoods and we get to help with that work on Wednesday, June 10th. This is part of MyHometown's Day of Service in West Valley. You can read more about what to expect here: https://citiesstrong.org/you-dont-need-a-special-skill-you-just-need-a-saturday/ This is an activity where you can bring your whole famil",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Solar Slopes",
+          "date": "2026-06-10",
+          "time": "6:00PM",
+          "location": "Midvale \u00b7 Topgolf Salt Lake City",
+          "link": "https://www.eventbrite.co.uk/e/solar-slopes-tickets-1989598499671",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Black Holes: Scientific Discovery and the Cosmic Frontier",
+          "date": "2026-06-11",
+          "time": "7:00PM",
+          "location": "Salt Lake City \u00b7 Clark Planetarium",
+          "link": "https://www.eventbrite.com/e/black-holes-scientific-discovery-and-the-cosmic-frontier-tickets-1982462872819",
+          "description": "How the most mysterious objects in space are being understood by astronomers. Black Holes: Scientific Discovery and the Cosmic Frontier From their first hints in Einstein's work over a century ago, black holes have transitioned from fringe theory to established science and popular culture. I will explore about the history that led to the discovery of gravitational waves and imaging a black hole's shadow. Current and future telescopes promise many new discoveries over the next few decades. BENJAM",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Day 1 | Nikon Tour Salt Lake City | Intro to Photography",
+          "date": "2026-06-12",
+          "time": "10:30AM",
+          "location": "Just added",
+          "link": "https://www.eventbrite.com/e/day-1-nikon-tour-salt-lake-city-intro-to-photography-tickets-1990504317998",
+          "description": "Join us at evo Hotel for free photography workshops! Pick the session that best fits your schedule. Start your photography journey with confidence at Beginner Day at evo Hotel in Salt Lake City, Utah! Join Kirill Umrikhin for a free, hands-on workshop designed specifically for beginners. Whether you\u2019re picking up a camera for the first time or looking to better understand the basics, this session will walk you through essential camera settings and simple techniques to help you capture impactful,",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "2026 Salt Lake City Summer Artisan & Vendor Market",
+          "date": "2026-06-12",
+          "time": "10:00AM",
+          "location": "Salt Lake City \u00b7 300 S 300 W",
+          "link": "https://www.eventbrite.com/e/2026-salt-lake-city-summer-artisan-vendor-market-tickets-1987251264026",
+          "description": "Discover unique crafts & goodies at the 2026 Salt Lake City Summer Artisan & Vendor Market, in person and full of fun! 2026 Salt Lake City Spring Artisan & Vendor Market Celebrate the arrival of spring at the 2026 Salt Lake City Spring Artisan & Vendor Market , a vibrant weekend marketplace bringing together talented artisans, independent businesses, and food vendors from across Utah and neighboring states. Hosted in the heart of Salt Lake City , this exciting two-day event will feature a carefu",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "The Farm and Sky Star Party - June 2026",
+          "date": "2026-06-12",
+          "time": "10:00PM",
+          "location": "Murray \u00b7 Wheeler Historic Farm",
+          "link": "https://www.eventbrite.com/e/the-farm-and-sky-star-party-june-2026-registration-1990110058758",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Localscapes: Design Workshop",
+          "date": "2026-06-12",
+          "time": "2:00PM",
+          "location": "West Jordan \u00b7 Conservation Garden Park",
+          "link": "https://www.eventbrite.com/e/localscapes-design-workshop-tickets-1988025771599",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "C\u00f3mo Comprar 3 Casas en 3 A\u00f1os en Utah",
+          "date": "2026-06-13",
+          "time": "11:00AM",
+          "location": "Cottonwood Heights \u00b7 Real Advantage Title Insurance Agency",
+          "link": "https://www.eventbrite.com/e/como-comprar-3-casas-en-3-anos-en-utah-tickets-1990204804144",
+          "description": "Aprende los trucos para invertir en bienes ra\u00edces y tener tres casas en Utah en solo tres a\u00f1os, \u00a1sin complicaciones! C\u00f3mo Comprar 3 Casas en 3 A\u00f1os en Utah \ud83c\udfd4\ufe0f \u00a1Atenci\u00f3n futuros propietarios e inversionistas en Utah! \ud83d\udce2 \u00bfCrees que comprar tu primera casa ya es dif\u00edcil? \u00a1Imag\u00ednate tres! Suena imposible... hasta que entiendes que no se trata de tener una fortuna, sino de tener la estrategia correcta. Este pr\u00f3ximo 13 de junio, te invito a un seminario completamente gratuito en Cottonwood Heights, don",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Vuori City Creek x Salt Lake Lagree",
+          "date": "2026-06-13",
+          "time": "8:00AM",
+          "location": "Salt Lake City \u00b7 Vuori City Creek",
+          "link": "https://www.eventbrite.com/e/vuori-city-creek-x-salt-lake-lagree-tickets-1989443356634",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "BTL x The Body Shop Wellness | Longevity Lounge Bus Tour",
+          "date": "2026-06-13",
+          "time": "10:00AM",
+          "location": "Murray \u00b7 The Body Shop Aesthetics & Wellness",
+          "link": "https://www.eventbrite.com/e/btl-x-the-body-shop-wellness-longevity-lounge-bus-tour-tickets-1989407118244",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Waterwise Birding Walk",
+          "date": "2026-06-13",
+          "time": "7:00AM",
+          "location": "West Jordan \u00b7 Conservation Garden Park",
+          "link": "https://www.eventbrite.com/e/waterwise-birding-walk-tickets-1987648646608",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Salt Lake City Pride Ride",
+          "date": "2026-06-14",
+          "time": "9:00AM",
+          "location": "Salt Lake City \u00b7 Trek Bicycle Salt Lake City Downtown",
+          "link": "https://www.eventbrite.com/e/salt-lake-city-pride-ride-tickets-1986462823780",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "\ud83c\udfb2\ud83e\uddc6\u2615\ufe0f\u265f\ufe0f\u265f\ufe0f Roll The Dice: Singles Game Day\ud83e\udd57\u265f\ufe0f\ud83c\udfb2\ud83c\udfb2",
+          "link": "https://www.meetup.com/out-and-about-slc-and-utah-county/events/314684322/",
+          "date": "2026-06-14",
+          "time": "1:15 PM",
+          "location": "Hallpass",
+          "description": "Come meet, network, and connect with singles, all while eating and playing board games. You can bring your own games to play, or enjoy games other people bring.\n\nThere are food options aplenty at Hall...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Portal Pours: Salt Lake City",
+          "date": "2026-06-15",
+          "time": "5:00PM",
+          "location": "Salt Lake City \u00b7 Drift Lounge at Woodbine",
+          "link": "https://www.eventbrite.com/e/portal-pours-salt-lake-city-tickets-1988863721931",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Single and Food Motivated",
+          "link": "https://www.meetup.com/singles-40s-and-50s-social-club-slc/events/314934677/",
+          "date": "2026-06-16",
+          "time": "8:30 PM",
+          "location": "Sugar House Station",
+          "description": "Have you felt overwhelmed by singles events that take place at chaotic bars or restaurants? Have you been seeking an alternative? Good news! This is the alternative! Come eat, network, and connect wit...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "\ud83c\udf7d\ud83c\udf5d\ud83c\udf55Single and Food Motivated \ud83c\udf7d\ud83c\udf77\ud83c\udf2e\ud83d\ude0b",
+          "link": "https://www.meetup.com/out-and-about-slc-and-utah-county/events/314913747/",
+          "date": "2026-06-16",
+          "time": "8:30 PM",
+          "location": "Sugar House Station",
+          "description": "Have you felt overwhelmed by singles events that take place at chaotic bars or restaurants? Have you been seeking an alternative? Good news! This is the alternative! Come eat, network, and connect wit...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "What Striving Readers Need: A Strategic Discussion for District Leaders",
+          "date": "2026-06-17",
+          "time": "11:00AM",
+          "location": "Salt Lake City \u00b7 111 E Broadway",
+          "link": "https://www.eventbrite.com/e/what-striving-readers-need-a-strategic-discussion-for-district-leaders-tickets-1988341143886",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Drop-in Drawing Disco",
+          "date": "2026-06-17",
+          "time": "6:00PM",
+          "location": "Salt Lake City \u00b7 Utah Museum of Fine Arts",
+          "link": "https://www.eventbrite.com/e/drop-in-drawing-disco-tickets-1987953037048",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Salt Lake City InfraGard Members Alliance - Communications / Cyber TTX",
+          "date": "2026-06-18",
+          "time": "9:00AM",
+          "location": "Taylorsville \u00b7 Taylorsville State Office Building",
+          "link": "https://www.eventbrite.com/e/salt-lake-city-infragard-members-alliance-communications-cyber-ttx-tickets-1986873956489",
+          "description": "Join InfraGard SLC for an elite Cyber & Comms. TTX. Test your response alongside federal, state, and national security experts. Experience a high-stakes Communications and Cyber Security Table Top Exercise (TTX) hosted by the Salt Lake City InfraGard Members Alliance, the State of Utah, and various Federal Agency Partners. This immersive event blends current real-world threats with plausible AI-driven scenarios to challenge your assumptions and push you beyond your comfort zone. Participants wil",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Return-to-Work Network Night",
+          "date": "2026-06-18",
+          "time": "7:00PM",
+          "location": "Salt Lake City \u00b7 Recursion",
+          "link": "https://www.eventbrite.com/e/return-to-work-network-night-tickets-1990452288376",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "KOREA Soccer Watch Party - Salt Lake City",
+          "date": "2026-06-18",
+          "time": "8:00PM",
+          "location": "Salt Lake City \u00b7 1388 S 300 W #400",
+          "link": "https://www.eventbrite.com/e/korea-soccer-watch-party-salt-lake-city-tickets-1989031346300",
+          "description": "Join TEAM ONE REDS as we root for Korea vs. Czechia, Mexico, & South Africa at the ENGINE ROOM\u2014cheer, chill, and enjoy the game live! UPDATE: Selling Official TEAM ONE REDS Fan T-Shirt for upcoming BYU Game. Pickup on Gameday! See details below 2026 KOREA Soccer Team One Reds Watch Party - Salt Lake City Join the FREE in-person watch party with TEAM ONE REDS, the official Korea Soccer fans gathering! Wear your RED or TEAM ONE REDS fan shirt and get ready to cheer loud and proud at the Engine Roo",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Healthy Trees, Happy Landscapes Presented by TreeUtah",
+          "date": "2026-06-18",
+          "time": "5:30PM",
+          "location": "West Jordan \u00b7 Conservation Garden Park",
+          "link": "https://www.eventbrite.com/e/healthy-trees-happy-landscapes-presented-by-treeutah-tickets-1978662275129",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Utah Arts Festival 2026 \u2014 50th Anniversary!",
+          "link": "https://www.meetup.com/real-art-lovers-slc/events/314580539/",
+          "date": "2026-06-19",
+          "time": "8:00 PM",
+          "location": "210 E 400 S",
+          "description": "Let's spend an evening at the Utah Arts Festival together! 2026 marks the festival's 50th anniversary, happening June 18\u201321 at Library Square in downtown SLC.\n\nExpect around 800 artists and performers...",
+          "source": "Meetup",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "FREE Utah Concealed Carry Permit Class",
+          "date": "2026-06-20",
+          "time": "10:00AM",
+          "location": "Salt Lake City \u00b7 Lee Kay Public Shooting Range",
+          "link": "https://www.eventbrite.com/e/free-utah-concealed-carry-permit-class-tickets-1987058079205",
+          "description": "Get your State of Utah Permit. Learn all about Utah Firearms Law and Federal Firearms Law, Use of Force Scenarios and more! There are moments when danger doesn\u2019t announce itself. One wrong turn in a parking lot, one stranger approaching your family at a gas station, one late-night knock at the door\u2014those are the seconds that decide everything. And in Utah, more people than ever are waking up to a hard truth: you are your own first responder.That\u2019s why Secret Squirrel Concealed Carry is hosting a",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "ACTV Studio IRL: Vuori City Creek x Rise4",
+          "date": "2026-06-20",
+          "time": "8:00AM",
+          "location": "Salt Lake City \u00b7 Vuori City Creek",
+          "link": "https://www.eventbrite.com/e/actv-studio-irl-vuori-city-creek-x-rise4-tickets-1989442100878",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "JETSET on the Mat X Second Summit Hard Cider",
+          "date": "2026-06-20",
+          "time": "8:30AM",
+          "location": "Millcreek \u00b7 Second Summit Hard Cider Co.",
+          "link": "https://www.eventbrite.com/e/jetset-on-the-mat-x-second-summit-hard-cider-tickets-1990591654223",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "\"Hold my beer\" Free Yoga at 2 Row Brewing",
+          "date": "2026-06-21",
+          "time": "11:30AM",
+          "location": "Midvale \u00b7 2 Row Brewing",
+          "link": "https://www.eventbrite.com/e/hold-my-beer-free-yoga-at-2-row-brewing-tickets-1988715200700",
+          "description": "",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Building Bridges: Anatomy of Trust Workshop",
+          "date": "2026-06-25",
+          "time": "10:00AM",
+          "location": "Salt Lake City \u00b7 Spy Hop Rooftop",
+          "link": "https://www.eventbrite.com/e/building-bridges-anatomy-of-trust-workshop-tickets-1990132486841",
+          "description": "Learn a framework to build, protect, and repair trust in any relationship--with donors, clients, coworkers, even friends & family. Friends, Welcome back to Building Bridges! I believe this Anatomy of Trust workshop has the power to help you strengthen relationships and more effectively accomplish your mission-driven work . Have you ever felt something shift in a relationship, but couldn\u2019t quite name what changed? A missed follow-through. A conversation avoided. A boundary crossed. A story you st",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "UT Criminal Legal System and Brain Injury Summit",
+          "date": "2026-06-30",
+          "time": "8:30AM",
+          "location": "Salt Lake City \u00b7 Multi-Agency State Office Building (MASOB)",
+          "link": "https://www.eventbrite.com/e/ut-criminal-legal-system-and-brain-injury-summit-tickets-1988351897049",
+          "description": "Join us to explore how brain injuries impact the criminal justice system and support reform efforts! UT Criminal Legal System and Brain Injury Summit You are cordially invited to participate in a six-hour, in-person summit hosted by the Utah Department of Health and Human Services Brain Injury Program. This important convening will bring together criminal legal professionals, behavioral health providers, reentry specialists, and key cross-system partners to strengthen collaboration, enhance shar",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        },
+        {
+          "title": "Salt Lake City Career Fair",
+          "date": "2026-07-09",
+          "time": "9:30AM",
+          "location": "Salt Lake City \u00b7 Marriott Hotel",
+          "link": "https://www.eventbrite.com/e/salt-lake-city-career-fair-tickets-1979173977645",
+          "description": "Meet live with employers Join us for this exciting career fair! Meet face to face with recruiters and HR managers from local and Fortune 500 companies to learn about open career opportunities. Dress to impress and please bring an updated resume. 100% free event for job seekers to attend. Event details Hours. 9:30 AM-1:00 PM Open positions: Hiring managers are onsite to fill positions in sales, retail, customer service, education, admissions, production, financial services, banking engineering, h",
+          "source": "Eventbrite",
+          "city": "ut--salt-lake-city"
+        }
+      ],
+      "total": 50,
+      "last_updated": "2026-06-04T04:22:16.333938",
+      "sources": {
+        "Eventbrite": 40,
+        "Meetup": 10,
+        "Luma": 0,
+        "Dice.fm": 0,
+        "RA.co": 0
+      }
+    },
+    "or--portland": {
       "events": [],
       "total": 0,
-      "last_updated": "2026-05-29T12:24:01.426579",
+      "last_updated": "2026-06-04T03:22:47.946297",
+      "sources": {}
+    },
+    "va--richmond": {
+      "events": [],
+      "total": 0,
+      "last_updated": "2026-06-04T03:32:38.074353",
       "sources": {}
     },
     "la--new-orleans": {
       "events": [],
       "total": 0,
-      "last_updated": "2026-05-29T12:34:46.060299",
+      "last_updated": "2026-06-04T03:32:48.125146",
       "sources": {}
     }
   },
-  "last_updated": "2026-05-29T12:34:46.060161"
+  "last_updated": "2026-06-04T04:22:16.332335"
 }

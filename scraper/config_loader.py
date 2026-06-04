@@ -24,6 +24,11 @@ class Config:
         if self._config is None:
             self.load()
     
+    def force_reload(self, config_file: str = "config.json") -> None:
+        """Force reload configuration from file, bypassing singleton cache"""
+        self._config = None
+        self.load(config_file)
+
     def load(self, config_file: str = "config.json") -> None:
         """Load configuration from JSON file"""
         try:

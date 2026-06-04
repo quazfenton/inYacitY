@@ -479,6 +479,10 @@ async def scrape_city_events(city: str, source: str = "manual") -> Dict:
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
 
+        # Force reload the Config singleton so scrapers see the newly written config
+        from config_loader import get_config as refresh_config
+        refresh_config().force_reload(config_path)
+
         try:
             os.chdir(scraper_dir)
             await run_all_scrapers()
